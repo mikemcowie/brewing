@@ -29,17 +29,24 @@ class Base(DeclarativeBase):
 
 def uuid_primary_key():
     return mapped_column(
-        pg.UUID, primary_key=True, server_default=text("uuid_generate_v4()")
+        pg.UUID,
+        default=None,
+        primary_key=True,
+        server_default=text("uuid_generate_v4()"),
     )
 
 
 def created_field():
-    return mapped_column(DateTime, index=True, server_default=func.now())
+    return mapped_column(DateTime, default=None, index=True, server_default=func.now())
 
 
 def updated_field():
     return mapped_column(
-        DateTime, index=True, server_default=func.now(), onupdate=func.now()
+        DateTime,
+        default=None,
+        index=True,
+        server_default=func.now(),
+        onupdate=func.now(),
     )
 
 
@@ -49,3 +56,8 @@ class User(MappedAsDataclass, Base, kw_only=True):
     password_hash: Mapped[str]
     created: Mapped[datetime] = created_field()
     updated: Mapped[datetime] = created_field()
+
+    @property
+    def username(self):
+        """Username is an alias for email."""
+        return self.email

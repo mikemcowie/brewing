@@ -1,11 +1,12 @@
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
+from uuid import UUID
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, EmailStr, SecretStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -52,7 +53,13 @@ class Token(BaseModel):
 
 
 class UserRead(BaseModel):
+    id: UUID
     username: str
+
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: SecretStr
 
 
 class UserAuth:
@@ -110,6 +117,9 @@ class UserAuth:
             token_type="bearer",
         )
 
+    def hashed_password(self, value: str):
+        return self.password_context.hash(value)
+
     def verify_password(self, plain_password: str, hashed_password: str):
         return self.password_context.verify(plain_password, hashed_password)
 
@@ -122,6 +132,17 @@ class UserAuth:
         except NotFound:
             pass  # Don't show a 404 in this case, shpw a 401 by raising the next error.
         raise LoginFailure()
+
+    async def create_user(self, user: UserRegister):
+        user_data = user.model_dump() | {
+            "password_hash": self.hashed_password(user.password.get_secret_value())
+        }
+        del user_data["password"]
+        async with self.db_session.begin():
+            db_user = User(**user_data)
+            self.db_session.add(db_user)
+            await self.db_session.flush()
+            return UserRead.model_validate(db_user, from_attributes=True)
 
 
 def settings():
@@ -145,8 +166,8 @@ async def user(auth: Annotated[UserAuth, Depends(user_auth)]):
 
 
 @router.get(Endpoints.USERS_PROFILE)
-async def user_own_profile(user: Annotated[User, Depends(user)]):  # noqa: ARG001
-    return {}
+async def user_own_profile(user: Annotated[User, Depends(user)]):
+    return user
 
 
 def secret_value(value: str | SecretStr):
@@ -166,5 +187,5 @@ async def login(
 
 
 @router.post(Endpoints.USERS_REGISTER, status_code=status.HTTP_201_CREATED)
-async def register():
-    return {}
+async def register(user: UserRegister, auth: Annotated[UserAuth, Depends(user_auth)]):
+    return await auth.create_user(user)

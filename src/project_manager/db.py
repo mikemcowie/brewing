@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager, contextmanager
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from alembic import command
 from alembic.config import Config
@@ -15,6 +15,9 @@ from project_manager.settings import Settings
 
 MIGRATIONS_DIR = Path(migrations.__file__).parent.resolve()
 VERSIONS_DIR = MIGRATIONS_DIR / "versions"
+# keyword args for engine creation, which are written to be overwritten for tests
+ASYNC_ENGINE_KWARGS: dict[str, Any] = {}
+SYNC_ENGINE_KWARGS: dict[str, Any] = {}
 
 
 if TYPE_CHECKING:
@@ -24,11 +27,11 @@ else:
 
     @cache
     def _engine(*args, **kwargs):
-        return create_engine(*args, **kwargs)
+        return create_engine(*args, **kwargs | SYNC_ENGINE_KWARGS)
 
     @cache
     def _async_engine(*args, **kwargs):
-        return create_async_engine(*args, **kwargs)
+        return create_async_engine(*args, **kwargs | ASYNC_ENGINE_KWARGS)
 
 
 class Database:

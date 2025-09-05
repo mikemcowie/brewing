@@ -62,6 +62,7 @@ class UserTestScenario:
         assert expectations.status == result.status_code, result.content
         assert expectations.headers.items() <= result.headers.items()
         assert expectations.json.items() <= result.json().items()
+        return result
 
     def register(self, user: User, test_name: str, expectations: Expectations):
         with self.subtests.test(test_name):
@@ -74,12 +75,16 @@ class UserTestScenario:
 
     def login(self, user: User, test_name: str, expectations: Expectations):
         with self.subtests.test(test_name):
-            self.validate_expectations(
+            result = self.validate_expectations(
                 expectations,
                 user.client.post(
                     Endpoints.USERS_LOGIN, data=user.login.model_dump(mode="json")
                 ),
             )
+            if result.status_code == status.HTTP_200_OK:
+                user.client.headers["authorization"] = (
+                    f"Bearer {result.json()['access_token']}"
+                )
 
     def retrieve_profile(self, user: User, test_name: str, expectations: Expectations):
         with self.subtests.test(test_name):
@@ -119,9 +124,7 @@ def test_register_login_and_profile(scenario: UserTestScenario):
     scenario.register(
         scenario.user1, "register", Expectations(status=status.HTTP_201_CREATED)
     )
-    scenario.login(
-        scenario.user1, "login", Expectations(status=status.HTTP_201_CREATED)
-    )
+    scenario.login(scenario.user1, "login", Expectations(status=status.HTTP_200_OK))
     scenario.login(
         scenario.user2,
         "login-user2-fails",
@@ -131,6 +134,6 @@ def test_register_login_and_profile(scenario: UserTestScenario):
         scenario.user1,
         test_name="retrieve-profile",
         expectations=Expectations(
-            status=status.HTTP_200_OK, json={"email": scenario.user1.login.email}
+            status=status.HTTP_200_OK, json={"email": scenario.user1.login.username}
         ),
     )
