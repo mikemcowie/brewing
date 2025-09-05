@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from enum import Enum
-from pathlib import Path
 from typing import Annotated, Any
 
 from cauldron.http import CauldronHTTP, Depends
@@ -41,7 +40,7 @@ def test_routes_created():
             pass
 
     expected_params = EndpointParameters(
-        path=Path("/"),
+        path=["/"],
         trailing_slash=True,
         method=HTTPMethod.GET,
         args=(),

@@ -131,9 +131,9 @@ class AbstractViewSet(ABC):
     def setup_endpoint(
         self, attr: str, item: Any, params: endpoints.EndpointParameters
     ):
-        path_parts = list(self.get_base_path()) + list(params.path.parts)
-        path = Path("/", "/".join(path_parts))
-        path_str = str(path) + "/" if params.trailing_slash else str(path)
+        path = list(self.get_base_path()) + params.path
+        path_obj = Path("/" + "/".join(path))
+        path_str = str(path_obj) + "/" if params.trailing_slash else str(path_obj)
         logger.debug(f"Creating fastapi endpoint for {self=} {attr=} {item=}")
         wrapper: Callable[..., Any] = getattr(self.router, params.method.value.lower())
         logger.debug(f"wrapping {item=}")

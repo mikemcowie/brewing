@@ -14,7 +14,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from http import HTTPMethod as HTTPMethod
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from cauldron.http.viewset import const
@@ -40,7 +39,7 @@ if TYPE_CHECKING:
 @dataclass
 class EndpointParameters:
     trailing_slash: bool
-    path: Path
+    path: list[str]
     method: HTTPMethod
     args: Sequence[Any]
     kwargs: dict[str, Any]
@@ -106,8 +105,8 @@ class Endpoint:
         """
 
         def decorator(func: Callable[..., Any]):
-            path = Path("/", *self.path)
-            path = path / "/" if self.trailing_slash else path
+            path = list(self.path)
+            path.append("/") if self.trailing_slash else ...
             func.__dict__[const.CAULDRON_ENDPOINT_PARAMS] = EndpointParameters(
                 path=path,
                 trailing_slash=self.trailing_slash,
