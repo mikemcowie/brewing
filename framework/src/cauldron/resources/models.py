@@ -7,6 +7,7 @@ from enum import StrEnum, auto
 from functools import cache
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from cauldron_incubator.auth.models import User
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from sqlalchemy import ForeignKey, event
 from sqlalchemy.orm import (
@@ -19,7 +20,6 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from cauldron.auth.models import User
 from cauldron.db import base, columns
 from cauldron.db.base import Base
 

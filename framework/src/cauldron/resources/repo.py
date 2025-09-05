@@ -17,10 +17,9 @@ from cauldron.resources.models import (
 if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     from uuid import UUID
 
+    from cauldron_incubator.auth.models import User
     from pydantic import BaseModel
     from sqlalchemy.ext.asyncio import AsyncSession
-
-    from cauldron.auth.models import User
 
     ResourceRead = BaseModel
     ResourceSummary = BaseModel

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cauldron.auth.models import User, UserSession
+from cauldron_incubator.auth.models import User, UserSession
 
 
 class UserRepo:

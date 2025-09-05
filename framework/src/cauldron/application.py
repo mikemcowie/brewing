@@ -5,11 +5,11 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from cauldron_incubator.auth.users import router as users_router
 from cauldronlib.generic import runtime_generic
 from starlette.staticfiles import StaticFiles
 
 from cauldron import root_router
-from cauldron.auth.users import router as users_router
 from cauldron.configuration import BaseConfiguration
 from cauldron.db.database import Database
 from cauldron.db.settings import PostgresqlSettings
