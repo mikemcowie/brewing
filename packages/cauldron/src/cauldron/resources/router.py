@@ -3,11 +3,11 @@ from dataclasses import make_dataclass
 from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cauldron import db
 from cauldron.exceptions import Unauthorized
+from cauldron.http import APIRouter, Depends, Path, status
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from cauldron.resources.repo import (
     CrudRepository,

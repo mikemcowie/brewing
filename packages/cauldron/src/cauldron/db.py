@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 
 from alembic import command
 from alembic.config import Config
-from fastapi import Request as _Request
 from project_manager import migrations
 from pydantic.alias_generators import to_snake
 from sqlalchemy import DateTime, MetaData, func, text
@@ -21,6 +20,7 @@ from sqlalchemy.orm import (
     mapped_column,
 )
 
+from cauldron.http import Request as _Request
 from cauldron.settings import Settings
 
 Request = _Request  # So that ruff won't hide it behind type checking

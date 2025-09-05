@@ -14,15 +14,15 @@ from cauldron.logging import get_logger, setup_logging
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from fastapi import FastAPI
+    from cauldron.http import CauldronHTTP
 
 
-def asgi_application_sting(factory: Callable[[], FastAPI], /):
+def asgi_application_sting(factory: Callable[[], CauldronHTTP], /):
     return f"{factory.__module__}:{factory.__name__}"
 
 
 def build_cli(  # noqa: C901, PLR0915
-    api_factory: Callable[[], FastAPI], dev_api_factory: Callable[[], FastAPI]
+    api_factory: Callable[[], CauldronHTTP], dev_api_factory: Callable[[], CauldronHTTP]
 ):
     setup_logging()
     logger = get_logger()

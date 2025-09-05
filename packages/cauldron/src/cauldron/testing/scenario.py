@@ -4,10 +4,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from faker import Faker
-from fastapi import FastAPI, status
-from fastapi.testclient import TestClient
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, EmailStr, SecretStr
+
+from cauldron.http import CauldronHTTP, status
+from cauldron.testing import TestClient
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -44,7 +45,7 @@ class User:
     client: TestClient
 
     @classmethod
-    def build(cls, app: FastAPI) -> User:
+    def build(cls, app: CauldronHTTP) -> User:
         login = UserLoginFactory.build()
         login.password = SecretStr(Faker().password(length=15))
         register = UserRegister(email=login.username, password=login.password)
@@ -55,7 +56,7 @@ class User:
 class TestScenario:
     __test__ = False
 
-    def __init__(self, subtests: SubTests, app: FastAPI) -> None:
+    def __init__(self, subtests: SubTests, app: CauldronHTTP) -> None:
         self.subtests = subtests
         self.user1, self.user2, self.bad_guy = (
             User.build(app=app),

@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 import pytest
-from fastapi import FastAPI, status
 from polyfactory.factories.pydantic_factory import ModelFactory
 from project_manager.app import Organization
 from runtime_generic import runtime_generic
 
+from cauldron.http import CauldronHTTP, status
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from cauldron.testing.scenario import Expectations, User
 from cauldron.testing.user import UserTestScenario
@@ -107,7 +107,7 @@ class BaseTestResourceCrud[ModelT: Resource]:
 
     @pytest.fixture(autouse=True)
     def scenario_fixture(
-        self, subtests: SubTests, app: FastAPI
+        self, subtests: SubTests, app: CauldronHTTP
     ) -> ResourceTestScenario[ModelT]:
         self.scenario = ResourceTestScenario[self.model](subtests=subtests, app=app)
         self.subtests = subtests

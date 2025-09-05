@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-from fastapi import FastAPI, status
 from pydantic import SecretStr
 
+from cauldron.http import CauldronHTTP, status
 from cauldron.testing.scenario import Expectations, TestScenario, User
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class UserTestScenario:
-    def __init__(self, subtests: SubTests, app: FastAPI):
+    def __init__(self, subtests: SubTests, app: CauldronHTTP):
         self.scenario = TestScenario(subtests=subtests, app=app)
         self.subtests = self.scenario.subtests
         self.user1, self.user2, self.bad_guy = (
@@ -76,7 +76,7 @@ class UserTestScenario:
 
 class BaseTestUser:
     @pytest.fixture
-    def scenario(self, subtests: SubTests, app: FastAPI) -> UserTestScenario:
+    def scenario(self, subtests: SubTests, app: CauldronHTTP) -> UserTestScenario:
         return UserTestScenario(subtests=subtests, app=app)
 
     def test_retrieve_profile_with_no_registered_user(

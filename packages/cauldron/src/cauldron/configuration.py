@@ -6,12 +6,15 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     import typer
-    from fastapi import FastAPI
+
+    from cauldron.http import CauldronHTTP
 
 
 class CLIProviderType(Protocol):
     def __call__(
-        self, api_factory: Callable[[], FastAPI], dev_api_factory: Callable[[], FastAPI]
+        self,
+        api_factory: Callable[[], CauldronHTTP],
+        dev_api_factory: Callable[[], CauldronHTTP],
     ) -> typer.Typer: ...
 
 

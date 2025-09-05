@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import status
+from cauldron.http import status
 
 
 class DomainError(Exception):

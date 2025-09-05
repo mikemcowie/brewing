@@ -5,8 +5,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from fastapi import APIRouter, FastAPI, Request
-from fastapi.responses import JSONResponse, Response
 from runtime_generic import runtime_generic
 from starlette.staticfiles import StaticFiles
 
@@ -14,6 +12,8 @@ from cauldron import root_router
 from cauldron.configuration import BaseConfiguration
 from cauldron.db import Database
 from cauldron.exceptions import DomainError
+from cauldron.http import APIRouter, CauldronHTTP, Request
+from cauldron.http.responses import JSONResponse, Response
 from cauldron.logging import setup_logging
 from cauldron.settings import Settings
 from cauldron.users import router as users_router
@@ -92,7 +92,7 @@ class Application[ConfigT: BaseConfiguration]:
 
     def _create_app(self, dev: bool):
         mounts = self.dev_default_mounts if dev else self.prod_default_mounts
-        app = FastAPI(
+        app = CauldronHTTP(
             title=self.config.title,
             version=self.config.version,
             description=self.config.description,

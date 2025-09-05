@@ -8,8 +8,6 @@ from secrets import token_bytes
 from typing import TYPE_CHECKING, Annotated, Literal
 from uuid import UUID  # noqa
 
-from fastapi import APIRouter, Depends, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, SecretStr
 from sqlalchemy import DateTime, ForeignKey, select
@@ -30,6 +28,8 @@ from cauldron.db import (
     uuid_primary_key,
 )
 from cauldron.exceptions import DomainError, Unauthorized
+from cauldron.http import APIRouter, Depends, status
+from cauldron.http.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
