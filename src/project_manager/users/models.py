@@ -9,8 +9,8 @@ from uuid import UUID  # noqa
 
 from cryptography.fernet import Fernet
 from passlib.context import CryptContext
-from pydantic import BaseModel
-from sqlalchemy import ForeignKey, select
+from pydantic import BaseModel, EmailStr
+from sqlalchemy import DateTime, ForeignKey, select
 from sqlalchemy.orm import (
     Mapped,
     MappedAsDataclass,
@@ -20,11 +20,11 @@ from sqlalchemy.orm import (
 
 from project_manager.db import Base, created_field, updated_field, uuid_primary_key
 from project_manager.exceptions import Unauthorized
+from project_manager.settings import Settings
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from project_manager.settings import Settings
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
 TOKEN_BYTES = 48
@@ -37,7 +37,9 @@ def password_context() -> CryptContext:
 
 @cache
 def fernet(settings: Settings):
-    return Fernet(settings.SECRET_KEY.get_secret_value())
+    return Fernet(
+        base64.urlsafe_b64encode(settings.SECRET_KEY.get_secret_value().encode())
+    )
 
 
 class Token(BaseModel):
@@ -73,7 +75,7 @@ class User(MappedAsDataclass, Base, kw_only=True):
             or not user.password_hash
             or not password_context().verify(password, user.password_hash)
         ):
-            raise Unauthorized()
+            raise Unauthorized("incorrect username or password")
         # password has been validated, so from here we are just constrcting a user session,
         # flushing to the database, and returning the token
         user_session = UserSession(
@@ -93,25 +95,26 @@ class UserSession(MappedAsDataclass, Base, kw_only=True):
     encrypted_token: Mapped[bytes] = mapped_column(init=False)
     created: Mapped[datetime] = created_field()
     updated: Mapped[datetime] = updated_field()
-    expires: Mapped[datetime] = mapped_column()
+    expires: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     user_id: Mapped[UUID] = mapped_column(ForeignKey(User.id), init=False)
     user: Mapped[User] = relationship()
 
     def __post_init__(self):
         self.encrypted_token = b""
+        self.fernet = fernet(Settings())
 
     def set_token(self, token: bytes) -> str:
-        self.encrypted_token = fernet().encrypt(token)
+        self.encrypted_token = self.fernet.encrypt(token)
         return f"{self.id!s}:{base64.b64encode(token).decode()}"
 
     def check_token(self, token: Token):
         return (
-            fernet().encrypt(base64.b64decode(token.access_token.split(":")[1]))
+            self.fernet.decrypt(base64.b64decode(token.access_token.split(":")[1]))
             == self.encrypted_token
         )
 
     @classmethod
-    async def validate_token(cls, token: Token, session: AsyncSession) -> bool:
+    async def validated(cls, token: Token, session: AsyncSession) -> UserSession | None:
         token_id = token.access_token.split(":")[0]
         user_session = (
             await session.execute(
@@ -121,5 +124,16 @@ class UserSession(MappedAsDataclass, Base, kw_only=True):
             )
         ).scalar_one_or_none()
         if not user_session or not user_session.encrypted_token:
-            return False
-        return user_session.check_token(token)
+            return None
+        user_session.check_token(token)
+        return user_session
+
+
+class UserRead(BaseModel):
+    id: UUID
+    username: str
+
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str

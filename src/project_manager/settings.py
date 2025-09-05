@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,4 +16,4 @@ class Settings(BaseSettings):
     PGDATABASE: str
     PGUSER: str
     PGPASSWORD: SecretStr
-    SECRET_KEY: SecretStr
+    SECRET_KEY: SecretStr = Field(default=..., min_length=32)

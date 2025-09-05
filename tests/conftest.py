@@ -10,6 +10,8 @@ from project_manager import testing
 from project_manager.application import ProjectManager
 from project_manager.db import Database
 
+pytest.register_assert_rewrite("tests.api.scenario")
+
 
 @pytest.fixture(scope="session")
 def postgresql() -> Generator[None, Any]:
