@@ -16,18 +16,20 @@ repos:
     -   id: detect-private-key
     -   id: mixed-line-ending
     -   id: no-commit-to-branch
--   repo: https://github.com/astral-sh/uv-pre-commit
-    # uv version.
-    rev: "0.7.4"
-    hooks:
-    -   id: uv-lock
 -   repo: local
     hooks:
+    -   id: uv-sync
+        name: uv sync
+        entry: uv sync
+        language: system
+        types: [python]
+        pass_filenames: false
     -   id: ruff-format
         name: ruff format
         entry: uv run ruff format
         language: system
         types: [python]
+        pass_filenames: false
     -   id: ruff-check
         name: ruff check
         entry: uv run ruff check --fix
