@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from project_manager.cli import cli
+from project_manager.app import cli
 from project_manager.migrations import versions
 from typer.testing import CliRunner
 
@@ -11,7 +11,7 @@ def test_run_cli() -> None:
         result = CliRunner().invoke(cli, ["api", "--workers", "2"])
         assert result.exit_code == 0, result.stderr + result.stdout
         uvicorn_run.assert_called_once_with(
-            "project_manager.api:api", workers=2, factory=True
+            "project_manager.app:api", workers=2, factory=True
         )
 
 
@@ -20,7 +20,7 @@ def test_run_dev_cli() -> None:
         result = CliRunner().invoke(cli, ["dev", "api"])
         assert result.exit_code == 0, result.stderr + result.stdout
         uvicorn_run.assert_called_once_with(
-            "project_manager.api:dev_api", reload=True, factory=True
+            "project_manager.app:dev_api", reload=True, factory=True
         )
 
 

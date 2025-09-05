@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 import pytest
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from fastapi import FastAPI, status
 from polyfactory.factories.pydantic_factory import ModelFactory
-from project_manager.models import Organization
+from project_manager.app import Organization
 
 from tests.api.scenario import Expectations, User
 from tests.api.test_user import UserTestScenario
@@ -98,20 +98,17 @@ class ResourceTestScenario[ModelT: Resource](UserTestScenario):
         return result
 
 
-class TestResourceCrud:
-    models: ClassVar[list[type[Resource]]] = [Organization]
+class BaseTestResourceCrud[ModelT: Resource]:
+    def __class_getitem__(cls, model: type[Resource]):
+        return type(cls.__name__, (cls,), {"model": model})
 
-    @pytest.fixture(params=models, ids=[m.__name__ for m in models])
-    def resource_model(self, request: pytest.FixtureRequest):
-        assert issubclass(request.param, Resource), request.param
-        return request.param
+    model: type[ModelT]
 
     @pytest.fixture(autouse=True)
-    def scenario_fixture[ModelT: Resource](
-        self, subtests: SubTests, app: FastAPI, resource_model: type[ModelT]
+    def scenario_fixture(
+        self, subtests: SubTests, app: FastAPI
     ) -> ResourceTestScenario[ModelT]:
-        self.model = resource_model
-        self.scenario = ResourceTestScenario[resource_model](subtests=subtests, app=app)
+        self.scenario = ResourceTestScenario[self.model](subtests=subtests, app=app)
         self.subtests = subtests
         self.app = app
         self.bar = None
@@ -410,3 +407,7 @@ class TestResourceCrud:
             str(org.id),
             Expectations(status=status.HTTP_200_OK),
         )
+
+
+class TestOrganization(BaseTestResourceCrud[Organization]):
+    pass

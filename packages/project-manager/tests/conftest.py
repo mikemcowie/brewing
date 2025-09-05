@@ -31,7 +31,7 @@ def db(postgresql: None) -> Generator[None, Any]:
 
 @pytest.fixture
 def project_manager(postgresql: None, db: Database) -> Application:
-    from project_manager.api import routers  # noqa: PLC0415
+    from project_manager.app import routers  # noqa: PLC0415
 
     return Application(dev=True, routers=routers)
 

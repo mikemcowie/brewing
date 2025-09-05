@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Any
 
 from alembic import command
 from alembic.config import Config
-from fastapi import Depends
 from fastapi import Request as _Request
 from project_manager import migrations
 from pydantic.alias_generators import to_snake
@@ -18,7 +17,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
     MappedColumn,
-    Session,
     declared_attr,
     mapped_column,
 )
@@ -34,7 +32,7 @@ SYNC_ENGINE_KWARGS: dict[str, Any] = {}
 
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Generator
+    from collections.abc import AsyncGenerator
     from datetime import datetime
     from uuid import UUID
 
@@ -68,15 +66,7 @@ class Database:
         self.settings = settings or Settings()
         self.async_engine = _async_engine(url=self.build_uri("asyncpg"))
         self.sync_engine = _engine(url=self.build_uri("psycopg"))
-        self.load_models()
         self.metadata = metadata
-
-    def load_models(self) -> None:
-        # ruff: noqa: F401,PLC0415
-        import project_manager.models
-
-        import cauldron.resources.models
-        import cauldron.users
 
     def build_uri(self, driver: str) -> str:
         return f"postgresql+{driver}://{self.settings.PGUSER}:{self.settings.PGPASSWORD.get_secret_value()}@{self.settings.PGHOST}:{self.settings.PGPORT}/{self.settings.PGDATABASE}"
@@ -141,7 +131,7 @@ def deleted_field() -> MappedColumn[datetime]:
 
 
 async def db_session(request: Request) -> AsyncGenerator[AsyncSession, Any]:
-    from cauldron.application import Application
+    from cauldron.application import Application  # noqa: PLC0415
 
     assert isinstance(request.app.project_manager, Application)
     async with request.app.project_manager.database.session() as session:
