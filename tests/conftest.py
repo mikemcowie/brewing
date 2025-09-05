@@ -27,7 +27,7 @@ def db(postgresql: None) -> Generator[None, Any]:
     db_ = Database()
     db_.upgrade()
     yield
-    db_.downgrade()
+    db_.downgrade("base")
 
 
 @pytest.fixture

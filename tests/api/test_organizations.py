@@ -211,3 +211,13 @@ class TestOrganizationCrud:
         assert initial_updated < current_updated, (
             "updated field should be newer after an update"
         )
+
+    def test_cannot_modify_org_if_not_member(self):
+        self.pre_create()
+        org = self.create()
+        self.scenario.update_organization(
+            self.scenario.user2,
+            str(org.id),
+            self.updated_org.model_dump(mode="json"),
+            Expectations(status=status.HTTP_403_FORBIDDEN),
+        )
