@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
     from pytest_subtests import SubTests
 
+    from project_manager.resources.models import ReadModelType
+
 
 class OrganizationTestScenario(UserTestScenario):
     def list_organizations(self, user: User, expectations: Expectations) -> Response:
@@ -96,7 +98,7 @@ class TestOrganizationCrud:
                 )
                 assert len(result.json()) == 0
 
-    def create(self) -> None:
+    def create(self) -> ReadModelType:
         with self.subtests.test("create-organization"):
             create_result = self.scenario.create_organization(
                 self.scenario.user1,
@@ -125,8 +127,10 @@ class TestOrganizationCrud:
                         json=create_result.json() | {"id": self.org_id},
                     ),
                 )
+            return Organization.schemas().read.model_validate(create_result.json())
+        pytest.fail("failed to create organization.")
 
-    def update(self) -> None:
+    def update(self) -> ReadModelType:
         assert self.org_id
         with self.subtests.test("update"):
             update_result = self.scenario.update_organization(
@@ -146,6 +150,8 @@ class TestOrganizationCrud:
                         status=status.HTTP_200_OK, json=update_result.json()
                     ),
                 )
+            return Organization.schemas().read.model_validate(update_result.json())
+        pytest.fail("failed to update organization.")
 
     def delete(self) -> None:
         assert self.org_id
@@ -190,3 +196,18 @@ class TestOrganizationCrud:
         self.update()
         self.delete()
         self.post_delete()
+
+    def test_created_field(self) -> None:
+        self.pre_create()
+        organization = self.create()
+        initial_created = organization.created
+        initial_updated = organization.updated
+        organization = self.update()
+        current_created = organization.created
+        current_updated = organization.updated
+        assert initial_created == current_created, (
+            "created field should not change when updated"
+        )
+        assert initial_updated < current_updated, (
+            "updated field should be newer after an update"
+        )

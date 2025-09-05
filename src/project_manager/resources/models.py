@@ -1,12 +1,12 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import cache
-from typing import ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, create_model
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, event
 from sqlalchemy.orm import (
     Mapped,
     MappedAsDataclass,
@@ -20,11 +20,21 @@ from project_manager import db
 TypeBaseModel = type[BaseModel]
 
 
+class ReadModelType(BaseModel):
+    id: UUID
+    created: datetime
+    updated: datetime
+
+
+class SummaryModelType(BaseModel):
+    id: UUID
+
+
 @dataclass
 class ResourceSchemas:
     create: type[BaseModel]
-    summary: type[BaseModel]
-    read: type[BaseModel]
+    summary: type[SummaryModelType]
+    read: type[ReadModelType]
     update: type[BaseModel]
 
 
@@ -66,21 +76,54 @@ class Resource(MappedAsDataclass, db.Base, kw_only=True):
     @classmethod
     @cache
     def schemas(cls) -> ResourceSchemas:
-        return ResourceSchemas(
-            create=cls.create_new_model(
-                f"Create{cls.__name__}", excluded=cls.read_only_fields
-            ),
-            summary=cls.create_new_model(
+        read = (
+            ReadModelType
+            if TYPE_CHECKING
+            else cls.create_new_model(
+                f"Read{cls.__name__}",
+                included=cls.summary_fields + cls.read_only_fields,
+            )
+        )
+        summary = (
+            SummaryModelType
+            if TYPE_CHECKING
+            else cls.create_new_model(
                 f"Summary{cls.__name__}", included=cls.summary_fields
-            ),
-            read=cls.create_new_model(
-                f"Read{cls.__name__}", included=cls.summary_fields
-            ),
-            update=cls.create_new_model(
+            )
+        )
+        create = (
+            BaseModel
+            if TYPE_CHECKING
+            else cls.create_new_model(
+                f"Create{cls.__name__}", excluded=cls.read_only_fields
+            )
+        )
+        update = (
+            BaseModel
+            if TYPE_CHECKING
+            else cls.create_new_model(
                 f"Update{cls.__name__}", excluded=cls.read_only_fields
-            ),
+            )
+        )
+        return ResourceSchemas(
+            create=create,
+            summary=summary,  # type: ignore[arg-type]
+            read=read,  # type: ignore[arg-type]
+            update=update,
         )
 
     @staticmethod
     def primary_foreign_key_to() -> MappedColumn[UUID]:
         return mapped_column(ForeignKey("resource.id"), primary_key=True, init=False)
+
+
+def update_modified_on_update_listener(_: Any, __: Any, target: Resource) -> None:
+    """Event listener that runs before a record is updated, and sets the modified field accordingly."""
+    # it's okay if this field doesn't exist - SQLAlchemy will silently ignore it.
+    target.updated = datetime.now(tz=UTC)
+
+
+# This actually makes the updated field work.
+event.listen(
+    Resource, "before_update", update_modified_on_update_listener, propagate=True
+)
