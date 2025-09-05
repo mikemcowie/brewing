@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 from cauldron import Application, BaseConfiguration, ModelViewSet, Resource, build_cli
+from cauldron.db.database import Migrations
 from sqlalchemy.orm import Mapped, mapped_column
 
 UUID = uuid.UUID
@@ -25,6 +26,7 @@ class Configuration(BaseConfiguration):
 
 vs = ModelViewSet[Organization]()
 application = Application[Configuration](viewsets=[ModelViewSet[Organization]()])
+migrations = Migrations(application.database, __file__)
 
 
 def dev_api():
@@ -35,4 +37,4 @@ def api():
     return application.app
 
 
-cli = build_cli(api, dev_api)
+cli = build_cli(api, dev_api, migrations)

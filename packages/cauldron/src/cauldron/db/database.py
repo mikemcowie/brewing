@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING, Any
 
 from alembic import command
 from alembic.config import Config
-from project_manager import migrations
 from runtime_generic import runtime_generic
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+from cauldron.db import migrations
 from cauldron.db.base import metadata
 from cauldron.db.settings import DBSettingsType
 from cauldron.http import Request as _Request
@@ -43,6 +43,60 @@ else:
         return create_async_engine(*args, **kwargs | ASYNC_ENGINE_KWARGS)
 
 
+class Migrations[SettingsT: DBSettingsType]:
+    """Cauldron's wrapper of alembic migrations.
+
+    We use cauldron-managed env.py, with a versions directory in the client package,
+    declared programatically as part of the instantiation
+    """
+
+    def __init__(
+        self,
+        database: Database[SettingsT],
+        versions_relative_to: Path | str,
+        /,
+        versions_directory: str | Path = "versions",
+    ):
+        self._database = database
+        # The caller can simply instantiate via Migrations(__file__)
+        # since we handle the case where it's a file by switching to
+        # its parent
+        if not isinstance(versions_relative_to, Path):
+            versions_relative_to = Path(versions_relative_to)
+        if versions_relative_to.is_file():
+            versions_relative_to = versions_relative_to.parent
+        self._versions_directory = (
+            versions_relative_to / versions_directory
+            if isinstance(versions_directory, str)
+            else versions_directory.resolve()
+        )
+
+    def migration_config(self) -> Config:
+        config = Config()
+        config.set_main_option(
+            "script_location", str(Path(__file__).parent / "migrations")
+        )
+        config.set_main_option("version_locations", str(self._versions_directory))
+        return config
+
+    def upgrade(self, revision: str = "head") -> None:
+        command.upgrade(self.migration_config(), revision=revision, sql=False)
+
+    def downgrade(self, revision: str = "-1") -> None:
+        command.downgrade(self.migration_config(), revision=revision, sql=False)
+
+    def stamp(self, revision: str = "head") -> None:
+        command.stamp(self.migration_config(), revision=revision)
+
+    def create_revision(self, message: str, autogenerate: bool) -> None:
+        command.revision(
+            self.migration_config(),
+            rev_id=f"{len(list(self._versions_directory.glob('*.py'))):05d}",
+            message=message,
+            autogenerate=autogenerate,
+        )
+
+
 @runtime_generic
 class Database[SettingsT: DBSettingsType]:
     settings_cls: type[SettingsT]
@@ -67,25 +121,3 @@ class Database[SettingsT: DBSettingsType]:
     async def session(self) -> AsyncGenerator[AsyncSession, Any]:
         async with AsyncSession(bind=self.async_engine, expire_on_commit=False) as sess:
             yield sess
-
-    def migration_config(self) -> Config:
-        config = Config()
-        config.set_main_option("script_location", "project_manager:migrations")
-        return config
-
-    def upgrade(self, revision: str = "head") -> None:
-        command.upgrade(self.migration_config(), revision=revision, sql=False)
-
-    def downgrade(self, revision: str = "-1") -> None:
-        command.downgrade(self.migration_config(), revision=revision, sql=False)
-
-    def stamp(self, revision: str = "head") -> None:
-        command.stamp(self.migration_config(), revision=revision)
-
-    def create_revision(self, message: str, autogenerate: bool) -> None:
-        command.revision(
-            self.migration_config(),
-            rev_id=f"{len(list(VERSIONS_DIR.glob('*.py'))):05d}",
-            message=message,
-            autogenerate=autogenerate,
-        )

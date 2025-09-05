@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, Annotated
 import typer
 import uvicorn
 
-from cauldron.db.database import Database
-from cauldron.db.settings import PostgresqlSettings
 from cauldron.development import (
     DevelopmentEnvironment,
 )
@@ -15,6 +13,8 @@ from cauldron.logging import get_logger, setup_logging
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from cauldron.db.database import Migrations
+    from cauldron.db.settings import PostgresqlSettings
     from cauldron.http import CauldronHTTP
 
 
@@ -23,7 +23,9 @@ def asgi_application_sting(factory: Callable[[], CauldronHTTP], /):
 
 
 def build_cli(  # noqa: C901, PLR0915
-    api_factory: Callable[[], CauldronHTTP], dev_api_factory: Callable[[], CauldronHTTP]
+    api_factory: Callable[[], CauldronHTTP],
+    dev_api_factory: Callable[[], CauldronHTTP],
+    migrations: Migrations[PostgresqlSettings],
 ):
     setup_logging()
     logger = get_logger()
@@ -53,17 +55,17 @@ def build_cli(  # noqa: C901, PLR0915
 
     def _db_upgrade(revision: str) -> None:
         logger.info("upgrading database", revision=revision)
-        Database[PostgresqlSettings]().upgrade(revision=revision)
+        migrations.upgrade(revision=revision)
         logger.info("finished upgrading database", revision=revision)
 
     def _db_downgrade(revision: str) -> None:
         logger.info("downgrading database", revision=revision)
-        Database[PostgresqlSettings]().downgrade(revision=revision)
+        migrations.downgrade(revision=revision)
         logger.info("finished downgrading database", revision=revision)
 
     def _db_stamp(revision: str) -> None:
         logger.info("stamping database", revision=revision)
-        Database[PostgresqlSettings]().stamp(revision=revision)
+        migrations.stamp(revision=revision)
         logger.info("finished stamping database", revision=revision)
 
     @db.command("upgrade")
@@ -104,7 +106,7 @@ def build_cli(  # noqa: C901, PLR0915
     ) -> None:
         with development_environment.testcontainer_postgresql():
             _db_upgrade("head")
-            return Database[PostgresqlSettings]().create_revision(
+            return migrations.create_revision(
                 message=message, autogenerate=autogenerate
             )
 

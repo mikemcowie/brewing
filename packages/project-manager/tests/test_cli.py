@@ -1,8 +1,8 @@
 from pathlib import Path
 from unittest.mock import patch
 
+from project_manager import versions
 from project_manager.app import cli
-from project_manager.migrations import versions
 from typer.testing import CliRunner
 
 

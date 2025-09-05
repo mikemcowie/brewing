@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol, get_type_hints
+from typing import TYPE_CHECKING, Any, Protocol, get_type_hints
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     import typer
 
+    from cauldron.db.database import Migrations
     from cauldron.http import CauldronHTTP
 
 
@@ -15,6 +16,7 @@ class CLIProviderType(Protocol):
         self,
         api_factory: Callable[[], CauldronHTTP],
         dev_api_factory: Callable[[], CauldronHTTP],
+        migrations: Migrations[Any],
     ) -> typer.Typer: ...
 
 

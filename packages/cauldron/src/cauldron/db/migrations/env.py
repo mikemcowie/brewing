@@ -1,4 +1,5 @@
 from alembic import context
+
 from cauldron.db.database import Database
 from cauldron.db.settings import PostgresqlSettings
 
