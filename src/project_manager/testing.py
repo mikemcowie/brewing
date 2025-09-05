@@ -2,6 +2,7 @@ import os
 import random
 import string
 import subprocess
+from collections.abc import Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from functools import cache
@@ -12,14 +13,14 @@ from testcontainers.postgres import PostgresContainer  # type:ignore[import-unty
 
 
 @cache
-def set_secret_key():
+def set_secret_key() -> None:
     os.environ["SECRET_KEY"] = "".join(
         random.choice(string.ascii_letters) for _ in range(32)
     )
 
 
 @contextmanager
-def testcontainer_postgresql():
+def testcontainer_postgresql() -> Generator[None]:
     with PostgresContainer() as pg:
         os.environ["PGPASSWORD"] = pg.password
         os.environ["PGDATABASE"] = pg.dbname
@@ -33,7 +34,7 @@ def testcontainer_postgresql():
 COMPOSE_FILE = Path(__file__).parents[2] / "compose.yaml"
 
 
-def dev_environment():
+def dev_environment() -> None:
     compose_data = yaml.load(COMPOSE_FILE.read_text(), yaml.SafeLoader)
     os.environ["PGPASSWORD"] = compose_data["services"]["db"]["environment"][
         "POSTGRES_PASSWORD"
@@ -51,7 +52,7 @@ def dev_environment():
         executor.submit(run_compose)
 
 
-def run_compose():
+def run_compose() -> None:
     subprocess.run(
         ["docker", "compose", "up", "-d"], check=False, cwd=COMPOSE_FILE.parent
     )

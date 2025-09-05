@@ -5,10 +5,10 @@ class DomainError(Exception):
     status_code = status.HTTP_400_BAD_REQUEST
     detail = "generic error"
 
-    def __init__(self, detail: str | None = None):
+    def __init__(self, detail: str | None = None) -> None:
         self.detail = detail or self.detail
 
-    def __str__(self):
+    def __str__(self) -> str:
         return ": ".join((str(self.status_code), self.detail))
 
 

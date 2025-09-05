@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     if TYPE_CHECKING:
 
-        def __init__(*_, **__):
+        def __init__(*_: Any, **__: Any) -> None:
             pass
 
     model_config = SettingsConfigDict(frozen=True)
@@ -19,5 +19,5 @@ class Settings(BaseSettings):
     SECRET_KEY: SecretStr
 
 
-def settings():
+def settings() -> Settings:
     return Settings()

@@ -1,8 +1,10 @@
-import pkgutil
+from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager, contextmanager
+from datetime import datetime
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
+from uuid import UUID
 
 from alembic import command
 from alembic.config import Config
@@ -12,7 +14,13 @@ from sqlalchemy import DateTime, MetaData, func, text
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Session, declared_attr, mapped_column
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    MappedColumn,
+    Session,
+    declared_attr,
+    mapped_column,
+)
 
 from project_manager import migrations
 from project_manager.settings import Settings, settings
@@ -51,47 +59,47 @@ class Base(DeclarativeBase):
 
 
 class Database:
-    def __init__(self, settings: Settings | None = None):
+    def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or Settings()
         self.async_engine = _async_engine(url=self.build_uri("asyncpg"))
         self.sync_engine = _engine(url=self.build_uri("psycopg"))
-        self.models = self.load_models()
+        self.load_models()
         self.metadata = metadata
 
-    def load_models(self):
+    def load_models(self) -> None:
         # ruff: noqa: F401,PLC0415
-        import project_manager.organizations.models  # type: ignore
-        import project_manager.resources.models  # type: ignore
-        import project_manager.users.models  # type: ignore
+        import project_manager.organizations.models
+        import project_manager.resources.models
+        import project_manager.users.models
 
-    def build_uri(self, driver: str):
+    def build_uri(self, driver: str) -> str:
         return f"postgresql+{driver}://{self.settings.PGUSER}:{self.settings.PGPASSWORD.get_secret_value()}@{self.settings.PGHOST}:{self.settings.PGPORT}/{self.settings.PGDATABASE}"
 
     @contextmanager
-    def session(self):
+    def session(self) -> Generator[Session, Any]:
         with Session(bind=self.sync_engine) as sess:
             yield sess
 
     @asynccontextmanager
-    async def async_session(self):
+    async def async_session(self) -> AsyncGenerator[AsyncSession, Any]:
         async with AsyncSession(bind=self.async_engine, expire_on_commit=False) as sess:
             yield sess
 
-    def migration_config(self):
+    def migration_config(self) -> Config:
         config = Config()
         config.set_main_option("script_location", "project_manager:migrations")
         return config
 
-    def upgrade(self, revision: str = "head"):
+    def upgrade(self, revision: str = "head") -> None:
         command.upgrade(self.migration_config(), revision=revision, sql=False)
 
-    def downgrade(self, revision: str = "-1"):
+    def downgrade(self, revision: str = "-1") -> None:
         command.downgrade(self.migration_config(), revision=revision, sql=False)
 
-    def stamp(self, revision: str = "head"):
+    def stamp(self, revision: str = "head") -> None:
         command.stamp(self.migration_config(), revision=revision)
 
-    def create_revision(self, message: str, autogenerate: bool):
+    def create_revision(self, message: str, autogenerate: bool) -> None:
         command.revision(
             self.migration_config(),
             rev_id=f"{len(list(VERSIONS_DIR.glob('*.py'))):05d}",
@@ -100,7 +108,7 @@ class Database:
         )
 
 
-def uuid_primary_key():
+def uuid_primary_key() -> MappedColumn[UUID]:
     return mapped_column(
         pg.UUID,
         default=None,
@@ -109,11 +117,11 @@ def uuid_primary_key():
     )
 
 
-def created_field():
+def created_field() -> MappedColumn[datetime]:
     return mapped_column(DateTime, default=None, index=True, server_default=func.now())
 
 
-def updated_field():
+def updated_field() -> MappedColumn[datetime]:
     return mapped_column(
         DateTime,
         default=None,
@@ -123,6 +131,8 @@ def updated_field():
     )
 
 
-async def db_session(settings: Annotated[Settings, Depends(settings)]):
+async def db_session(
+    settings: Annotated[Settings, Depends(settings)],
+) -> AsyncGenerator[AsyncSession, Any]:
     async with Database(settings=settings).async_session() as session:
         yield session

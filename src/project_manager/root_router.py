@@ -16,7 +16,7 @@ class APIRootResponse(BaseModel):
 
 
 @router.get("/", response_model=APIRootResponse)
-async def api_root(request: Request):
+async def api_root(request: Request) -> APIRootResponse:
     app = request.app
     if TYPE_CHECKING:
         assert isinstance(app, FastAPI)
