@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
+from uuid import UUID
 
 import pytest
 from fastapi import FastAPI, status
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from project_manager.organizations.models import Organization
+from project_manager.resources.models import AccessLevel, ResourceAccessItem
 from tests.api.scenario import Expectations, User
 from tests.api.test_user import UserTestScenario
 
@@ -62,6 +64,21 @@ class OrganizationTestScenario(UserTestScenario):
         self, user: User, organization_id: str, expectations: Expectations
     ) -> Response:
         result = user.client.get(f"/organizations/{organization_id}/access/")
+        self.validate_expectations(expectations, result)
+        return result
+
+    def set_access(
+        self,
+        user: User,
+        access: ResourceAccessItem | list[ResourceAccessItem],
+        organization_id: str,
+        expectations: Expectations,
+    ):
+        access = [access] if not isinstance(access, list) else access
+        result = user.client.post(
+            f"/organizations/{organization_id}/access/",
+            json=[a.model_dump(mode="json") for a in access],
+        )
         self.validate_expectations(expectations, result)
         return result
 
@@ -246,3 +263,18 @@ class TestOrganizationCrud:
         ).json()["id"]
         assert access.json()[0]["user_id"] == user_id
         assert access.json()[0]["access"] == "owner"
+
+    def test_user1_assigns_user2_access(self):
+        self.pre_create()
+        org = self.create()
+        user2_id = self.scenario.retrieve_profile(
+            self.scenario.user2, "test-user2-access-read", expectations=Expectations()
+        ).json()["id"]
+        result = self.scenario.set_access(
+            self.scenario.user1,
+            access=[
+                ResourceAccessItem(user_id=UUID(user2_id), access=AccessLevel.owner)
+            ],
+            expectations=Expectations(),
+            organization_id=str(org.id),
+        )

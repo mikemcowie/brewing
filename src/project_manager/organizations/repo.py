@@ -98,13 +98,13 @@ class OrganizationRepository:
         await self.session.commit()
 
     def _base_access_query(
-        self, organization_id: UUID | None = None, principal_id: UUID | None = None
+        self, organization_id: UUID | None = None, user_id: UUID | None = None
     ):
         q = select(ResourceAccess)
         if organization_id:
             q = q.where(ResourceAccess.resource_id == organization_id)
-        if principal_id:
-            q = q.where(ResourceAccess.user_id == principal_id)
+        if user_id:
+            q = q.where(ResourceAccess.user_id == user_id)
         return q
 
     async def get_access(self, organization_id: UUID):
@@ -119,12 +119,12 @@ class OrganizationRepository:
             .all()
         ]
 
-    async def get_access_one(self, organization_id: UUID, principal_id: UUID):
+    async def get_access_one(self, organization_id: UUID, user_id: UUID):
         resource = (
             (
                 await self.session.execute(
                     self._base_access_query(
-                        organization_id=organization_id, principal_id=principal_id
+                        organization_id=organization_id, user_id=user_id
                     )
                 )
             )
@@ -132,7 +132,7 @@ class OrganizationRepository:
             .one_or_none()
         )
         if not resource:
-            raise NotFound(f"no access found for {organization_id=}, {principal_id=}")
+            raise NotFound(f"no access found for {organization_id=}, {user_id=}")
         return ResourceAccessItem.model_validate(
             resource,
             from_attributes=True,
@@ -143,7 +143,7 @@ class OrganizationRepository:
             (
                 await self.session.execute(
                     self._base_access_query(organization_id=organization_id).where(
-                        ResourceAccess.user_id.in_([a.principal_id for a in access])
+                        ResourceAccess.user_id.in_([a.user_id for a in access])
                     )
                 )
             )
@@ -152,14 +152,14 @@ class OrganizationRepository:
         )
         users_to_db_item = {a.user_id: a for a in current_access}
         for access_item in access:
-            if access_item.principal_id in users_to_db_item:
-                users_to_db_item[access_item.principal_id].access = access_item.access
+            if access_item.user_id in users_to_db_item:
+                users_to_db_item[access_item.user_id].access = access_item.access
             else:
                 self.session.add(
                     ResourceAccess(
                         resource_id=organization_id,
                         access=access_item.access,
-                        user_id=access_item.principal_id,
+                        user_id=access_item.user_id,
                     )
                 )
         await self.session.commit()

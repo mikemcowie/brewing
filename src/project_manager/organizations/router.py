@@ -81,10 +81,10 @@ async def get_access(
 )
 async def get_access_one(
     organization_id: UUID,
-    principal_id: UUID,
+    user_id: UUID,
     repo: Annotated[OrganizationRepository, Depends(repo)],
 ) -> ResourceAccessItem:
-    return await repo.get_access_one(organization_id, principal_id)
+    return await repo.get_access_one(organization_id, user_id)
 
 
 @router.post(

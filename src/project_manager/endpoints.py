@@ -8,6 +8,4 @@ class Endpoints:
     ORGANIZATIONS = "/organizations/"
     ORGANIZATIONS_ONE = "/organizations/{organization_id}"
     ORGANIZATIONS_ONE_ACCESS = "/organizations/{organization_id}/access/"
-    ORGANIZATIONS_ONE_ACCESS_ONE = (
-        "/organizations/{organization_id}/access/{principal_id}"
-    )
+    ORGANIZATIONS_ONE_ACCESS_ONE = "/organizations/{organization_id}/access/{user_id}"

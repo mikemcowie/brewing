@@ -136,7 +136,7 @@ class ResourceAccess(MappedAsDataclass, db.Base, kw_only=True):
 
 
 class ResourceAccessItem(BaseModel):
-    principal_id: UUID = Field(default=..., alias="user_id")
+    user_id: UUID = Field(default=..., alias="user_id")
     access: AccessLevel
 
 
