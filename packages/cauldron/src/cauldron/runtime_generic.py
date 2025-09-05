@@ -26,30 +26,10 @@ class _GenericClassProcessor:
             raise TypeError(
                 f"expected {len(attributes)} parameter(s), got {len(types)} parameter(s)."
             )
-        target_attributes_unrendered: dict[str, tuple[TypeVar]] = {
-            k: v.__parameters__ for k, v in self.annotations.items()
+        return {
+            k: dict(zip(self.parameters, types, strict=True))[v.__parameters__[0]]
+            for k, v in self.annotations.items()
         }
-        param_to_type = dict(zip(self.parameters, types, strict=True))
-        for key, value in target_attributes_unrendered.items():
-            if len(value) != 1:
-                raise TypeError(
-                    f"Cannot generate subclass of {self.cls}; class attribute {key} is generic on {len(value)} parameters, but must be generic on exactly 1 parameter."
-                )
-
-        # if len(attributes) > 2:
-        #   raise Exception(param_to_type)
-        #   raise Exception("Err\n" + "\n".join([str(target_attributes_unrendered), str(types), str(self.parameters)]))
-
-        return dict(
-            zip(
-                attributes,
-                (
-                    param_to_type[attr.__parameters__[0]]
-                    for attr in self.annotations.values()
-                ),
-                strict=True,
-            )
-        )
 
     def concrete_subclasser(self):
         """Returns callable that modifies a class with a new __class_getitem__ method.
