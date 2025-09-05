@@ -14,6 +14,7 @@ from sqlalchemy import DateTime, ForeignKey, select
 from sqlalchemy.orm import (
     Mapped,
     MappedAsDataclass,
+    MappedColumn,
     mapped_column,
     relationship,
 )
@@ -51,6 +52,10 @@ class User(MappedAsDataclass, Base, kw_only=True):
         if self.password:
             self.password_hash = password_context().hash(self.password)
             self.password = ""  # forget the actual password.
+
+    @staticmethod
+    def primary_foreign_key_to() -> MappedColumn[UUID]:
+        return mapped_column(ForeignKey("user.id"), primary_key=True, init=False)
 
     @property
     def username(self) -> str:

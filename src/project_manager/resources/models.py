@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from enum import StrEnum, auto
 from functools import cache
 from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
@@ -16,6 +17,7 @@ from sqlalchemy.orm import (
 )
 
 from project_manager import db
+from project_manager.users.models import User
 
 TypeBaseModel = type[BaseModel]
 
@@ -36,6 +38,12 @@ class ResourceSchemas:
     summary: type[SummaryModelType]
     read: type[ReadModelType]
     update: type[BaseModel]
+
+
+class AccessLevel(StrEnum):
+    owner = auto()
+    contributor = auto()
+    reader = auto()
 
 
 class Resource(MappedAsDataclass, db.Base, kw_only=True):
@@ -115,6 +123,12 @@ class Resource(MappedAsDataclass, db.Base, kw_only=True):
     @staticmethod
     def primary_foreign_key_to() -> MappedColumn[UUID]:
         return mapped_column(ForeignKey("resource.id"), primary_key=True, init=False)
+
+
+class ResourceAccess(MappedAsDataclass, db.Base, kw_only=True):
+    resource_id: Mapped[UUID] = Resource.primary_foreign_key_to()
+    user_id: Mapped[UUID] = User.primary_foreign_key_to()
+    access: Mapped[AccessLevel]
 
 
 def update_modified_on_update_listener(_: Any, __: Any, target: Resource) -> None:
