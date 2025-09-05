@@ -35,6 +35,7 @@ class BaseConfiguration:
             cls.__dict__.keys()
         ):
             raise TypeError(
-                f"required class attributes missing: {sorted(set(unimplemented_annotations))}. Create a subclass that implements these as class attributes."
+                f"required class attributes missing: {sorted(set(unimplemented_annotations))}. "
+                "Create a subclass that implements these as class attributes."
             )
         return super().__new__(cls)
