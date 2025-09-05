@@ -3,9 +3,10 @@ from __future__ import annotations
 from functools import partial
 
 from cauldron.application import Application
+from cauldron.cli import build_cli
 from cauldron.resources.router import model_crud_router
 
-from project_manager.organizations.models import Organization
+from project_manager.models import Organization
 
 app_extra_args = {
     "title": "Project Manager Service",
@@ -21,3 +22,4 @@ def make_api(dev: bool):
 
 dev_api = partial(make_api, True)
 api = partial(make_api, False)
+cli = build_cli("project_manager.app:api", "project_manager.app:dev_api")

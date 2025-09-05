@@ -12,8 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-project-manager = "project_manager.cli:cli"
-dev = "project_manager.cli:dev"
+project-manager = "project_manager.app:cli"
 
 [build-system]
 requires = ["hatchling"]

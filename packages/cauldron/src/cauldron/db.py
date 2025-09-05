@@ -73,7 +73,7 @@ class Database:
 
     def load_models(self) -> None:
         # ruff: noqa: F401,PLC0415
-        import project_manager.organizations.models
+        import project_manager.models
 
         import cauldron.resources.models
         import cauldron.users

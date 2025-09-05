@@ -8,7 +8,7 @@ import pytest
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from fastapi import FastAPI, status
 from polyfactory.factories.pydantic_factory import ModelFactory
-from project_manager.organizations.models import Organization
+from project_manager.models import Organization
 
 from tests.api.scenario import Expectations, User
 from tests.api.test_user import UserTestScenario
