@@ -10,6 +10,7 @@ from starlette.staticfiles import StaticFiles
 
 from project_manager import root_router
 from project_manager.db import Database
+from project_manager.exceptions import DomainError
 from project_manager.organizations.router import router as organizations_router
 from project_manager.settings import Settings
 from project_manager.users.router import router as users_router
@@ -18,8 +19,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from starlette.types import ASGIApp
-
-    from project_manager.exceptions import DomainError
 
 
 @dataclass
@@ -33,10 +32,6 @@ class MountedApp:
 class ExceptionHandler[T: BaseException]:
     exception_type: type[T]
     handler: Callable[[Request, T], Response]
-
-
-def default_routers() -> list[APIRouter]:
-    return [root_router.router, users_router, organizations_router]
 
 
 def handle_exception(request: Request, exc: DomainError) -> JSONResponse:
@@ -72,7 +67,7 @@ class ProjectManager:
         ),
     )
     default_exception_handlers: tuple[ExceptionHandler[Any]] = (
-        ExceptionHandler(ValueError, handle_exception),
+        ExceptionHandler(DomainError, handle_exception),
     )
 
     def __init__(
@@ -96,6 +91,7 @@ class ProjectManager:
         self.app_args = self.default_app_args | (app_extra_args or {})
         self.exception_handlers = exception_handlers or self.default_exception_handlers
         self.app = FastAPI(**self.app_args)
+        self.app.project_manager = self  # type: ignore
         for router in self.routers:
             self.app.include_router(router)
         for mount in self.mounts:

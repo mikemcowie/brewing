@@ -10,9 +10,6 @@ class DomainError(Exception):
     def __init__(self, detail: str | None = None) -> None:
         self.detail = detail or self.detail
 
-    def __str__(self) -> str:
-        return ": ".join((str(self.status_code), self.detail))
-
 
 class NotFound(DomainError):
     status_code = status.HTTP_404_NOT_FOUND

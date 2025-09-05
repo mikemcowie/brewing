@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,13 +29,15 @@ else:  # At runtime we derive these from the sqlalchemy mapped class
     UpdateOrganization = Organization.schemas().update
 
 
-@router.post(Endpoints.ORGANIZATIONS)  # response_model=OrganizationRead)
+@router.post(
+    Endpoints.ORGANIZATIONS, status_code=status.HTTP_201_CREATED
+)  # response_model=OrganizationRead)
 async def create_organization(
     create: CreateOrganization, db_session: DBSessionAnnotation
 ) -> OrganizationRead:
     organization = Organization(**create.model_dump())
     db_session.add(organization)
-    await db_session.flush()
+    await db_session.commit()
     return OrganizationRead.model_validate(organization, from_attributes=True)
 
 
@@ -81,7 +83,7 @@ async def update_organization(
     return OrganizationRead.model_validate(organization, from_attributes=True)
 
 
-@router.delete(Endpoints.ORGANIZATIONS_ONE)
+@router.delete(Endpoints.ORGANIZATIONS_ONE, status_code=status.HTTP_204_NO_CONTENT)
 async def delete_organization(
     db_session: DBSessionAnnotation, organization: OrganizationAnnotation
 ) -> None:

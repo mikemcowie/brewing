@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Any
 from alembic import command
 from alembic.config import Config
 from fastapi import Depends
+from fastapi import Request as _Request
 from pydantic.alias_generators import to_snake
 from sqlalchemy import DateTime, MetaData, func, text
 from sqlalchemy.dialects import postgresql as pg
@@ -22,8 +23,9 @@ from sqlalchemy.orm import (
 )
 
 from project_manager import migrations
-from project_manager.settings import Settings, settings
+from project_manager.settings import Settings
 
+Request = _Request  # So that ruff won't hide it behind type checking
 MIGRATIONS_DIR = Path(migrations.__file__).parent.resolve()
 VERSIONS_DIR = MIGRATIONS_DIR / "versions"
 # keyword args for engine creation, which are written to be overwritten for tests
@@ -78,13 +80,8 @@ class Database:
     def build_uri(self, driver: str) -> str:
         return f"postgresql+{driver}://{self.settings.PGUSER}:{self.settings.PGPASSWORD.get_secret_value()}@{self.settings.PGHOST}:{self.settings.PGPORT}/{self.settings.PGDATABASE}"
 
-    @contextmanager
-    def session(self) -> Generator[Session, Any]:
-        with Session(bind=self.sync_engine) as sess:
-            yield sess
-
     @asynccontextmanager
-    async def async_session(self) -> AsyncGenerator[AsyncSession, Any]:
+    async def session(self) -> AsyncGenerator[AsyncSession, Any]:
         async with AsyncSession(bind=self.async_engine, expire_on_commit=False) as sess:
             yield sess
 
@@ -134,8 +131,9 @@ def updated_field() -> MappedColumn[datetime]:
     )
 
 
-async def db_session(
-    settings: Annotated[Settings, Depends(settings)],
-) -> AsyncGenerator[AsyncSession, Any]:
-    async with Database(settings=settings).async_session() as session:
+async def db_session(request: Request) -> AsyncGenerator[AsyncSession, Any]:
+    from project_manager.project_manager import ProjectManager
+
+    assert isinstance(request.app.project_manager, ProjectManager)
+    async with request.app.project_manager.database.session() as session:
         yield session

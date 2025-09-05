@@ -20,7 +20,8 @@ cli.add_typer(db, name="db")
 dev.add_typer(dev_db, name="db")
 
 
-API = "project_manager.api:dev_api"
+API = "project_manager.api:api"
+DEV_API = "project_manager.api:dev_api"
 
 
 @cli.command(name="api")
@@ -34,7 +35,7 @@ def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]) -> None:
 def dev_api() -> None:
     """Run development api woth hot reload."""
     dev_environment()
-    uvicorn.run(API, reload=True)
+    uvicorn.run(DEV_API, reload=True)
 
 
 def _db_upgrade(revision: str) -> None:
@@ -56,7 +57,7 @@ def upgrade(
     _db_upgrade(revision=revision or "head")
 
 
-@db.command("upgrade")
+@db.command("downgrade")
 def downgrade(revision: Annotated[str | None, typer.Option()] = None) -> None:
     _db_downgrade(revision=revision or "-1")
 
