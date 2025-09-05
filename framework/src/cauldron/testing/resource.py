@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 import pytest
+from cauldron_incubator.http import CauldronHTTP, status
 from cauldronlib.generic import runtime_generic
 from polyfactory.factories.pydantic_factory import ModelFactory
 from project_manager.app import Organization
 
-from cauldron.http import CauldronHTTP, status
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from cauldron.testing.scenario import Expectations, User
 from cauldron.testing.user import UserTestScenario

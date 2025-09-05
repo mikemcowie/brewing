@@ -6,9 +6,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     import typer
+    from cauldron_incubator.http import CauldronHTTP
 
     from cauldron.db.database import Migrations
-    from cauldron.http import CauldronHTTP
 
 
 class CLIProviderType(Protocol):

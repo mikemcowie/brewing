@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from cauldron.http import status
+from cauldron_incubator.http import status
 
 
 class DomainError(Exception):

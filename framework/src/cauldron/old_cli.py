@@ -14,9 +14,10 @@ from cauldron.logging import get_logger, setup_logging
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from cauldron_incubator.http import CauldronHTTP
+
     from cauldron.db.database import Migrations, MigrationsProtocol
     from cauldron.db.settings import PostgresqlSettings
-    from cauldron.http import CauldronHTTP
 
 
 logger = get_logger()

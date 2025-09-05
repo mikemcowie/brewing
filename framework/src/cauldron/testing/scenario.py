@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from cauldron_incubator.http import CauldronHTTP, status
 from faker import Faker
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, EmailStr, SecretStr
 
-from cauldron.http import CauldronHTTP, status
 from cauldron.testing import TestClient
 
 if TYPE_CHECKING:
