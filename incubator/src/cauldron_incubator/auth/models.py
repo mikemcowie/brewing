@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
+from cauldron.db.base import Base
+from cauldron.db.columns import created_field, updated_field, uuid_primary_key
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import DateTime, ForeignKey
 from sqlalchemy.orm import (
@@ -13,9 +15,6 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-
-from cauldron.db.base import Base
-from cauldron.db.columns import created_field, updated_field, uuid_primary_key
 
 UUID = uuid.UUID
 

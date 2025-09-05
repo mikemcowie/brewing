@@ -8,13 +8,6 @@ from functools import cached_property
 from secrets import token_bytes
 from typing import TYPE_CHECKING, Annotated
 
-from cauldronlib.generic import runtime_generic
-from passlib.context import CryptContext
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from cauldron.auth.exceptions import InvalidToken
-from cauldron.auth.models import Token, User, UserRead, UserRegister, UserSession
-from cauldron.auth.repo import UserRepo
 from cauldron.db.session import (
     db_session,
 )
@@ -22,6 +15,19 @@ from cauldron.exceptions import Unauthorized
 from cauldron.http import Depends, Request, status
 from cauldron.http.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from cauldron.http.viewset import Endpoint, ViewSet
+from cauldronlib.generic import runtime_generic
+from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from cauldron_incubator.auth.exceptions import InvalidToken
+from cauldron_incubator.auth.models import (
+    Token,
+    User,
+    UserRead,
+    UserRegister,
+    UserSession,
+)
+from cauldron_incubator.auth.repo import UserRepo
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
