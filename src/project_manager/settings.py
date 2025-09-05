@@ -17,3 +17,7 @@ class Settings(BaseSettings):
     PGUSER: str
     PGPASSWORD: SecretStr
     SECRET_KEY: SecretStr
+
+
+def settings():
+    return Settings()

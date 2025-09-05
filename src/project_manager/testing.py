@@ -2,6 +2,7 @@ import os
 import random
 import string
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from functools import cache
 from pathlib import Path
@@ -46,6 +47,8 @@ def dev_environment():
     os.environ["PGHOST"] = "127.0.0.1"
     os.environ["PGPORT"] = "5432"
     set_secret_key()
+    with ThreadPoolExecutor() as executor:
+        executor.submit(run_compose)
 
 
 def run_compose():

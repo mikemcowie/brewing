@@ -5,11 +5,12 @@ from fastapi.responses import JSONResponse
 
 from project_manager import constants, root_router
 from project_manager.exceptions import DomainError
+from project_manager.organizations.router import router as organizations_router
 from project_manager.users.router import router as users_router
 
 
 def default_routers():
-    return [root_router.router, users_router]
+    return [root_router.router, users_router, organizations_router]
 
 
 def handle_exception(request: Request, exc: DomainError):

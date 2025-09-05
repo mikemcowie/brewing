@@ -1,8 +1,6 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, func, text
-from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import (
     Mapped,
     MappedAsDataclass,
@@ -10,32 +8,9 @@ from sqlalchemy.orm import (
     registry,
 )
 
-from project_manager.db import Base
+from project_manager.db import Base, created_field, uuid_primary_key
 
 reg = registry()
-
-
-def uuid_primary_key():
-    return mapped_column(
-        pg.UUID,
-        default=None,
-        primary_key=True,
-        server_default=text("uuid_generate_v4()"),
-    )
-
-
-def created_field():
-    return mapped_column(DateTime, default=None, index=True, server_default=func.now())
-
-
-def updated_field():
-    return mapped_column(
-        DateTime,
-        default=None,
-        index=True,
-        server_default=func.now(),
-        onupdate=func.now(),
-    )
 
 
 class User(MappedAsDataclass, Base, kw_only=True):

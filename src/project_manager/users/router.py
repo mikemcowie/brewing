@@ -4,25 +4,15 @@ from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from project_manager.db import Database
+from project_manager.db import db_session
 from project_manager.endpoints import Endpoints
 from project_manager.secrets import secret_value
-from project_manager.settings import Settings
 from project_manager.users.auth import UserAuth
 from project_manager.users.models import User
 from project_manager.users.schemas import UserRegister
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=Endpoints.USERS_LOGIN, auto_error=False)
 router = APIRouter(tags=["users"])
-
-
-def settings():
-    return Settings()
-
-
-async def db_session(settings: Annotated[Settings, Depends(settings)]):
-    async with Database(settings=settings).async_session() as session:
-        yield session
 
 
 async def user_auth(

@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated
 
 import typer
@@ -7,7 +6,6 @@ import uvicorn
 from project_manager.db import Database
 from project_manager.testing import (
     dev_environment,
-    run_compose,
     testcontainer_postgresql,
 )
 
@@ -34,9 +32,7 @@ def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]):
 def dev_api():
     """Run development api woth hot reload."""
     dev_environment()
-    with ThreadPoolExecutor() as executor:
-        executor.submit(run_compose)
-        uvicorn.run(API, reload=True)
+    uvicorn.run(API, reload=True)
 
 
 def _db_upgrade(revision: str):
