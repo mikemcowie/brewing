@@ -52,7 +52,9 @@ class User:
         return cls(login, register, client)
 
 
-class UserTestScenario:
+class TestScenario:
+    __test__ = False
+
     def __init__(self, subtests: SubTests, app: FastAPI) -> None:
         self.subtests = subtests
         self.user1, self.user2, self.bad_guy = (
@@ -68,6 +70,8 @@ class UserTestScenario:
         assert expectations.json.items() <= result.json().items()
         return result
 
+
+class UserTestScenario(TestScenario):
     def register(self, user: User, test_name: str, expectations: Expectations) -> None:
         with self.subtests.test(test_name):
             self.validate_expectations(
