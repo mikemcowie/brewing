@@ -32,6 +32,9 @@ else:  # At runtime we derive these from the sqlalchemy mapped class
 class ResourceRepository[ModelT: Resource]:
     db_model: type[ModelT]
 
+    def __class_getitem__(cls, resource_type: type[Resource]):
+        return type(cls.__name__, (cls,), {"db_model": resource_type})
+
     def __init__(self, session: AsyncSession, user: User):
         self.session = session
         self.user = user
@@ -163,7 +166,3 @@ class ResourceRepository[ModelT: Resource]:
                 )
         await self.session.commit()
         return await self.get_access(resource_id=resource_id)
-
-
-class OrganizationRepository(ResourceRepository[Organization]):
-    db_model = Organization
