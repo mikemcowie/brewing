@@ -1,24 +1,24 @@
-from __future__ import annotations
+# from __future__ import annotations
 
+# if TYPE_CHECKING:
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import JSONResponse, Response
+from runtime_generic import runtime_generic
 from starlette.staticfiles import StaticFiles
+from starlette.types import ASGIApp
 
 from cauldron import root_router
+from cauldron.config import BaseConfiguration
 from cauldron.db import Database
 from cauldron.exceptions import DomainError
 from cauldron.logging import setup_logging
 from cauldron.settings import Settings
 from cauldron.users import router as users_router
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
-
-    from starlette.types import ASGIApp
 
 
 @dataclass
@@ -41,9 +41,10 @@ def handle_exception(request: Request, exc: DomainError) -> JSONResponse:
     )
 
 
-class Application:
+@runtime_generic
+class Application[ConfigT: BaseConfiguration]:
     # ruff: noqa: PLR0913
-    default_app_args: ClassVar[dict[str, str]] = {"title": "Project Manager"}
+    config_type: type[ConfigT]
     default_routers = (
         root_router.router,
         users_router,
@@ -80,10 +81,10 @@ class Application:
         settings: Settings | None = None,
         database: Database | None = None,
         mounts: tuple[MountedApp] | None = None,
-        app_extra_args: dict[str, Any] | None = None,
         exception_handlers: tuple[ExceptionHandler[Any]] | None = None,
     ):
         setup_logging()
+        self.config = self.config_type()
         self.dev = dev
         self.settings = settings or Settings()
         self.database = database or Database(settings=self.settings)
@@ -92,9 +93,13 @@ class Application:
             self.dev_default_mounts if self.dev else self.prod_default_mounts
         )
         self.mounts = mounts or default_mounts
-        self.app_args = self.default_app_args | (app_extra_args or {})
+        self.app_args = {"title": self.config.title}
         self.exception_handlers = exception_handlers or self.default_exception_handlers
-        self.app = FastAPI(**self.app_args)  # type: ignore
+        self.app = FastAPI(
+            title=self.config.title,
+            version=self.config.version,
+            description=self.config.description,
+        )
         self.app.project_manager = self  # type: ignore
         for router in self.routers:
             self.app.include_router(router)
@@ -102,7 +107,3 @@ class Application:
             self.app.mount(mount.path, mount.app, mount.name)
         for handler in self.exception_handlers:
             self.app.add_exception_handler(handler.exception_type, handler.handler)
-
-
-def make_api(dev: bool, routers: Sequence[APIRouter]):
-    return Application(dev=dev, routers=routers).app

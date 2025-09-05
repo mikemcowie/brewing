@@ -1,13 +1,19 @@
-from collections.abc import Generator
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from cauldron import db as db_
 from cauldron import development
 from cauldron.application import Application
 from cauldron.db import Database
-from fastapi import FastAPI
 from sqlalchemy.pool import NullPool
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from fastapi import FastAPI
+    from project_manager.app import Configuration
 
 pytest.register_assert_rewrite("tests.api.scenario")
 
@@ -30,12 +36,12 @@ def db(postgresql: None) -> Generator[None, Any]:
 
 
 @pytest.fixture
-def project_manager(postgresql: None, db: Database) -> Application:
-    from project_manager.app import routers  # noqa: PLC0415
+def project_manager(postgresql: None, db: Database) -> Application[Configuration]:
+    from project_manager.app import Configuration, routers  # noqa: PLC0415
 
-    return Application(dev=True, routers=routers)
+    return Application[Configuration](dev=True, routers=routers)
 
 
 @pytest.fixture
-def app(project_manager: Application) -> FastAPI:
+def app(project_manager: Application[Configuration]) -> FastAPI:
     return project_manager.app
