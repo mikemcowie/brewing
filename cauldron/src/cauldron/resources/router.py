@@ -1,9 +1,9 @@
+from collections.abc import Sequence
 from dataclasses import make_dataclass
 from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, status
-from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cauldron import db
@@ -15,6 +15,8 @@ from cauldron.resources.repo import (
 from cauldron.users import User, user
 
 if TYPE_CHECKING:
+    from pydantic import BaseModel
+
     CreateResource = BaseModel
     UpdateResource = BaseModel
     ResourceRead = BaseModel
@@ -94,7 +96,7 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
     @router.get(Endpoints.RESOURCES, response_model=list[ResourceSummary])
     async def list_resource(
         repo: Annotated[CrudRepository[ModelT], Depends(repo)],
-    ) -> list[ResourceSummary]:
+    ) -> Sequence[ResourceSummary]:
         return await repo.list_resources()
 
     @router.get(
