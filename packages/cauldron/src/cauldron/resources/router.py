@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import make_dataclass
-from typing import TYPE_CHECKING, Annotated
+from enum import Enum
+from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
 from runtime_generic import runtime_generic
@@ -10,7 +11,8 @@ from cauldron.auth.models import User
 from cauldron.auth.users import user
 from cauldron.db import session
 from cauldron.exceptions import Unauthorized
-from cauldron.http import APIRouter, Depends, Path, status
+from cauldron.http import Depends, Path, status
+from cauldron.http.viewset import AbstractViewSet
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from cauldron.resources.repo import (
     CrudRepository,
@@ -26,18 +28,14 @@ if TYPE_CHECKING:
 
 
 @runtime_generic
-class ModelViewSet[ModelT: Resource]:
+class ModelViewSet[ModelT: Resource](AbstractViewSet):
     model: type[ModelT]
 
-    def __init__(self):
-        self._router = APIRouter(
-            tags=[self.model.plural_name], dependencies=[Depends(user)]
-        )
-        self.setup_endpoints()
+    def get_router_tags(self) -> list[str | Enum]:
+        return [self.model.plural_name]
 
-    @property
-    def router(self):
-        return self._router
+    def get_router_dependencies(self) -> Sequence[Any]:
+        return [Depends(user)]
 
     def setup_endpoints(self):  # noqa: C901
         path_param_name = f"{self.model.singular_name}_id"
