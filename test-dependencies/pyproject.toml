@@ -1,0 +1,25 @@
+[project]
+name = "cauldron-test-dependencies"
+version = "0.1.0"
+description = "Cauldron's test dependencies"
+readme = "README.md"
+authors = [
+    { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "coverage>=7.9.1",
+    "hatch>=1.14.1",
+    "hatchling>=1.27.0",
+    "ipython>=9.3.0",
+    "polyfactory>=2.21.0",
+    "pyright>=1.1.403",
+    "pytest>=8.4.1",
+    "pytest-alembic>=0.12.1",
+    "pytest-cov>=6.2.1",
+    "pytest-html>=4.1.1",
+    "pytest-subtests>=0.14.2",
+    "ruff>=0.12.0",
+    "testcontainers>=4.10.0",
+    "types-passlib>=1.7.7.20250602",
+]
