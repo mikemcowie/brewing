@@ -16,7 +16,7 @@ from cauldron.settings import Settings
 from cauldron.users import router as users_router
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from starlette.types import ASGIApp
 
@@ -76,7 +76,7 @@ class Application:
     def __init__(
         self,
         dev: bool,
-        routers: tuple[APIRouter],
+        routers: Sequence[APIRouter],
         settings: Settings | None = None,
         database: Database | None = None,
         mounts: tuple[MountedApp] | None = None,
@@ -87,7 +87,7 @@ class Application:
         self.dev = dev
         self.settings = settings or Settings()
         self.database = database or Database(settings=self.settings)
-        self.routers = routers + self.default_routers
+        self.routers = tuple(routers) + self.default_routers
         default_mounts = (
             self.dev_default_mounts if self.dev else self.prod_default_mounts
         )
@@ -102,3 +102,7 @@ class Application:
             self.app.mount(mount.path, mount.app, mount.name)
         for handler in self.exception_handlers:
             self.app.add_exception_handler(handler.exception_type, handler.handler)
+
+
+def make_api(dev: bool, routers: Sequence[APIRouter]):
+    return Application(dev=dev, routers=routers).app
