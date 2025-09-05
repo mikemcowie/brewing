@@ -1,16 +1,13 @@
-# from __future__ import annotations
+from __future__ import annotations
 
-# if TYPE_CHECKING:
-from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 from runtime_generic import runtime_generic
 from starlette.staticfiles import StaticFiles
-from starlette.types import ASGIApp
 
 from cauldron import root_router
 from cauldron.configuration import BaseConfiguration
@@ -19,6 +16,11 @@ from cauldron.exceptions import DomainError
 from cauldron.logging import setup_logging
 from cauldron.settings import Settings
 from cauldron.users import router as users_router
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from starlette.types import ASGIApp
 
 
 @dataclass
