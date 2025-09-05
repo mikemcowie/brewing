@@ -29,7 +29,8 @@ cauldron-test-dependencies = { workspace = true }
 
 [dependency-groups]
 dev = [
-    "cauldron-test-dependencies"
+    "cauldron-test-dependencies",
+    "pre-commit>=4.3.0",
 ]
 
 [tool.ruff]
