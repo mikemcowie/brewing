@@ -1,14 +1,12 @@
 """Provides a decorator that makes a given generic class able to be instantiated with generic syntax."""
 
-from collections.abc import Callable
-from functools import cache, partial
-from typing import TYPE_CHECKING, Any, TypeVar, get_type_hints
+from functools import cache
+from typing import TYPE_CHECKING, TypeVar, get_type_hints
 
 
 class _GenericClassProcessor:
-    def __init__(self, cls: type, attribute: str):
+    def __init__(self, cls: type):
         self.cls = cls
-        self.attribute = attribute
 
     @property
     def annotations(self):
@@ -23,9 +21,13 @@ class _GenericClassProcessor:
         return self.cls.__parameters__
 
     def subclass_attributes(self, generic_type: tuple[type, ...]):
-        return {
-            self.attribute: generic_type[0]
-        }  # Wrong but works for the 1-tuple case.
+        return dict(
+            zip(
+                (attr for attr in self.unbound_class_attributes),
+                generic_type,
+                strict=False,
+            )
+        )
 
     def concrete_subclasser(self):
         """Returns callable that modifies a class with a new __class_getitem__ method.
@@ -34,9 +36,7 @@ class _GenericClassProcessor:
         with the specified class attribute filled in.
         """
 
-        # First argument is a placeholder _ as this gets bound into the target class as
-        # a classmethod; but the class name is already available from the parent scope.
-        def subclass(_: Any, generic_type: type | tuple[type, ...]):
+        def subclass(generic_type: type | tuple[type, ...]):
             # raise Exception(self.unbound_class_attributes)
             # raise Exception((self.parameters[0] == list(self.annotations.values())[0].__parameters__[0]))
             if not isinstance(generic_type, tuple):
@@ -62,18 +62,11 @@ class _GenericClassProcessor:
         if not TYPE_CHECKING:
             # The type checkers get all sorts of upset about this call
             # But it works.
-            self.cls.__class_getitem__ = classmethod(cache(subclass))
+            self.cls.__class_getitem__ = cache(subclass)
 
         return self.cls
 
 
-def _enhancer[T](cls: type[T], attribute: str):
-    processor = _GenericClassProcessor(cls, attribute)
-    return processor.enhance()
-
-
-def runtime_generic[T](
-    attribute: str,
-) -> Callable[[type[T]], type[T]]:
+def runtime_generic[T](cls: type[T]) -> type[T]:
     """Decorator that makes some class's generic be able to be instantiated."""
-    return partial(_enhancer, attribute=attribute)
+    return _GenericClassProcessor(cls).enhance()

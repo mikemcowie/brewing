@@ -14,7 +14,7 @@ class SomeSubClass(Someclass):
     extra_attribute: Literal["foo"] = "foo"
 
 
-@runtime_generic("generic_type")
+@runtime_generic
 class GenericThing[ModelT: Someclass]:
     generic_type: type[ModelT]
 
@@ -35,8 +35,8 @@ def test_runtime_generic_decorator():
 def test_cant_use_decorator_on_class_that_already_has_class_setitem():
     with pytest.raises(RuntimeError) as err:
 
-        @runtime_generic("foo")
-        @runtime_generic("foo")
+        @runtime_generic
+        @runtime_generic
         class Foo:  # type: ignore
             pass
 
@@ -45,18 +45,18 @@ def test_cant_use_decorator_on_class_that_already_has_class_setitem():
     )
 
 
-@runtime_generic("")
+@runtime_generic
 class HasOneParam[T1]:
     t1: type[T1]
 
 
-@runtime_generic("")
+@runtime_generic
 class HasTwoParam[T1, T2]:
     t1: type[T1]
     t2: type[T2]
 
 
-@runtime_generic("")
+@runtime_generic
 class HasThreeParam[T1, T2, T3]:
     t1: type[T1]
     t2: type[T2]
