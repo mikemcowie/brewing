@@ -5,11 +5,6 @@ from functools import cache
 from typing import TYPE_CHECKING, get_type_hints
 
 
-class _GenericClassProcessor:
-    def __init__(self, cls: type):
-        self.cls = cls
-
-
 def subclass_attributes(cls: type, types: tuple[type, ...]):
     annotations = get_type_hints(cls)
     unbound_class_attributes = set(annotations.keys()).difference(cls.__dict__.keys())
@@ -44,9 +39,8 @@ def concrete_subclasser[T](cls: type[T]) -> Callable[[type | tuple[type, ...]], 
 
 def runtime_generic[T](cls: type[T]) -> type[T]:
     """Decorator that makes some class's generic be able to be instantiated."""
-    processor = _GenericClassProcessor(cls)
     subclasser = concrete_subclasser(cls)
-    current_class_getitem = getattr(processor.cls, "__class_getitem__", None)
+    current_class_getitem = getattr(cls, "__class_getitem__", None)
     if current_class_getitem and current_class_getitem.__name__ == subclasser.__name__:
         raise RuntimeError(
             "Cannot decorate a class with runtime_generic more than once."
@@ -54,6 +48,6 @@ def runtime_generic[T](cls: type[T]) -> type[T]:
     if not TYPE_CHECKING:
         # The type checkers get all sorts of upset about this call
         # But it works.
-        processor.cls.__class_getitem__ = cache(subclasser)
+        cls.__class_getitem__ = cache(subclasser)
 
-    return processor.cls
+    return cls
