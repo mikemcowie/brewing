@@ -88,12 +88,13 @@ extend-ignore = [
     ]
 
 [tool.pytest.ini_options]
-addopts = "--import-mode=importlib --cov-report=html --cov-report=term --cov=. --cov-fail-under=90 --cov-context=test --cov-branch --html=testreport/index.html"
+addopts = "--import-mode=importlib --cov-report=html --cov-report=term --cov=. --cov-fail-under=90 --cov-context=test --cov-branch --html=testreport/index.html --markdown-docs --ignore framework/src/cauldron/db/migrations/"
 python_files = [
     "test_*.py",
     "*_test.py",
     "feat_*.py",
 ]
+ignore_glob = "**/env.py"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]

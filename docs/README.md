@@ -5,24 +5,33 @@ Cauldron is a python application framework  built to combine and enhance the bes
 ## The pitch
 
 ```python
-from cauldron import Application, ViewSet, collection
+from cauldron import Application, BaseConfiguration, build_cli
+from cauldron.http import ViewSet, collection
 from cauldron.testing import TestClient
 
 
 class HelloCauldron(ViewSet):
+
+    base_path = ("hello",)
 
     @collection.GET()
     def greet(self, whom:str="cauldron")->str:
         return f"hello, {whom}!"
 
 
-application = Application(viewsets=[HelloCauldron()])
+class Configuration(BaseConfiguration):
+    title = "Project Manager Service"
+    description = "Maintains Filesystem Projects over time"
+    version = "0.0.1"
+    cli_provider = build_cli
 
-testclient = TestClient(application)
-result = testclient.get("?whom=eric")
+
+application = Application[Configuration](viewsets=[HelloCauldron()])
+
+testclient = TestClient(application.app)
+result = testclient.get("/hello/?whom=eric")
 assert result.status_code == 200
-assert result.stdout == "hello, eric!"
-
+assert "hello, eric!" in result.text
 
 ```
 
