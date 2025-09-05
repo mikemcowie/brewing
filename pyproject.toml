@@ -14,9 +14,10 @@ dependencies = [
 
 [tool.uv.workspace]
 members = [
-    "packages/*",
+    "framework",
     "libs/*",
-    "test-dependencies"
+    "samples/*",
+    "test-dependencies",
 ]
 
 [tool.uv.sources]
@@ -94,9 +95,6 @@ python_files = [
 concurrency = ["thread", "greenlet"]
 
 [tool.coverage.report]
-omit = [
-    "src/openlms/_version.py"
-]
 exclude_also = [
     'def __repr__',
     'if self.debug:',
