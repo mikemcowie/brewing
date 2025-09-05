@@ -70,5 +70,8 @@ class TestScenario:
         if expectations.headers:  # pragma: no cover
             assert expectations.headers.items() <= result.headers.items()
         if expectations.json:
-            assert expectations.json.items() <= result.json().items()
+            assert expectations.json.items() <= result.json().items(), (
+                expectations.json,
+                result.json(),
+            )
         return result

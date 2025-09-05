@@ -49,13 +49,6 @@ class UserRepo:
             )
         ).scalar_one_or_none()
 
-    async def authenticated_user(self, token: str | None) -> User | None:
-        if not token:
-            return None
-        if user_session := await self.validated(token):
-            return user_session.user
-        raise InvalidToken(detail="invalid token")
-
     async def user_from_email(self, username: str) -> User | None:
         return (
             await self._session.execute(select(User).where(User.email == username))
@@ -92,10 +85,13 @@ class UserService[RepoT: UserRepo, AuthConfigT: AuthConfig]:
         return await self.oauth_scheme(request)
 
     async def user_from_request(self, request: Request):
-        user = await self._repo.authenticated_user(await self.token(request))
-        if not user:
+        token = await self.token(request)
+        if not token:
+            raise Unauthorized("unauthorized")
+        user_session = await self._repo.validated(token)
+        if not user_session:
             raise InvalidToken("unauthorized")
-        return user
+        return user_session.user
 
     async def authorize(self, form: OAuth2PasswordRequestForm):
         username, password = form.username, form.password
