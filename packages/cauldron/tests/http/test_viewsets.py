@@ -22,6 +22,9 @@ class ConcreteViewSet(AbstractViewSet):
     def get_router_tags(self) -> list[str | Enum]:
         return ["test"]
 
+    def get_path_param_name(self) -> str:
+        return "param_id"
+
     def get_base_path(self) -> Sequence[str]:
         return [APIPathConstant("test")]
 

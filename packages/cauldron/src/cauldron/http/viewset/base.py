@@ -10,28 +10,27 @@ They contain a set of related "views" or "endpoints"
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from dataclasses import dataclass, make_dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any, get_type_hints
+from uuid import UUID
 
 import structlog
+from fastapi.params import Depends
 
 from cauldron.http import APIRouter
+from cauldron.http.viewset import endpoints  # noqa: TC001
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
     from enum import Enum
 
     from pydantic import BaseModel
-
-    from cauldron.http.viewset import endpoints
 
     CreateResource = BaseModel
     UpdateResource = BaseModel
     ResourceRead = BaseModel
     ResourceSummary = BaseModel
-
-    from collections.abc import Callable
 
     _router = APIRouter()
     _UNUSED_PATH = "/unused"
@@ -42,6 +41,16 @@ logger = structlog.get_logger()
 type ViewSetTags = Sequence[str | Enum]
 type ViewSetDependencies = Sequence[Any]
 type ViewSetBasePath = Sequence[str]
+
+
+@dataclass
+class PathParameterPlaceholder:
+    """represents the path parameters of a request.
+
+    This is used as a sentinel object, as a type hint,
+    signalling that the viewset should compute the pathparameter
+    dependency at instantiation by calling  self.get_path_param_name
+    """
 
 
 class AbstractViewSet(ABC):
@@ -67,12 +76,54 @@ class AbstractViewSet(ABC):
         self._router = APIRouter(
             tags=list(self.get_router_tags()), dependencies=self.get_dependencies()
         )
-        self._router.dependency_overrides_provider = {}
         self.setup_endpoints()
 
     @property
     def router(self) -> APIRouter:
         return self._router
+
+    @abstractmethod
+    def get_path_param_name(self) -> str:
+        "Provide the name of the path parameter"
+
+    def get_path_params_class(self):
+        return make_dataclass(
+            "InstancePathParams",
+            [(self.get_path_param_name(), Annotated[UUID, Path()])],
+        )
+
+    def process_metadata_item(
+        self, hint_name: str, item: Any, hint: Any, metadata: Any
+    ):
+        """Return bound instance of dependency if there is a bound instance available.
+
+        Otherwise return the original dependency
+        """
+        if isinstance(metadata, Depends) and metadata.dependency:
+            bound_dependency = getattr(self, metadata.dependency.__name__, None)
+            if bound_dependency and metadata.dependency is bound_dependency.__func__:
+                return Depends(bound_dependency)
+        if (
+            isinstance(metadata, Depends)
+            and getattr(hint, "__origin__", None) is PathParameterPlaceholder
+            and metadata.dependency is None
+        ):
+            item.__annotations__[hint_name] = Annotated[
+                self.get_path_params_class(), Depends()
+            ]
+            return Depends()
+        return metadata
+
+    def setup_dependencies(self, item: Any):
+        logger.debug(f"setting up dependencies for {item=}")
+        hints = get_type_hints(item, include_extras=True)
+        for hint_name, hint in hints.items():
+            metadata = getattr(hint, "__metadata__", None)
+            if metadata:
+                hint.__metadata__ = tuple(
+                    self.process_metadata_item(hint_name, item, hint, md)
+                    for md in metadata
+                )
 
     def setup_endpoint(
         self, attr: str, item: Any, params: endpoints.EndpointParameters
@@ -82,18 +133,25 @@ class AbstractViewSet(ABC):
         path_str = str(path) + "/" if params.trailing_slash else str(path)
         logger.debug(f"Creating fastapi endpoint for {self=} {attr=} {item=}")
         wrapper: Callable[..., Any] = getattr(self.router, params.method.value.lower())
-        logger.info(f"wrapping {item=}")
+        logger.debug(f"wrapping {item=}")
+        if deps := params.kwargs.get("dependencies"):
+            params.kwargs["dependencies"] = [
+                self.process_metadata_item(attr, item, None, dep) for dep in deps
+            ]
+
         wrapper(path_str, *params.args, **params.kwargs)(item)
 
     def setup_endpoints(self):
         """required method called to configure the router."""
         for attr in dir(self):
             item = getattr(self, attr)
-            params: endpoints.EndpointParameters | None = getattr(
-                item, "_cauldron_endpoint_params", None
-            )
-            if params:
-                self.setup_endpoint(attr, item, params)
+            if getattr(item, "__self__", None):
+                self.setup_dependencies(item)
+                params: endpoints.EndpointParameters | None = getattr(
+                    item, "_cauldron_endpoint_params", None
+                )
+                if params:
+                    self.setup_endpoint(attr, item, params)
 
     @abstractmethod
     def get_base_path(self) -> ViewSetBasePath:
@@ -125,6 +183,13 @@ class ViewSet(AbstractViewSet):
         self.dependencies = dependencies or self.dependencies
         self.base_path = base_path or self.base_path
         super().__init__()
+
+    def get_path_param_name(self) -> str:
+        "Provide the name of the path parameter"
+        raise NotImplementedError(
+            "The base viewset class does not permit the use of get_path_param_name. "
+            "You need to override this method when subclassing to enable this."
+        )
 
     def get_router_tags(self) -> ViewSetTags:
         return self.tags
