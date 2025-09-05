@@ -10,6 +10,7 @@ from cauldron.development import (
     DevelopmentEnvironment,
 )
 from cauldron.logging import get_logger, setup_logging
+from cauldron.settings import Settings
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -52,17 +53,17 @@ def build_cli(  # noqa: C901, PLR0915
 
     def _db_upgrade(revision: str) -> None:
         logger.info("upgrading database", revision=revision)
-        Database().upgrade(revision=revision)
+        Database[Settings]().upgrade(revision=revision)
         logger.info("finished upgrading database", revision=revision)
 
     def _db_downgrade(revision: str) -> None:
         logger.info("downgrading database", revision=revision)
-        Database().downgrade(revision=revision)
+        Database[Settings]().downgrade(revision=revision)
         logger.info("finished downgrading database", revision=revision)
 
     def _db_stamp(revision: str) -> None:
         logger.info("stamping database", revision=revision)
-        Database().stamp(revision=revision)
+        Database[Settings]().stamp(revision=revision)
         logger.info("finished stamping database", revision=revision)
 
     @db.command("upgrade")
@@ -103,7 +104,7 @@ def build_cli(  # noqa: C901, PLR0915
     ) -> None:
         with development_environment.testcontainer_postgresql():
             _db_upgrade("head")
-            return Database().create_revision(
+            return Database[Settings]().create_revision(
                 message=message, autogenerate=autogenerate
             )
 

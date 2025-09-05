@@ -1,4 +1,5 @@
 from alembic import context
+from cauldron.settings import Settings
 
 
 def run_migrations_online() -> None:
@@ -12,7 +13,7 @@ def run_migrations_online() -> None:
 
     from cauldron.db import Base, Database  # noqa: PLC0415
 
-    with Database().sync_engine.connect() as connection:
+    with Database[Settings]().sync_engine.connect() as connection:
         context.configure(connection=connection, target_metadata=Base.metadata)
 
         with context.begin_transaction():

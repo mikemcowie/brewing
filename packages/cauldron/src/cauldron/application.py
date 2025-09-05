@@ -79,14 +79,11 @@ class Application[ConfigT: BaseConfiguration]:
     def __init__(
         self,
         routers: Sequence[APIRouter],
-        settings: Settings | None = None,
-        database: Database | None = None,
         exception_handlers: tuple[ExceptionHandler[Any]] | None = None,
     ):
         setup_logging()
         self.config = self.config_type()
-        self._settings = settings
-        self._database = database
+        self._database = Database[Settings]()
         self.routers = tuple(routers) + self.default_routers
         self.exception_handlers = exception_handlers or self.default_exception_handlers
 
@@ -115,11 +112,5 @@ class Application[ConfigT: BaseConfiguration]:
         return self._create_app(dev=False)
 
     @cached_property
-    def settings(self):
-        self._settings = self._settings or Settings()
-        return self._settings
-
-    @cached_property
     def database(self):
-        self._database = self._database or Database(settings=self.settings)
         return self._database

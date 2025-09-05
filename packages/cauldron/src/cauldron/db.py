@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from functools import cache
+from functools import cache, cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -9,6 +9,7 @@ from alembic import command
 from alembic.config import Config
 from project_manager import migrations
 from pydantic.alias_generators import to_snake
+from runtime_generic import runtime_generic
 from sqlalchemy import DateTime, MetaData, func, text
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.engine import create_engine
@@ -61,12 +62,25 @@ class Base(DeclarativeBase):
         return to_snake(cls.__name__)
 
 
-class Database:
-    def __init__(self, settings: Settings | None = None) -> None:
-        self.settings = settings or Settings()
-        self.async_engine = _async_engine(url=self.build_uri("asyncpg"))
-        self.sync_engine = _engine(url=self.build_uri("psycopg"))
-        self.metadata = metadata
+@runtime_generic
+class Database[SettingsT: Settings]:
+    settings_cls: type[SettingsT]
+
+    @cached_property
+    def metadata(self):
+        return metadata
+
+    @cached_property
+    def settings(self):
+        return self.settings_cls()
+
+    @cached_property
+    def async_engine(self):
+        return _async_engine(url=self.build_uri("asyncpg"))
+
+    @cached_property
+    def sync_engine(self):
+        return _engine(url=self.build_uri("psycopg"))
 
     def build_uri(self, driver: str) -> str:
         return f"postgresql+{driver}://{self.settings.PGUSER}:{self.settings.PGPASSWORD.get_secret_value()}@{self.settings.PGHOST}:{self.settings.PGPORT}/{self.settings.PGDATABASE}"
