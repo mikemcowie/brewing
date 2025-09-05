@@ -126,6 +126,16 @@ class UserSession(MappedAsDataclass, Base, kw_only=True):
             return None
         return user_session
 
+    @classmethod
+    async def authenticated_user(
+        cls, session: AsyncSession, token: str | None
+    ) -> User | None:
+        if not token:
+            return None
+        if user_session := await cls.validated(token, session):
+            return user_session.user
+        raise InvalidToken(detail="invalid token")
+
 
 class UserRead(BaseModel):
     id: UUID
@@ -174,14 +184,6 @@ class UserRepo:
             await self.db_session.flush()
             return UserRead.model_validate(db_user, from_attributes=True)
 
-    async def authenticated_user(self) -> User | None:
-        if not self.token:
-            return None
-        user_session = await UserSession.validated(self.token, self.db_session)
-        if user_session:
-            return user_session.user
-        raise InvalidToken(detail="invalid token")
-
     async def login(self, username: str, password: str) -> Token:
         return await User.authorize(self.db_session, username, password)
 
@@ -197,8 +199,11 @@ async def user_auth(
     return UserRepo(token=token, db_session=db_session)
 
 
-async def user(auth: Annotated[UserRepo, Depends(user_auth)]) -> User:
-    user = await auth.authenticated_user()
+async def user(
+    db_session: Annotated[AsyncSession, Depends(db_session)],
+    token: Annotated[str | None, Depends(oauth2_scheme)],
+) -> User:
+    user = await UserSession.authenticated_user(db_session, token)
     if not user:
         raise InvalidToken("unauthorized")
     return user
