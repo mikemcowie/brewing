@@ -25,6 +25,22 @@ class UserTestScenario(TestScenario):
                 ),
             )
 
+    def register_all_users(self) -> None:
+        for user in self.user1, self.user2, self.bad_guy:
+            self.register(
+                user=user,
+                test_name=f"register-user-{user.register.email}",
+                expectations=Expectations(status=status.HTTP_201_CREATED),
+            )
+
+    def login_all_users(self) -> None:
+        for user in self.user1, self.user2, self.bad_guy:
+            self.login(
+                user=user,
+                test_name=f"login-user-{user.register.email}",
+                expectations=Expectations(),
+            )
+
     def login(self, user: User, test_name: str, expectations: Expectations) -> None:
         with self.subtests.test(test_name):
             payload = user.login.model_dump(mode="json") | {
