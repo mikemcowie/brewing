@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 from cauldron import db as db_
-from cauldron import testing
+from cauldron import development
 from cauldron.application import Application
 from cauldron.db import Database
 from fastapi import FastAPI
@@ -17,7 +17,7 @@ def postgresql() -> Generator[None, Any]:
     # override the sqlalchemy poolclass as the queuepool works
     # badly in tests
     db_.ASYNC_ENGINE_KWARGS["poolclass"] = NullPool
-    with testing.testcontainer_postgresql():
+    with development.testcontainer_postgresql():
         yield
 
 

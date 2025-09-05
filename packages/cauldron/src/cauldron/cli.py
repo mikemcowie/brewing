@@ -6,11 +6,11 @@ import typer
 import uvicorn
 
 from cauldron.db import Database
-from cauldron.logging import get_logger, setup_logging
-from cauldron.testing import (
+from cauldron.development import (
     dev_environment,
     testcontainer_postgresql,
 )
+from cauldron.logging import get_logger, setup_logging
 
 
 def build_cli(api_string_ref: str, dev_api_string_ref: str):  # noqa: C901
