@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from functools import partial
 
 from cauldron import (
     Application,
@@ -27,9 +26,18 @@ class Configuration(BaseConfiguration):
     title = "Project Manager Service"
     description = "Maintains Filesystem Projects over time"
     version = "0.0.1"
+    cli_provider = build_cli
 
 
 routers = (model_crud_router(Organization),)
-dev_api = partial(lambda: Application[Configuration](dev=True, routers=routers).app)
-api = partial(lambda: Application[Configuration](dev=False, routers=routers).app)
+
+
+def dev_api():
+    return Application[Configuration](routers=routers).dev_app
+
+
+def api():
+    return Application[Configuration](routers=routers).dev_app
+
+
 cli = build_cli("project_manager.app:api", "project_manager.app:dev_api")

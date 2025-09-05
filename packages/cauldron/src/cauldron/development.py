@@ -6,7 +6,6 @@ import string
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -21,50 +20,47 @@ if TYPE_CHECKING:
 logger = get_logger()
 
 
-@cache
-def set_secret_key() -> None:
-    os.environ["SECRET_KEY"] = "".join(
-        random.choice(string.ascii_letters) for _ in range(32)
-    )
+class DevelopmentEnvironment:
+    COMPOSE_FILE = Path(__file__).parent / "compose.yaml"
 
-
-@contextmanager
-def testcontainer_postgresql() -> Generator[None]:
-    with PostgresContainer() as pg:
-        os.environ["PGPASSWORD"] = pg.password
-        os.environ["PGDATABASE"] = pg.dbname
-        os.environ["PGUSER"] = pg.username
+    def run(self) -> None:  # pragma: no cover
+        logger.info("setting up dev environment")
+        compose_data = yaml.load(self.COMPOSE_FILE.read_text(), yaml.SafeLoader)
+        os.environ["PGPASSWORD"] = compose_data["services"]["db"]["environment"][
+            "POSTGRES_PASSWORD"
+        ]
+        os.environ["PGDATABASE"] = compose_data["services"]["db"]["environment"][
+            "POSTGRES_DB"
+        ]
+        os.environ["PGUSER"] = compose_data["services"]["db"]["environment"][
+            "POSTGRES_USER"
+        ]
         os.environ["PGHOST"] = "127.0.0.1"
-        os.environ["PGPORT"] = str(pg.get_exposed_port(pg.port))
-        set_secret_key()
-        yield
+        os.environ["PGPORT"] = "5432"
+        self.set_secret_key()
+        with ThreadPoolExecutor() as executor:
+            executor.submit(self._run_compose)
+        logger.info("finished setting up dev environment")
 
+    def set_secret_key(self) -> None:
+        if not os.environ.get("SECRET_KEY"):
+            os.environ["SECRET_KEY"] = "".join(
+                random.choice(string.ascii_letters) for _ in range(32)
+            )
 
-COMPOSE_FILE = Path(__file__).parent / "compose.yaml"
+    @contextmanager
+    def testcontainer_postgresql(self) -> Generator[None]:
+        with PostgresContainer() as pg:
+            os.environ["PGPASSWORD"] = pg.password
+            os.environ["PGDATABASE"] = pg.dbname
+            os.environ["PGUSER"] = pg.username
+            os.environ["PGHOST"] = "127.0.0.1"
+            os.environ["PGPORT"] = str(pg.get_exposed_port(pg.port))
+            self.set_secret_key()
+            yield
 
-
-def dev_environment() -> None:  # pragma: no cover
-    logger.info("setting up dev environment")
-    compose_data = yaml.load(COMPOSE_FILE.read_text(), yaml.SafeLoader)
-    os.environ["PGPASSWORD"] = compose_data["services"]["db"]["environment"][
-        "POSTGRES_PASSWORD"
-    ]
-    os.environ["PGDATABASE"] = compose_data["services"]["db"]["environment"][
-        "POSTGRES_DB"
-    ]
-    os.environ["PGUSER"] = compose_data["services"]["db"]["environment"][
-        "POSTGRES_USER"
-    ]
-    os.environ["PGHOST"] = "127.0.0.1"
-    os.environ["PGPORT"] = "5432"
-    set_secret_key()
-    with ThreadPoolExecutor() as executor:
-        executor.submit(run_compose)
-    logger.info("finished setting up dev environment")
-
-
-def run_compose() -> None:  # pragma: no cover
-    logger.info("running docker compose")
-    subprocess.run(
-        ["docker", "compose", "up", "-d"], check=False, cwd=COMPOSE_FILE.parent
-    )
+    def _run_compose(self) -> None:  # pragma: no cover
+        logger.info("running docker compose")
+        subprocess.run(
+            ["docker", "compose", "up", "-d"], check=False, cwd=self.COMPOSE_FILE.parent
+        )

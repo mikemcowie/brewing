@@ -7,13 +7,12 @@ import uvicorn
 
 from cauldron.db import Database
 from cauldron.development import (
-    dev_environment,
-    testcontainer_postgresql,
+    DevelopmentEnvironment,
 )
 from cauldron.logging import get_logger, setup_logging
 
 
-def build_cli(api_string_ref: str, dev_api_string_ref: str):  # noqa: C901
+def build_cli(api_string_ref: str, dev_api_string_ref: str):  # noqa: C901, PLR0915
     setup_logging()
     logger = get_logger()
     cli = typer.Typer(add_help_option=True, no_args_is_help=True)
@@ -23,6 +22,7 @@ def build_cli(api_string_ref: str, dev_api_string_ref: str):  # noqa: C901
     cli.add_typer(dev, name="dev")
     cli.add_typer(db, name="db")
     dev.add_typer(dev_db, name="db")
+    development_environment = DevelopmentEnvironment()
 
     @cli.command(name="api")
     def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]) -> None:
@@ -34,7 +34,7 @@ def build_cli(api_string_ref: str, dev_api_string_ref: str):  # noqa: C901
     @dev.command("api")
     def dev_api() -> None:
         """Run development api woth hot reload."""
-        dev_environment()
+        development_environment.run()
         logger.info("starting dev API")
         uvicorn.run(dev_api_string_ref, reload=True, factory=True)
         logger.info("shut down dev API")
@@ -72,17 +72,17 @@ def build_cli(api_string_ref: str, dev_api_string_ref: str):  # noqa: C901
     def dev_upgrade(
         revision: Annotated[str | None, typer.Option(envvar="DB_REVISION")] = None,
     ) -> None:
-        dev_environment()
+        development_environment.run()
         _db_upgrade(revision=revision or "head")
 
     @dev_db.command("downgrade")
     def dev_downgrade(revision: Annotated[str | None, typer.Option()] = None) -> None:
-        dev_environment()
+        development_environment.run()
         _db_downgrade(revision=revision or "-1")
 
     @dev_db.command("stamp")
     def dev_stamp(revision: Annotated[str | None, typer.Option()] = None) -> None:
-        dev_environment()
+        development_environment.run()
         _db_stamp(revision=revision or "head")
 
     @dev_db.command("revision")
@@ -90,7 +90,7 @@ def build_cli(api_string_ref: str, dev_api_string_ref: str):  # noqa: C901
         message: Annotated[str, typer.Option()],
         autogenerate: Annotated[bool, typer.Option()] = True,
     ) -> None:
-        with testcontainer_postgresql():
+        with development_environment.testcontainer_postgresql():
             _db_upgrade("head")
             return Database().create_revision(
                 message=message, autogenerate=autogenerate

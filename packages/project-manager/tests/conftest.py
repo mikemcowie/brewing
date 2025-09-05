@@ -23,7 +23,7 @@ def postgresql() -> Generator[None, Any]:
     # override the sqlalchemy poolclass as the queuepool works
     # badly in tests
     db_.ASYNC_ENGINE_KWARGS["poolclass"] = NullPool
-    with development.testcontainer_postgresql():
+    with development.DevelopmentEnvironment().testcontainer_postgresql():
         yield
 
 
@@ -39,7 +39,7 @@ def db(postgresql: None) -> Generator[None, Any]:
 def project_manager(postgresql: None, db: Database) -> Application[Configuration]:
     from project_manager.app import Configuration, routers  # noqa: PLC0415
 
-    return Application[Configuration](dev=True, routers=routers)
+    return Application[Configuration](routers=routers)
 
 
 @pytest.fixture

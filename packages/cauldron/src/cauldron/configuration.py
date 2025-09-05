@@ -1,4 +1,10 @@
-from typing import get_type_hints
+from typing import Protocol, get_type_hints
+
+import typer
+
+
+class CLIProviderType(Protocol):
+    def __call__(self, api_string_ref: str, dev_api_string_ref: str) -> typer.Typer: ...
 
 
 class BaseConfiguration:
@@ -11,6 +17,7 @@ class BaseConfiguration:
     description: str
     title: str
     version: str
+    cli_provider: CLIProviderType
 
     def __new__(cls):
         if unimplemented_annotations := set(get_type_hints(cls).keys()).difference(
