@@ -30,14 +30,15 @@ class Configuration(BaseConfiguration):
 
 
 routers = (model_crud_router(Organization),)
+application = Application[Configuration](routers=routers)
 
 
 def dev_api():
-    return Application[Configuration](routers=routers).dev_app
+    return application.dev_app
 
 
 def api():
-    return Application[Configuration](routers=routers).dev_app
+    return application.app
 
 
 cli = build_cli("project_manager.app:api", "project_manager.app:dev_api")

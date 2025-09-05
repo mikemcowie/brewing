@@ -85,8 +85,8 @@ class Application[ConfigT: BaseConfiguration]:
     ):
         setup_logging()
         self.config = self.config_type()
-        self.settings = settings or Settings()
-        self.database = database or Database(settings=self.settings)
+        self._settings = settings
+        self._database = database
         self.routers = tuple(routers) + self.default_routers
         self.exception_handlers = exception_handlers or self.default_exception_handlers
 
@@ -113,3 +113,13 @@ class Application[ConfigT: BaseConfiguration]:
     @cached_property
     def app(self):
         return self._create_app(dev=False)
+
+    @cached_property
+    def settings(self):
+        self._settings = self._settings or Settings()
+        return self._settings
+
+    @cached_property
+    def database(self):
+        self._database = self._database or Database(settings=self.settings)
+        return self._database
