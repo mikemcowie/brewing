@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from sqlalchemy import ForeignKey, event
 from sqlalchemy.orm import (
+    InstrumentedAttribute,
     Mapped,
     MappedAsDataclass,
     MappedColumn,
@@ -56,6 +57,7 @@ class AccessLevel(StrEnum):
         return self.is_contributor() or self == self.__class__.reader
 
 
+@dataclass
 class ResourceAttributes:
     """Attributes for the resource model.
 
@@ -81,6 +83,16 @@ class ResourceAttributes:
         return retval
 
     @classmethod
+    def __pydantic_type_from_class_attribute(cls, attr_name: str):
+        attr: InstrumentedAttribute = cls.__dict__[attr_name]
+        attr_type = attr.type.python_type
+        return (
+            (attr_type | None, Field(default=None))
+            if attr.nullable
+            else (attr_type, Field(default=...))
+        )
+
+    @classmethod
     def create_new_model(
         cls,
         name: str,
@@ -90,13 +102,13 @@ class ResourceAttributes:
         included = list(included) if included is not None else included
         included = included or list(cls.__annotations__.keys())
         excluded = excluded or []
-        return create_model(
+        return create_model(  # type: ignore
             name,
             __config__=ConfigDict(extra="forbid"),
-            **{
-                attr: (cls.__dict__[attr].type.python_type)
-                for attr in cls.__dataclass_fields__
-                if all([attr not in excluded, attr in included])
+            **{  # type: ignore
+                attr_name: cls.__pydantic_type_from_class_attribute(attr_name)
+                for attr_name in cls.__dataclass_fields__
+                if all([attr_name not in excluded, attr_name in included])
             },
         )
 

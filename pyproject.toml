@@ -97,6 +97,7 @@ extend-ignore = [
     "TRY003", # disagree about error message length
     "N818", # disagree about error naming
     "PLC0414",
+    "RUF009",
 ]
 
 [tool.ruff.lint.per-file-ignores]
