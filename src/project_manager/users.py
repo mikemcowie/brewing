@@ -5,12 +5,15 @@ import hashlib
 from datetime import UTC, datetime, timedelta
 from functools import cache
 from secrets import token_bytes
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Annotated, Literal
 from uuid import UUID  # noqa
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, SecretStr
 from sqlalchemy import DateTime, ForeignKey, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import (
     Mapped,
     MappedAsDataclass,
@@ -19,8 +22,15 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from project_manager.db import Base, created_field, updated_field, uuid_primary_key
-from project_manager.exceptions import Unauthorized
+from project_manager.db import (
+    Base,
+    created_field,
+    db_session,
+    updated_field,
+    uuid_primary_key,
+)
+from project_manager.exceptions import DomainError, Unauthorized
+from project_manager.settings import Settings
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,6 +38,10 @@ if TYPE_CHECKING:
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
 TOKEN_BYTES = 48
+
+
+def secret_value(value: str | SecretStr) -> str:
+    return value if isinstance(value, str) else value.get_secret_value()
 
 
 @cache
@@ -121,3 +135,92 @@ class UserRead(BaseModel):
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
+
+
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
+ALGORITHM = "HS256"
+
+
+class LoginFailure(DomainError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    detail = "incorrect username or password"
+
+
+class InvalidToken(DomainError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    detail = "invalid token."
+
+
+class UserRepo:
+    def __init__(
+        self,
+        db_session: AsyncSession,
+        token: str | None,
+        settings: Settings | None = None,
+    ) -> None:
+        self.db_session = db_session
+        self.token = token or None
+        self.settings = settings or Settings()
+        self.credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    async def create_user(self, user: UserRegister) -> UserRead:
+        async with self.db_session.begin():
+            db_user = User(**user.model_dump())
+            self.db_session.add(db_user)
+            await self.db_session.flush()
+            return UserRead.model_validate(db_user, from_attributes=True)
+
+    async def authenticated_user(self) -> User | None:
+        if not self.token:
+            return None
+        user_session = await UserSession.validated(self.token, self.db_session)
+        if user_session:
+            return user_session.user
+        raise InvalidToken(detail="invalid token")
+
+    async def login(self, username: str, password: str) -> Token:
+        return await User.authorize(self.db_session, username, password)
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login", auto_error=False)
+router = APIRouter(tags=["users"])
+
+
+async def user_auth(
+    token: Annotated[str | None, Depends(oauth2_scheme)],
+    db_session: Annotated[AsyncSession, Depends(db_session)],
+) -> UserRepo:
+    return UserRepo(token=token, db_session=db_session)
+
+
+async def user(auth: Annotated[UserRepo, Depends(user_auth)]) -> User:
+    user = await auth.authenticated_user()
+    if not user:
+        raise InvalidToken("unauthorized")
+    return user
+
+
+@router.get("/users/profile")
+async def user_own_profile(user: Annotated[User, Depends(user)]) -> User:
+    return user
+
+
+@router.post("/users/login")
+async def login(
+    form: Annotated[OAuth2PasswordRequestForm, Depends()],
+    auth: Annotated[UserRepo, Depends(user_auth)],
+) -> Token:
+    return await auth.login(
+        username=form.username, password=secret_value(form.password)
+    )
+
+
+@router.post("/users/register", status_code=status.HTTP_201_CREATED)
+async def register(
+    user: UserRegister, auth: Annotated[UserRepo, Depends(user_auth)]
+) -> UserRead:
+    return await auth.create_user(user)

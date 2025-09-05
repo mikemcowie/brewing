@@ -19,7 +19,7 @@ from sqlalchemy.orm import (
 )
 
 from project_manager import db
-from project_manager.users.models import User
+from project_manager.users import User
 
 TypeBaseModel = type[BaseModel]
 

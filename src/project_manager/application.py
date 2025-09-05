@@ -15,7 +15,7 @@ from project_manager.logging import setup_logging
 from project_manager.organizations.models import Organization
 from project_manager.resources.router import model_crud_router
 from project_manager.settings import Settings
-from project_manager.users.router import router as users_router
+from project_manager.users import router as users_router
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -15,8 +15,7 @@ from project_manager.resources.repo import (
     ResourceSummary,
     UpdateResource,
 )
-from project_manager.users.models import User
-from project_manager.users.router import user
+from project_manager.users import User, user
 
 
 def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901

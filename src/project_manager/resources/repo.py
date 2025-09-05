@@ -13,7 +13,7 @@ from project_manager.resources.models import (
     ResourceAccess,
     ResourceAccessItem,
 )
-from project_manager.users.models import User
+from project_manager.users import User
 
 if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     from pydantic import BaseModel

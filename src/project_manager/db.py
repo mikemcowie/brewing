@@ -75,7 +75,7 @@ class Database:
         # ruff: noqa: F401,PLC0415
         import project_manager.organizations.models
         import project_manager.resources.models
-        import project_manager.users.models
+        import project_manager.users
 
     def build_uri(self, driver: str) -> str:
         return f"postgresql+{driver}://{self.settings.PGUSER}:{self.settings.PGPASSWORD.get_secret_value()}@{self.settings.PGHOST}:{self.settings.PGPORT}/{self.settings.PGDATABASE}"
