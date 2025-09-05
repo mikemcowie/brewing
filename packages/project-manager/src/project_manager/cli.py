@@ -30,7 +30,7 @@ DEV_API = "project_manager.api:dev_api"
 def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]) -> None:
     """Run api"""
     logger.info("starting API")
-    uvicorn.run(API, workers=workers)
+    uvicorn.run(API, workers=workers, factory=True)
     logger.info("shut down API")
 
 
@@ -39,7 +39,7 @@ def dev_api() -> None:
     """Run development api woth hot reload."""
     dev_environment()
     logger.info("starting dev API")
-    uvicorn.run(DEV_API, reload=True)
+    uvicorn.run(DEV_API, reload=True, factory=True)
     logger.info("shut down dev API")
 
 

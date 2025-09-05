@@ -12,7 +12,7 @@ from sqlalchemy.pool import NullPool
 pytest.register_assert_rewrite("tests.api.scenario")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def postgresql() -> Generator[None, Any]:
     # override the sqlalchemy poolclass as the queuepool works
     # badly in tests
@@ -31,7 +31,9 @@ def db(postgresql: None) -> Generator[None, Any]:
 
 @pytest.fixture
 def project_manager(postgresql: None, db: Database) -> Application:
-    return Application(dev=True)
+    from project_manager.api import routers  # noqa: PLC0415
+
+    return Application(dev=True, routers=routers)
 
 
 @pytest.fixture

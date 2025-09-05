@@ -6,14 +6,12 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import JSONResponse, Response
-from project_manager.organizations.models import Organization
 from starlette.staticfiles import StaticFiles
 
 from cauldron import root_router
 from cauldron.db import Database
 from cauldron.exceptions import DomainError
 from cauldron.logging import setup_logging
-from cauldron.resources.router import model_crud_router
 from cauldron.settings import Settings
 from cauldron.users import router as users_router
 
@@ -49,7 +47,6 @@ class Application:
     default_routers = (
         root_router.router,
         users_router,
-        model_crud_router(Organization),
     )
     prod_default_mounts: tuple[MountedApp, ...] = ()
     dev_default_mounts: tuple[MountedApp, ...] = (
@@ -79,10 +76,10 @@ class Application:
     def __init__(
         self,
         dev: bool,
+        routers: tuple[APIRouter],
         settings: Settings | None = None,
         database: Database | None = None,
         mounts: tuple[MountedApp] | None = None,
-        routers: tuple[APIRouter] | None = None,
         app_extra_args: dict[str, Any] | None = None,
         exception_handlers: tuple[ExceptionHandler[Any]] | None = None,
     ):
@@ -90,7 +87,7 @@ class Application:
         self.dev = dev
         self.settings = settings or Settings()
         self.database = database or Database(settings=self.settings)
-        self.routers = routers or self.default_routers
+        self.routers = routers + self.default_routers
         default_mounts = (
             self.dev_default_mounts if self.dev else self.prod_default_mounts
         )

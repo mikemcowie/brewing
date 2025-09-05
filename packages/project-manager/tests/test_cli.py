@@ -10,14 +10,18 @@ def test_run_cli() -> None:
     with patch("project_manager.cli.uvicorn.run") as uvicorn_run:
         result = CliRunner().invoke(cli, ["api", "--workers", "2"])
         assert result.exit_code == 0, result.stderr + result.stdout
-        uvicorn_run.assert_called_once_with("project_manager.api:api", workers=2)
+        uvicorn_run.assert_called_once_with(
+            "project_manager.api:api", workers=2, factory=True
+        )
 
 
 def test_run_dev_cli() -> None:
     with patch("project_manager.cli.uvicorn.run") as uvicorn_run:
         result = CliRunner().invoke(cli, ["dev", "api"])
         assert result.exit_code == 0, result.stderr + result.stdout
-        uvicorn_run.assert_called_once_with("project_manager.api:dev_api", reload=True)
+        uvicorn_run.assert_called_once_with(
+            "project_manager.api:dev_api", reload=True, factory=True
+        )
 
 
 def test_db_upgrade_downgrade(postgresql: None) -> None:
