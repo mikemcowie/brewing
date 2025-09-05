@@ -1,34 +1,60 @@
 """Provides a decorator that makes a given generic class able to be instantiated with generic syntax."""
 
 from collections.abc import Callable
-from functools import cache
-from typing import TYPE_CHECKING
+from functools import cache, partial
+from typing import TYPE_CHECKING, Any, TypeVar, get_type_hints
 
 
-def runtime_generic[T_OUTER](
-    attribute: str,
-) -> Callable[[type[T_OUTER]], type[T_OUTER]]:
-    """Decorator that makes some class's generic be able to be instantiated."""
+class _GenericClassProcessor:
+    def __init__(self, cls: type, attribute: str):
+        self.cls = cls
+        self.attribute = attribute
 
-    def enhance[T_INNER: type](cls: T_INNER) -> T_INNER:
-        def concrete_subclass_factory[TypeT, GenericT](
-            cls: type[TypeT], generic_type: type[GenericT]
-        ):
-            """Modifies class to have a __class_getitem__ method.
+    @property
+    def annotations(self):
+        return get_type_hints(self.cls)
 
-            This method automatically returns a generated subclass
-            with the specified class attribute filled in.
-            """
+    @property
+    def unbound_class_attributes(self):
+        return set(self.annotations.keys()).difference(self.__class__.__dict__.keys())
+
+    @property
+    def parameters(self) -> tuple[TypeVar]:
+        return self.cls.__parameters__
+
+    def subclass_attributes(self, generic_type: tuple[type, ...]):
+        return {
+            self.attribute: generic_type[0]
+        }  # Wrong but works for the 1-tuple case.
+
+    def concrete_subclasser(self):
+        """Returns callable that modifies a class with a new __class_getitem__ method.
+
+        This callable automatically returns a generated subclass
+        with the specified class attribute filled in.
+        """
+
+        # First argument is a placeholder _ as this gets bound into the target class as
+        # a classmethod; but the class name is already available from the parent scope.
+        def subclass(_: Any, generic_type: type | tuple[type, ...]):
+            # raise Exception(self.unbound_class_attributes)
+            # raise Exception((self.parameters[0] == list(self.annotations.values())[0].__parameters__[0]))
+            if not isinstance(generic_type, tuple):
+                generic_type = (generic_type,)
             return type(
-                f"{cls.__name__}[{generic_type.__name__}]",
-                (cls,),
-                {attribute: generic_type},
+                f"{self.cls.__name__}[{','.join(t.__name__ for t in generic_type)}]",
+                (self.cls,),
+                self.subclass_attributes(generic_type=generic_type),
             )
 
-        current_class_getitem = getattr(cls, "__class_getitem__", None)
+        return subclass
+
+    def enhance(self):
+        subclass = self.concrete_subclasser()
+        current_class_getitem = getattr(self.cls, "__class_getitem__", None)
         if (
             current_class_getitem
-            and current_class_getitem.__name__ == concrete_subclass_factory.__name__
+            and current_class_getitem.__name__ == subclass.__name__
         ):
             raise RuntimeError(
                 "Cannot decorate a class with runtime_generic more than once."
@@ -36,8 +62,18 @@ def runtime_generic[T_OUTER](
         if not TYPE_CHECKING:
             # The type checkers get all sorts of upset about this call
             # But it works.
-            cls.__class_getitem__ = classmethod(cache(concrete_subclass_factory))
+            self.cls.__class_getitem__ = classmethod(cache(subclass))
 
-        return cls
+        return self.cls
 
-    return enhance
+
+def _enhancer[T](cls: type[T], attribute: str):
+    processor = _GenericClassProcessor(cls, attribute)
+    return processor.enhance()
+
+
+def runtime_generic[T](
+    attribute: str,
+) -> Callable[[type[T]], type[T]]:
+    """Decorator that makes some class's generic be able to be instantiated."""
+    return partial(_enhancer, attribute=attribute)
