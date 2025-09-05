@@ -1,10 +1,18 @@
-from typing import Protocol, get_type_hints
+from __future__ import annotations
 
-import typer
+from typing import TYPE_CHECKING, Protocol, get_type_hints
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    import typer
+    from fastapi import FastAPI
 
 
 class CLIProviderType(Protocol):
-    def __call__(self, api_string_ref: str, dev_api_string_ref: str) -> typer.Typer: ...
+    def __call__(
+        self, api_factory: Callable[[], FastAPI], dev_api_factory: Callable[[], FastAPI]
+    ) -> typer.Typer: ...
 
 
 class BaseConfiguration:

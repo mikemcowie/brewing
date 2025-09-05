@@ -41,4 +41,4 @@ def api():
     return application.app
 
 
-cli = build_cli("project_manager.app:api", "project_manager.app:dev_api")
+cli = build_cli(api, dev_api)

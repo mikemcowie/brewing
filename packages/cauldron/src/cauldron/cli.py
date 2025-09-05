@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import typer
 import uvicorn
@@ -11,8 +11,19 @@ from cauldron.development import (
 )
 from cauldron.logging import get_logger, setup_logging
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-def build_cli(api_string_ref: str, dev_api_string_ref: str):  # noqa: C901, PLR0915
+    from fastapi import FastAPI
+
+
+def asgi_application_sting(factory: Callable[[], FastAPI], /):
+    return f"{factory.__module__}:{factory.__name__}"
+
+
+def build_cli(  # noqa: C901, PLR0915
+    api_factory: Callable[[], FastAPI], dev_api_factory: Callable[[], FastAPI]
+):
     setup_logging()
     logger = get_logger()
     cli = typer.Typer(add_help_option=True, no_args_is_help=True)
@@ -28,7 +39,7 @@ def build_cli(api_string_ref: str, dev_api_string_ref: str):  # noqa: C901, PLR0
     def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]) -> None:
         """Run api"""
         logger.info("starting API")
-        uvicorn.run(api_string_ref, workers=workers, factory=True)
+        uvicorn.run(asgi_application_sting(api_factory), workers=workers, factory=True)
         logger.info("shut down API")
 
     @dev.command("api")
@@ -36,7 +47,7 @@ def build_cli(api_string_ref: str, dev_api_string_ref: str):  # noqa: C901, PLR0
         """Run development api woth hot reload."""
         development_environment.run()
         logger.info("starting dev API")
-        uvicorn.run(dev_api_string_ref, reload=True, factory=True)
+        uvicorn.run(asgi_application_sting(dev_api_factory), reload=True, factory=True)
         logger.info("shut down dev API")
 
     def _db_upgrade(revision: str) -> None:
