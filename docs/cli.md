@@ -27,8 +27,7 @@ class MyCLI(CLI):
         print("message")
 
 
-cli = MyCLI().typer
-cli()
+cli = MyCLI("mycli").typer
 
 ```
 

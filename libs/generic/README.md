@@ -7,6 +7,8 @@ with generic parameters mapped to matching unbound class attributes.
 
 # Example
 ```python
+from cauldronlib.generic import runtime_generic
+
 @runtime_generic
 class SomeGenericClass[A, B]:
     attr_a: type[A]
@@ -21,6 +23,6 @@ class ThingB:
     thingb = "bar"
 
 
-assert SomeGenericClass[ThingA, ThingB].thinga == "foo"
-assert SomeGenericClass[ThingA, ThingB].thingb == "bar"
+assert SomeGenericClass[ThingA, ThingB]().attr_a.thinga == "foo"
+assert SomeGenericClass[ThingA, ThingB]().attr_b.thingb == "bar"
 ```

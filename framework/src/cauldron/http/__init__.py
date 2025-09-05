@@ -8,5 +8,7 @@ from fastapi import status as status
 
 from .asgi import CauldronHTTP as CauldronHTTP
 from .responses import Response as Response
+from .viewset import ViewSet as ViewSet
+from .viewset import collection as collection
 
 __all__ = ["APIRouter", "CauldronHTTP", "Depends", "Request", "Response", "status"]
