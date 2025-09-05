@@ -3,7 +3,7 @@ import pytest
 from alembic.config import Config
 
 # The actual test cases are imported from this file.
-from pytest_alembic.tests.default import *
+from pytest_alembic.tests.default import *  # type: ignore
 from sqlalchemy.engine import Engine
 
 from project_manager.db import Database

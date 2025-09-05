@@ -92,7 +92,7 @@ class ProjectManager:
         self.mounts = mounts or default_mounts
         self.app_args = self.default_app_args | (app_extra_args or {})
         self.exception_handlers = exception_handlers or self.default_exception_handlers
-        self.app = FastAPI(**self.app_args)
+        self.app = FastAPI(**self.app_args)  # type: ignore
         self.app.project_manager = self  # type: ignore
         for router in self.routers:
             self.app.include_router(router)
