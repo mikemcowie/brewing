@@ -4,7 +4,7 @@ from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from project_manager import constants, root_router
-from project_manager.users.auth import DomainError
+from project_manager.exceptions import DomainError
 from project_manager.users.router import router as users_router
 
 
