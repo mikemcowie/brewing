@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from cauldron.application import Application
 from cauldron.cli import build_cli
-from cauldron.config import BaseConfiguration
+from cauldron.configuration import BaseConfiguration
 from cauldron.resources.models import Resource
 from cauldron.resources.router import model_crud_router
 from sqlalchemy.orm import Mapped, mapped_column

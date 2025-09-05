@@ -1,5 +1,5 @@
 import pytest
-from cauldron.config import BaseConfiguration
+from cauldron.configuration import BaseConfiguration
 
 
 def test_config_cannot_be_instantiated_with_unimplemented_attributes():

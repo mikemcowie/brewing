@@ -13,7 +13,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import ASGIApp
 
 from cauldron import root_router
-from cauldron.config import BaseConfiguration
+from cauldron.configuration import BaseConfiguration
 from cauldron.db import Database
 from cauldron.exceptions import DomainError
 from cauldron.logging import setup_logging
