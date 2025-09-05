@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from functools import cache, cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 from alembic import command
 from alembic.config import Config
@@ -41,6 +41,16 @@ else:
     @cache
     def _async_engine(*args, **kwargs):
         return create_async_engine(*args, **kwargs | ASYNC_ENGINE_KWARGS)
+
+
+class MigrationsProtocol(Protocol):
+    def upgrade(self, revision: str = "head") -> None: ...
+
+    def downgrade(self, revision: str = "-1") -> None: ...
+
+    def stamp(self, revision: str = "head") -> None: ...
+
+    def create_revision(self, message: str, autogenerate: bool) -> None: ...
 
 
 class Migrations[SettingsT: DBSettingsType]:

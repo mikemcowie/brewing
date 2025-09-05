@@ -7,7 +7,7 @@ from typer.testing import CliRunner
 
 
 def test_run_cli() -> None:
-    with patch("cauldron.cli.uvicorn.run") as uvicorn_run:
+    with patch("cauldron.old_cli.uvicorn.run") as uvicorn_run:
         result = CliRunner().invoke(cli, ["api", "--workers", "2"])
         assert result.exit_code == 0, result.stderr + result.stdout
         uvicorn_run.assert_called_once_with(
@@ -16,7 +16,7 @@ def test_run_cli() -> None:
 
 
 def test_run_dev_cli() -> None:
-    with patch("cauldron.cli.uvicorn.run") as uvicorn_run:
+    with patch("cauldron.old_cli.uvicorn.run") as uvicorn_run:
         result = CliRunner().invoke(cli, ["dev", "api"])
         assert result.exit_code == 0, result.stderr + result.stdout
         uvicorn_run.assert_called_once_with(
