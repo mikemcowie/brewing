@@ -2,16 +2,15 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import uuid
 from datetime import UTC, datetime, timedelta
 from functools import cache
 from secrets import token_bytes
-from typing import TYPE_CHECKING, Annotated, Literal
-from uuid import UUID  # noqa
+from typing import TYPE_CHECKING, Literal
 
 from passlib.context import CryptContext
-from pydantic import BaseModel, EmailStr, SecretStr
+from pydantic import BaseModel, EmailStr
 from sqlalchemy import DateTime, ForeignKey, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import (
     Mapped,
     MappedAsDataclass,
@@ -20,35 +19,24 @@ from sqlalchemy.orm import (
     relationship,
 )
 
+from cauldron.auth.exceptions import InvalidToken
 from cauldron.db.base import Base
 from cauldron.db.columns import created_field, updated_field, uuid_primary_key
-from cauldron.db.session import (
-    db_session,
-)
-from cauldron.exceptions import DomainError, Unauthorized
-from cauldron.http import APIRouter, Depends, status
-from cauldron.http.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from cauldron.exceptions import Unauthorized
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
-
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
 TOKEN_BYTES = 48
 
 
-def secret_value(value: str | SecretStr) -> str:
-    return value if isinstance(value, str) else value.get_secret_value()
+UUID = uuid.UUID
 
 
 @cache
 def password_context() -> CryptContext:
     return CryptContext(schemes=["argon2"], deprecated="auto")
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: Literal["bearer"] = "bearer"
 
 
 class User(MappedAsDataclass, Base, kw_only=True):
@@ -142,9 +130,9 @@ class UserSession(MappedAsDataclass, Base, kw_only=True):
         raise InvalidToken(detail="invalid token")
 
 
-class UserRead(BaseModel):
-    id: UUID
-    username: str
+class Token(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
 
 
 class UserRegister(BaseModel):
@@ -152,50 +140,6 @@ class UserRegister(BaseModel):
     password: str
 
 
-class LoginFailure(DomainError):
-    status_code = status.HTTP_401_UNAUTHORIZED
-    detail = "incorrect username or password"
-
-
-class InvalidToken(DomainError):
-    status_code = status.HTTP_401_UNAUTHORIZED
-    detail = "invalid token."
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login", auto_error=False)
-router = APIRouter(tags=["users"])
-
-
-async def user(
-    db_session: Annotated[AsyncSession, Depends(db_session)],
-    token: Annotated[str | None, Depends(oauth2_scheme)],
-) -> User:
-    user = await UserSession.authenticated_user(db_session, token)
-    if not user:
-        raise InvalidToken("unauthorized")
-    return user
-
-
-@router.get("/users/profile")
-async def user_own_profile(user: Annotated[User, Depends(user)]) -> User:
-    return user
-
-
-@router.post("/users/login")
-async def login(
-    form: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db_session: Annotated[AsyncSession, Depends(db_session)],
-) -> Token:
-    return await User.authorize(
-        db_session, email=form.username, password=secret_value(form.password)
-    )
-
-
-@router.post("/users/register", status_code=status.HTTP_201_CREATED)
-async def register(
-    user: UserRegister,
-    db_session: Annotated[AsyncSession, Depends(db_session)],
-) -> UserRead:
-    return UserRead.model_validate(
-        await User.create_user(db_session, user), from_attributes=True
-    )
+class UserRead(BaseModel):
+    id: UUID
+    username: str

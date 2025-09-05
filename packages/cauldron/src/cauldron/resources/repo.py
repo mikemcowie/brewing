@@ -20,7 +20,7 @@ if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     from pydantic import BaseModel
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from cauldron.users import User
+    from cauldron.auth.models import User
 
     ResourceRead = BaseModel
     ResourceSummary = BaseModel

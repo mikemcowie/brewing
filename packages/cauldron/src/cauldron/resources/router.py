@@ -5,6 +5,8 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from cauldron.auth.models import User
+from cauldron.auth.users import user
 from cauldron.db import session
 from cauldron.exceptions import Unauthorized
 from cauldron.http import APIRouter, Depends, Path, status
@@ -12,7 +14,6 @@ from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from cauldron.resources.repo import (
     CrudRepository,
 )
-from cauldron.users import User, user
 
 if TYPE_CHECKING:
     from pydantic import BaseModel

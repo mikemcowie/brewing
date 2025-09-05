@@ -19,9 +19,9 @@ from sqlalchemy.orm import (
     relationship,
 )
 
+from cauldron.auth.models import User
 from cauldron.db import base, columns
 from cauldron.db.base import Base
-from cauldron.users import User
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

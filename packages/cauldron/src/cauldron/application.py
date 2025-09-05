@@ -9,6 +9,7 @@ from runtime_generic import runtime_generic
 from starlette.staticfiles import StaticFiles
 
 from cauldron import root_router
+from cauldron.auth.users import router as users_router
 from cauldron.configuration import BaseConfiguration
 from cauldron.db.database import Database
 from cauldron.db.settings import PostgresqlSettings
@@ -16,7 +17,6 @@ from cauldron.exceptions import DomainError
 from cauldron.http import APIRouter, CauldronHTTP, Request
 from cauldron.http.responses import JSONResponse, Response
 from cauldron.logging import setup_logging
-from cauldron.users import router as users_router
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
