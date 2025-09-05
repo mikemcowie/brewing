@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from project_manager.api import api_factory
 
 
-def test_root_endpoint():
+def test_root_endpoint() -> None:
     api = api_factory(title="Foo")
     client = TestClient(api)
     result = client.get("/")

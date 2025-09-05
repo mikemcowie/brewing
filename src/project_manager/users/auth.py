@@ -26,7 +26,7 @@ class UserAuth:
         db_session: AsyncSession,
         token: str | None = None,
         settings: Settings | None = None,
-    ):
+    ) -> None:
         self.db_session = db_session
         self.token = token or ""
         self.settings = settings or Settings()
@@ -37,21 +37,22 @@ class UserAuth:
         )
         self.password_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-    def jwt_payload(self):
+    def jwt_payload(self) -> dict[str, str]:
         if not self.token:
             raise Unauthorized()
-        return jwt.decode(
+        result: dict[str, str] = jwt.decode(
             self.token,
             self.settings.SECRET_KEY.get_secret_value(),
             algorithms=[ALGORITHM],
         )
+        return result
 
-    def username_from_token(self):
+    def username_from_token(self) -> str:
         if username := self.jwt_payload().get("sub"):
             return username
         raise ValueError()
 
-    async def user_from_db(self, user: str):
+    async def user_from_db(self, user: str) -> User:
         result = (
             await self.db_session.execute(select(User).where(User.email == user))
         ).scalar_one_or_none()
@@ -59,10 +60,10 @@ class UserAuth:
             return result
         raise NotFound(detail=f"{user=} not found")
 
-    async def token_user(self):
+    async def token_user(self) -> User:
         return await self.user_from_db(self.username_from_token())
 
-    async def issue_token(self, username: str):
+    async def issue_token(self, username: str) -> Token:
         return Token(
             access_token=jwt.encode(
                 {
@@ -75,13 +76,13 @@ class UserAuth:
             token_type="bearer",
         )
 
-    def hashed_password(self, value: str):
+    def hashed_password(self, value: str) -> str:
         return self.password_context.hash(value)
 
-    def verify_password(self, plain_password: str, hashed_password: str):
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return self.password_context.verify(plain_password, hashed_password)
 
-    async def authenticate(self, username: str, password: str):
+    async def authenticate(self, username: str, password: str) -> Token:
         try:
             if self.verify_password(
                 password, (await self.user_from_db(username)).password_hash
@@ -91,7 +92,7 @@ class UserAuth:
             pass  # Don't show a 404 in this case, shpw a 401 by raising the next error.
         raise LoginFailure()
 
-    async def create_user(self, user: UserRegister):
+    async def create_user(self, user: UserRegister) -> UserRead:
         user_data = user.model_dump() | {
             "password_hash": self.hashed_password(user.password.get_secret_value())
         }

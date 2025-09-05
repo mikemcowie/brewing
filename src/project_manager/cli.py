@@ -22,62 +22,64 @@ API = "project_manager.api:api"
 
 
 @cli.command(name="api")
-def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]):
+def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]) -> None:
     """Run api"""
 
     uvicorn.run(API, workers=workers)
 
 
 @dev.command("api")
-def dev_api():
+def dev_api() -> None:
     """Run development api woth hot reload."""
     dev_environment()
     uvicorn.run(API, reload=True)
 
 
-def _db_upgrade(revision: str):
+def _db_upgrade(revision: str) -> None:
     return Database().upgrade(revision=revision)
 
 
-def _db_downgrade(revision: str):
+def _db_downgrade(revision: str) -> None:
     return Database().downgrade(revision=revision)
 
 
-def _db_stamp(revision: str):
+def _db_stamp(revision: str) -> None:
     return Database().stamp(revision=revision)
 
 
 @db.command("upgrade")
-def upgrade(revision: Annotated[str | None, typer.Option(envvar="DB_REVISION")] = None):
+def upgrade(
+    revision: Annotated[str | None, typer.Option(envvar="DB_REVISION")] = None,
+) -> None:
     _db_upgrade(revision=revision or "head")
 
 
 @db.command("upgrade")
-def downgrade(revision: Annotated[str | None, typer.Option()] = None):
+def downgrade(revision: Annotated[str | None, typer.Option()] = None) -> None:
     _db_downgrade(revision=revision or "-1")
 
 
 @db.command("stamp")
-def stamp(revision: Annotated[str | None, typer.Option()] = None):
+def stamp(revision: Annotated[str | None, typer.Option()] = None) -> None:
     _db_stamp(revision=revision or "head")
 
 
 @dev_db.command("upgrade")
 def dev_upgrade(
     revision: Annotated[str | None, typer.Option(envvar="DB_REVISION")] = None,
-):
+) -> None:
     dev_environment()
     _db_upgrade(revision=revision or "head")
 
 
 @dev_db.command("downgrade")
-def dev_downgrade(revision: Annotated[str | None, typer.Option()] = None):
+def dev_downgrade(revision: Annotated[str | None, typer.Option()] = None) -> None:
     dev_environment()
     _db_downgrade(revision=revision or "-1")
 
 
 @dev_db.command("stamp")
-def dev_stamp(revision: Annotated[str | None, typer.Option()] = None):
+def dev_stamp(revision: Annotated[str | None, typer.Option()] = None) -> None:
     dev_environment()
     _db_stamp(revision=revision or "head")
 
@@ -86,7 +88,7 @@ def dev_stamp(revision: Annotated[str | None, typer.Option()] = None):
 def dev_revision(
     message: Annotated[str, typer.Option()],
     autogenerate: Annotated[bool, typer.Option()] = True,
-):
+) -> None:
     with testcontainer_postgresql():
         _db_upgrade("head")
         return Database().create_revision(message=message, autogenerate=autogenerate)

@@ -9,7 +9,7 @@ from project_manager.endpoints import Endpoints
 from project_manager.secrets import secret_value
 from project_manager.users.auth import UserAuth
 from project_manager.users.models import User
-from project_manager.users.schemas import UserRegister
+from project_manager.users.schemas import Token, UserRead, UserRegister
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=Endpoints.USERS_LOGIN, auto_error=False)
 router = APIRouter(tags=["users"])
@@ -18,16 +18,16 @@ router = APIRouter(tags=["users"])
 async def user_auth(
     token: Annotated[str, Depends(oauth2_scheme)],
     db_session: Annotated[AsyncSession, Depends(db_session)],
-):
+) -> UserAuth:
     return UserAuth(token=token, db_session=db_session)
 
 
-async def user(auth: Annotated[UserAuth, Depends(user_auth)]):
+async def user(auth: Annotated[UserAuth, Depends(user_auth)]) -> User:
     return await auth.token_user()
 
 
 @router.get(Endpoints.USERS_PROFILE)
-async def user_own_profile(user: Annotated[User, Depends(user)]):
+async def user_own_profile(user: Annotated[User, Depends(user)]) -> User:
     return user
 
 
@@ -35,12 +35,14 @@ async def user_own_profile(user: Annotated[User, Depends(user)]):
 async def login(
     form: Annotated[OAuth2PasswordRequestForm, Depends()],
     auth: Annotated[UserAuth, Depends(user_auth)],
-):
+) -> Token:
     return await auth.authenticate(
         username=form.username, password=secret_value(form.password)
     )
 
 
 @router.post(Endpoints.USERS_REGISTER, status_code=status.HTTP_201_CREATED)
-async def register(user: UserRegister, auth: Annotated[UserAuth, Depends(user_auth)]):
+async def register(
+    user: UserRegister, auth: Annotated[UserAuth, Depends(user_auth)]
+) -> UserRead:
     return await auth.create_user(user)

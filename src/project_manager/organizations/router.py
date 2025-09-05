@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from project_manager import db
 from project_manager.endpoints import Endpoints
@@ -12,7 +13,7 @@ from project_manager.organizations.models import Organization
 router = APIRouter(tags=["organizations"])
 
 
-DBSessionAnnotation = Annotated[db.AsyncSession, Depends(db.db_session)]
+DBSessionAnnotation = Annotated[AsyncSession, Depends(db.db_session)]
 
 if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     from pydantic import BaseModel
@@ -31,7 +32,7 @@ else:  # At runtime we derive these from the sqlalchemy mapped class
 @router.post(Endpoints.ORGANIZATIONS)  # response_model=OrganizationRead)
 async def create_organization(
     create: CreateOrganization, db_session: DBSessionAnnotation
-):
+) -> OrganizationRead:
     organization = Organization(**create.model_dump())
     db_session.add(organization)
     await db_session.flush()
@@ -39,8 +40,13 @@ async def create_organization(
 
 
 @router.get(Endpoints.ORGANIZATIONS, response_model=list[OrganizationSummary])
-async def list_organization(db_session: DBSessionAnnotation):
-    return (await db_session.execute(select(Organization))).scalars()
+async def list_organization(
+    db_session: DBSessionAnnotation,
+) -> list[OrganizationSummary]:
+    return [
+        OrganizationSummary.model_validate(org, from_attributes=True)
+        for org in (await db_session.execute(select(Organization))).scalars()
+    ]
 
 
 async def organization(
@@ -59,8 +65,8 @@ OrganizationAnnotation = Annotated[Organization, Depends(organization)]
 
 
 @router.get(Endpoints.ORGANIZATIONS_ONE, response_model=OrganizationRead)
-async def read_organization(organization: OrganizationAnnotation):
-    return organization
+async def read_organization(organization: OrganizationAnnotation) -> OrganizationRead:
+    return OrganizationRead.model_validate(organization, from_attributes=True)
 
 
 @router.put(Endpoints.ORGANIZATIONS_ONE, response_model=OrganizationRead)
@@ -68,7 +74,7 @@ async def update_organization(
     organization: OrganizationAnnotation,
     update: UpdateOrganization,
     db_session: DBSessionAnnotation,
-):
+) -> OrganizationRead:
     for k, v in update.model_dump().items():
         setattr(organization, k, v)
     await db_session.commit()
@@ -78,6 +84,6 @@ async def update_organization(
 @router.delete(Endpoints.ORGANIZATIONS_ONE)
 async def delete_organization(
     db_session: DBSessionAnnotation, organization: OrganizationAnnotation
-):
+) -> None:
     await db_session.delete(organization)
     await db_session.commit()

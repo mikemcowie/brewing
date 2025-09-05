@@ -7,9 +7,17 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, create_model
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, MappedAsDataclass, declared_attr, mapped_column
+from sqlalchemy.orm import (
+    Mapped,
+    MappedAsDataclass,
+    MappedColumn,
+    declared_attr,
+    mapped_column,
+)
 
 from project_manager import db
+
+TypeBaseModel = type[BaseModel]
 
 
 @dataclass
@@ -28,8 +36,8 @@ class Resource(MappedAsDataclass, db.Base, kw_only=True):
     updated: Mapped[datetime] = db.updated_field()
     type: Mapped[str] = mapped_column(index=True, init=False)
 
-    @declared_attr
-    def __mapper_args__(cls):  # noqa: N805
+    @declared_attr  # type: ignore
+    def __mapper_args__(cls) -> dict[str, str]:  # noqa: N805
         retval: dict[str, str] = {"polymorphic_identity": cls.__tablename__}
         if cls.__name__ == "Resource":
             retval["polymorphic_on"] = "type"
@@ -41,7 +49,7 @@ class Resource(MappedAsDataclass, db.Base, kw_only=True):
         name: str,
         excluded: Iterable[str] | None = None,
         included: Iterable[str] | None = None,
-    ):
+    ) -> TypeBaseModel:
         included = list(included) if included is not None else included
         included = included or list(cls.__annotations__.keys())
         excluded = excluded or []
@@ -74,5 +82,5 @@ class Resource(MappedAsDataclass, db.Base, kw_only=True):
         )
 
     @staticmethod
-    def primary_foreign_key_to():
+    def primary_foreign_key_to() -> MappedColumn[UUID]:
         return mapped_column(ForeignKey("resource.id"), primary_key=True, init=False)

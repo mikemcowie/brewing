@@ -1,16 +1,21 @@
-from collections.abc import Mapping
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
-from httpx import Response
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, EmailStr, SecretStr
-from pytest_subtests import SubTests
 
 from project_manager.endpoints import Endpoints
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from httpx import Response
+    from pytest_subtests import SubTests
 
 
 class UserLogin(BaseModel):
@@ -34,7 +39,7 @@ class User:
     client: TestClient
 
     @classmethod
-    def build(cls, app: FastAPI):
+    def build(cls, app: FastAPI) -> User:
         login = UserLoginFactory.build()
         register = UserRegister(email=login.username, password=login.password)
         client = TestClient(app)
@@ -49,7 +54,7 @@ class Expectations:
 
 
 class UserTestScenario:
-    def __init__(self, subtests: SubTests, app: FastAPI):
+    def __init__(self, subtests: SubTests, app: FastAPI) -> None:
         self.subtests = subtests
         self.user1, self.user2, self.bad_guy = (
             User.build(app=app),
@@ -58,13 +63,13 @@ class UserTestScenario:
         )
 
     @staticmethod
-    def validate_expectations(expectations: Expectations, result: Response):
+    def validate_expectations(expectations: Expectations, result: Response) -> Response:
         assert expectations.status == result.status_code, result.content
         assert expectations.headers.items() <= result.headers.items()
         assert expectations.json.items() <= result.json().items()
         return result
 
-    def register(self, user: User, test_name: str, expectations: Expectations):
+    def register(self, user: User, test_name: str, expectations: Expectations) -> None:
         with self.subtests.test(test_name):
             self.validate_expectations(
                 expectations,
@@ -73,7 +78,7 @@ class UserTestScenario:
                 ),
             )
 
-    def login(self, user: User, test_name: str, expectations: Expectations):
+    def login(self, user: User, test_name: str, expectations: Expectations) -> None:
         with self.subtests.test(test_name):
             result = self.validate_expectations(
                 expectations,
@@ -86,7 +91,9 @@ class UserTestScenario:
                     f"Bearer {result.json()['access_token']}"
                 )
 
-    def retrieve_profile(self, user: User, test_name: str, expectations: Expectations):
+    def retrieve_profile(
+        self, user: User, test_name: str, expectations: Expectations
+    ) -> None:
         with self.subtests.test(test_name):
             self.validate_expectations(
                 expectations, user.client.get(Endpoints.USERS_PROFILE)
@@ -94,11 +101,11 @@ class UserTestScenario:
 
 
 @pytest.fixture
-def scenario(subtests: SubTests, app: FastAPI):
+def scenario(subtests: SubTests, app: FastAPI) -> UserTestScenario:
     return UserTestScenario(subtests=subtests, app=app)
 
 
-def test_retrieve_profile_with_no_registered_user(scenario: UserTestScenario):
+def test_retrieve_profile_with_no_registered_user(scenario: UserTestScenario) -> None:
     scenario.retrieve_profile(
         scenario.user1,
         "expect-fail-if-not-logged-in",
@@ -109,7 +116,7 @@ def test_retrieve_profile_with_no_registered_user(scenario: UserTestScenario):
     )
 
 
-def test_login_without_registering(scenario: UserTestScenario):
+def test_login_without_registering(scenario: UserTestScenario) -> None:
     scenario.login(
         scenario.user1,
         "login-witout-having-registered",
@@ -120,7 +127,7 @@ def test_login_without_registering(scenario: UserTestScenario):
     )
 
 
-def test_register_login_and_profile(scenario: UserTestScenario):
+def test_register_login_and_profile(scenario: UserTestScenario) -> None:
     scenario.register(
         scenario.user1, "register", Expectations(status=status.HTTP_201_CREATED)
     )

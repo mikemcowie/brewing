@@ -21,6 +21,6 @@ class User(MappedAsDataclass, Base, kw_only=True):
     updated: Mapped[datetime] = created_field()
 
     @property
-    def username(self):
+    def username(self) -> str:
         """Username is an alias for email."""
         return self.email
