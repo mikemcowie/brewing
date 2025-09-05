@@ -8,9 +8,11 @@ They contain a set of related "views" or "endpoints"
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, Any
+
+import structlog
 
 from cauldron.http import APIRouter
 
@@ -21,6 +23,9 @@ if TYPE_CHECKING:
     UpdateResource = BaseModel
     ResourceRead = BaseModel
     ResourceSummary = BaseModel
+
+
+logger = structlog.get_logger()
 
 
 class AbstractViewSet(ABC):
@@ -40,9 +45,17 @@ class AbstractViewSet(ABC):
     def router(self) -> APIRouter:
         return self._router
 
-    @abstractmethod
     def setup_endpoints(self):
         """required method called to configure the router."""
+        for attr in dir(self):
+            item = getattr(self, attr)
+            params: dict[str, Any] = getattr(item, "_cauldron_endpoint_params", {})
+            if params:
+                logger.debug(f"Creating fastapi endpoint for {self=} {attr=} {item=}")
+                wrapper: Callable[..., Any] = getattr(
+                    self.router, params["method"].lower()
+                )
+                wrapper(params["path"], *params["args"], **params["kwargs"])(item)
 
     @abstractmethod
     def get_router_dependencies(self) -> Sequence[Any]:
