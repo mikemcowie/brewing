@@ -118,3 +118,6 @@ exclude_also = [
     'assert False',
     'pytest.fail',
 ]
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel", "sqlalchemy.orm.DeclarativeBase", "cauldron.db.base.Base"]

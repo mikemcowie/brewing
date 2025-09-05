@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Literal
+from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import DateTime, ForeignKey
@@ -15,9 +16,6 @@ from sqlalchemy.orm import (
 
 from cauldron.db.base import Base
 from cauldron.db.columns import created_field, updated_field, uuid_primary_key
-
-if TYPE_CHECKING:
-    from datetime import datetime
 
 UUID = uuid.UUID
 
