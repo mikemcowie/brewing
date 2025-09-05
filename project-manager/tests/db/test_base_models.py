@@ -3,15 +3,14 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 import pytest
+from cauldron.resources.models import (
+    Resource,
+    create_resource_cls,
+)
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_snake
 from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr
-
-from project_manager.resources.models import (
-    Resource,
-    create_resource_cls,
-)
 
 
 def create_test_resource_cls():

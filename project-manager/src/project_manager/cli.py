@@ -4,8 +4,8 @@ from typing import Annotated
 
 import typer
 import uvicorn
+from cauldron.db import Database
 
-from project_manager.db import Database
 from project_manager.logging import get_logger, setup_logging
 from project_manager.testing import (
     dev_environment,

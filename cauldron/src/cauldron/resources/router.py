@@ -1,26 +1,37 @@
 from dataclasses import make_dataclass
-from typing import Annotated
+from typing import Annotated, TYPE_CHECKING
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
 
-from project_manager import db
-from project_manager.exceptions import Unauthorized
-from project_manager.resources.models import AccessLevel, Resource, ResourceAccessItem
-from project_manager.resources.repo import (
-    CreateResource,
+from cauldron import db
+from cauldron.exceptions import Unauthorized
+from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
+from cauldron.resources.repo import (
     CrudRepository,
-    ResourceRead,
-    ResourceSummary,
-    UpdateResource,
 )
-from project_manager.users import User, user
+from cauldron.users import User, user
+
+if TYPE_CHECKING:
+    CreateResource = BaseModel
+    UpdateResource = BaseModel
+    ResourceRead = BaseModel
+    ResourceSummary = BaseModel
 
 
 def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
     router = APIRouter(tags=[model_type.plural_name], dependencies=[Depends(user)])
     path_param_name = f"{model_type.singular_name}_id"
+    if not TYPE_CHECKING:
+        # Annotions that are read by fastapi at runtime
+        # However pyright doesn't see them as valid
+        # So alternatives are defined in import block for type checker to see.
+        CreateResource = model_type.schemas().create
+        UpdateResource = model_type.schemas().update
+        ResourceRead = model_type.schemas().read
+        ResourceSummary = model_type.schemas().summary
 
     class Endpoints:
         RESOURCES = f"/{model_type.plural_name}/"

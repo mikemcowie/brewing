@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -5,15 +6,14 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from project_manager.exceptions import Forbidden, NotFound
-from project_manager.organizations.models import Organization
-from project_manager.resources.models import (
+from cauldron.exceptions import Forbidden, NotFound
+from cauldron.resources.models import (
     AccessLevel,
     Resource,
     ResourceAccess,
     ResourceAccessItem,
 )
-from project_manager.users import User
+from cauldron.users import User
 
 if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     from pydantic import BaseModel
@@ -22,11 +22,6 @@ if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     ResourceSummary = BaseModel
     CreateResource = BaseModel
     UpdateResource = BaseModel
-else:  # At runtime we derive these from the sqlalchemy mapped class
-    ResourceRead = Organization.schemas().read
-    ResourceSummary = Organization.schemas().summary
-    CreateResource = Organization.schemas().create
-    UpdateResource = Organization.schemas().update
 
 
 class CrudRepository[ModelT: Resource]:
@@ -59,11 +54,13 @@ class CrudRepository[ModelT: Resource]:
         )
         self.session.add_all((resource, access))
         await self.session.commit()
-        return ResourceRead.model_validate(resource, from_attributes=True)
+        return self.db_model.schemas().read.model_validate(
+            resource, from_attributes=True
+        )
 
     async def list_resources(self):
         return [
-            ResourceSummary.model_validate(resource, from_attributes=True)
+            self.db_model.schemas().read.model_validate(resource, from_attributes=True)
             for resource in (await self.session.execute(self.base_query)).scalars()
         ]
 
@@ -100,7 +97,9 @@ class CrudRepository[ModelT: Resource]:
         for k, v in update.model_dump().items():
             setattr(resource, k, v)
         await self.session.commit()
-        return ResourceRead.model_validate(resource, from_attributes=True)
+        return self.db_model.schemas().read.model_validate(
+            resource, from_attributes=True
+        )
 
     async def delete(self, resource_id: UUID):
         resource = await self.get(resource_id)

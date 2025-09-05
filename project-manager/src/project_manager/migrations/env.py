@@ -10,7 +10,7 @@ def run_migrations_online() -> None:
     """
     # late import to avoid circular import
 
-    from project_manager.db import Base, Database  # noqa: PLC0415
+    from cauldron.db import Base, Database  # noqa: PLC0415
 
     with Database().sync_engine.connect() as connection:
         context.configure(connection=connection, target_metadata=Base.metadata)

@@ -40,7 +40,7 @@ def testcontainer_postgresql() -> Generator[None]:
         yield
 
 
-COMPOSE_FILE = Path(__file__).parents[2] / "compose.yaml"
+COMPOSE_FILE = Path(__file__).parents[3] / "compose.yaml"
 
 
 def dev_environment() -> None:  # pragma: no cover

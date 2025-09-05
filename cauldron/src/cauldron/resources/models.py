@@ -18,8 +18,8 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from project_manager import db
-from project_manager.users import User
+from cauldron import db
+from cauldron.users import User
 
 TypeBaseModel = type[BaseModel]
 

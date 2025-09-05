@@ -22,14 +22,14 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from project_manager.db import (
+from cauldron.db import (
     Base,
     created_field,
     db_session,
     updated_field,
     uuid_primary_key,
 )
-from project_manager.exceptions import DomainError, Unauthorized
+from cauldron.exceptions import DomainError, Unauthorized
 from project_manager.settings import Settings
 
 if TYPE_CHECKING:

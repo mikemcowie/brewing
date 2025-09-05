@@ -1,6 +1,5 @@
 import pytest
-
-from project_manager.resources import models, repo
+from cauldron.resources import models, repo
 
 
 def test_cannot_instantiate_unspecialized_repo():

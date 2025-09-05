@@ -1,0 +1,121 @@
+[project]
+name = "project-manager"
+version = "0.0.1"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "cauldron",
+]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.9.1",
+    "hatch>=1.14.1",
+    "hatchling>=1.27.0",
+    "ipython>=9.3.0",
+    "polyfactory>=2.21.0",
+    "pyright>=1.1.403",
+    "pytest>=8.4.1",
+    "pytest-alembic>=0.12.1",
+    "pytest-cov>=6.2.1",
+    "pytest-html>=4.1.1",
+    "pytest-subtests>=0.14.2",
+    "ruff>=0.12.0",
+    "testcontainers>=4.10.0",
+    "types-passlib>=1.7.7.20250602",
+]
+
+
+
+[project.scripts]
+project-manager = "project_manager.cli:cli"
+dev = "project_manager.cli:dev"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff.format]
+docstring-code-format = true
+line-ending = "lf"
+
+[tool.ruff.lint]
+extend-select = [
+    "A",
+    "B",
+    "Q",
+    "C4",
+    "DTZ",
+    "FIX",
+    "ISC",
+    "ICN",
+    "LOG",
+    "T",
+    "PT",
+    "SLF",
+    "SIM",
+    "TID",
+    "ARG",
+    "PTH",
+    "I",
+    "C90",
+    "N",
+    "UP",
+    "FURB",
+    "RUF",
+    "TRY",
+    "TC",
+    "PERF",
+    "PL",
+    "UP",
+    ]
+extend-ignore = [
+    "A002",
+    "TRY003", # disagree about error message length
+    "N818", # disagree about error naming
+    "PLC0414",
+    "RUF009",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "ARG001", # pytest fixtures may cause unused function args to be valid
+    "PLR2004" # magic values are reasonable in tests
+    ]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib --cov-report=html --cov-report=term --cov=. --cov-fail-under=90 --cov-context=test --cov-branch --html=testreport/index.html"
+python_files = [
+    "test_*.py",
+    "*_test.py",
+    "feat_*.py",
+]
+
+[tool.coverage.run]
+concurrency = ["thread", "greenlet"]
+
+[tool.coverage.report]
+omit = [
+    "src/openlms/_version.py"
+]
+exclude_also = [
+    'def __repr__',
+    'if self.debug:',
+    'if settings.DEBUG',
+    'raise AssertionError',
+    'raise NotImplementedError',
+    'if 0:',
+    'if __name__ == .__main__.:',
+    'if TYPE_CHECKING:',
+    'class .*\bProtocol\):',
+    '@(abc\.)?abstractmethod',
+    'assert False',
+    'pytest.fail',
+]
+
+[tool.uv.sources]
+cauldron = { workspace = true }
