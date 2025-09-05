@@ -29,8 +29,8 @@ else:  # At runtime we derive these from the sqlalchemy mapped class
     UpdateResource = Organization.schemas().update
 
 
-class OrganizationRepository:
-    db_model: type[Resource] = Organization
+class ResourceRepository[ModelT: Resource]:
+    db_model: type[ModelT]
 
     def __init__(self, session: AsyncSession, user: User):
         self.session = session
@@ -64,9 +64,9 @@ class OrganizationRepository:
         query = self.base_query.where(self.db_model.id == resource_id).where(
             ResourceAccess.user_id == self.user.id
         )
-        if org := (await self.session.execute(query)).scalar_one_or_none():
+        if resource := (await self.session.execute(query)).scalar_one_or_none():
             if access_level == AccessLevel.reader:
-                return org
+                return resource
             if access_level == AccessLevel.contributor:
                 query = query.where(
                     ResourceAccess.access.in_(
@@ -75,77 +75,73 @@ class OrganizationRepository:
                 )
             if access_level == AccessLevel.owner:
                 query = query.where(ResourceAccess.access == AccessLevel.owner)
-            second_org_result = (await self.session.execute(query)).scalar_one_or_none()
-            if second_org_result:
-                return second_org_result
+            second_resource = (await self.session.execute(query)).scalar_one_or_none()
+            if second_resource:
+                return second_resource
             raise Forbidden()
 
         raise NotFound(detail=f"{resource_id=!s} not found.")
 
     async def update(
         self,
-        organization_id: UUID,
+        resource_id: UUID,
         update: UpdateResource,
     ) -> ResourceRead:
-        organization = await self.get(
-            organization_id, access_level=AccessLevel.contributor
-        )
+        resource = await self.get(resource_id, access_level=AccessLevel.contributor)
         for k, v in update.model_dump().items():
-            setattr(organization, k, v)
+            setattr(resource, k, v)
         await self.session.commit()
-        return ResourceRead.model_validate(organization, from_attributes=True)
+        return ResourceRead.model_validate(resource, from_attributes=True)
 
-    async def delete(self, organization_id: UUID):
-        org = await self.get(organization_id)
-        org.deleted = datetime.now(UTC)
+    async def delete(self, resource_id: UUID):
+        resource = await self.get(resource_id)
+        resource.deleted = datetime.now(UTC)
         await self.session.commit()
 
     def _base_access_query(
-        self, organization_id: UUID | None = None, user_id: UUID | None = None
+        self, resource_id: UUID | None = None, user_id: UUID | None = None
     ):
         q = select(ResourceAccess)
-        if organization_id:
-            q = q.where(ResourceAccess.resource_id == organization_id)
+        if resource_id:
+            q = q.where(ResourceAccess.resource_id == resource_id)
         if user_id:
             q = q.where(ResourceAccess.user_id == user_id)
         return q
 
-    async def get_access(self, organization_id: UUID):
+    async def get_access(self, resource_id: UUID):
         return [
             ResourceAccessItem.model_validate(a, from_attributes=True)
             for a in (
                 await self.session.execute(
-                    self._base_access_query(organization_id=organization_id)
+                    self._base_access_query(resource_id=resource_id)
                 )
             )
             .scalars()
             .all()
         ]
 
-    async def get_access_one(self, organization_id: UUID, user_id: UUID):
+    async def get_access_one(self, resource_id: UUID, user_id: UUID):
         resource = (
             (
                 await self.session.execute(
-                    self._base_access_query(
-                        organization_id=organization_id, user_id=user_id
-                    )
+                    self._base_access_query(resource_id=resource_id, user_id=user_id)
                 )
             )
             .scalars()
             .one_or_none()
         )
         if not resource:
-            raise NotFound(f"no access found for {organization_id=}, {user_id=}")
+            raise NotFound(f"no access found for {resource_id=}, {user_id=}")
         return ResourceAccessItem.model_validate(
             resource,
             from_attributes=True,
         )
 
-    async def set_access(self, organization_id: UUID, access: list[ResourceAccessItem]):
+    async def set_access(self, resource_id: UUID, access: list[ResourceAccessItem]):
         current_access = (
             (
                 await self.session.execute(
-                    self._base_access_query(organization_id=organization_id).where(
+                    self._base_access_query(resource_id=resource_id).where(
                         ResourceAccess.user_id.in_([a.user_id for a in access])
                     )
                 )
@@ -160,10 +156,14 @@ class OrganizationRepository:
             else:
                 self.session.add(
                     ResourceAccess(
-                        resource_id=organization_id,
+                        resource_id=resource_id,
                         access=access_item.access,
                         user_id=access_item.user_id,
                     )
                 )
         await self.session.commit()
-        return await self.get_access(organization_id=organization_id)
+        return await self.get_access(resource_id=resource_id)
+
+
+class OrganizationRepository(ResourceRepository[Organization]):
+    db_model = Organization

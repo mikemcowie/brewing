@@ -32,7 +32,7 @@ async def access_level(
     repo: Annotated[OrganizationRepository, Depends(repo)], organization_id: UUID
 ) -> AccessLevel:
     return (
-        await repo.get_access_one(organization_id=organization_id, user_id=repo.user.id)
+        await repo.get_access_one(resource_id=organization_id, user_id=repo.user.id)
     ).access
 
 
