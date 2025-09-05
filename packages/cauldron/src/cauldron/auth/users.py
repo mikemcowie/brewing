@@ -33,19 +33,21 @@ TOKEN_BYTES = 48
 class UserRepo:
     def __init__(self, session: AsyncSession):
         self._session = session
-        self._password_context = CryptContext(schemes=["argon2"], deprecated="auto")
+
+    async def flush(self):
+        await self._session.flush()
+
+    async def commit(self):
+        await self._session.commit()
 
     async def validated(self, token: str) -> UserSession | None:
-        user_session = (
+        return (
             await self._session.execute(
                 select(UserSession)
                 .where(UserSession.id == hashlib.sha512(token.encode()).hexdigest())
                 .where(UserSession.expires > datetime.now(UTC))
             )
         ).scalar_one_or_none()
-        if not user_session:
-            return None
-        return user_session
 
     async def authenticated_user(self, token: str | None) -> User | None:
         if not token:
@@ -54,38 +56,15 @@ class UserRepo:
             return user_session.user
         raise InvalidToken(detail="invalid token")
 
-    async def authorize(self, username: str, password: str):
-        user = (
+    async def user_from_email(self, username: str) -> User | None:
+        return (
             await self._session.execute(select(User).where(User.email == username))
         ).scalar_one_or_none()
-        if (
-            user is None
-            or not user.password_hash
-            or not self._password_context.verify(password, user.password_hash)
-        ):
-            raise Unauthorized("incorrect username or password")
-        # password has been validated, so from here we are just constrcting a user session,
-        # flushing to the database, and returning the token
-        token = base64.b64encode(token_bytes(TOKEN_BYTES)).decode()
-        user_session = UserSession(
-            id=hashlib.sha512(token.encode()).hexdigest(),
-            user=user,
-            expires=datetime.now(UTC) + timedelta(ACCESS_TOKEN_EXPIRE_MINUTES),
-        )
-        self._session.add(user_session)
-        self._session.add(user)
-        await self._session.flush()
-        await self._session.commit()
-        return Token(access_token=token)
 
-    async def create_user(self, new_user: UserRegister) -> User:
-        async with self._session.begin():
-            user = User(**new_user.model_dump())
-            user.password_hash = self._password_context.hash(user.password)
-            user.password = ""  # forget the actual password.
-            self._session.add(user)
+    async def add(self, item: UserSession | User, flush: bool = False):
+        self._session.add(item)
+        if flush:
             await self._session.flush()
-            return user
 
 
 @dataclass
@@ -101,6 +80,7 @@ class UserService[RepoT: UserRepo, AuthConfigT: AuthConfig]:
     def __init__(self, session: AsyncSession):
         self._config = self.auth_config()
         self._repo = self.repo_type(session)
+        self._password_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
     @cached_property
     def oauth_scheme(self):
@@ -118,14 +98,34 @@ class UserService[RepoT: UserRepo, AuthConfigT: AuthConfig]:
         return user
 
     async def authorize(self, form: OAuth2PasswordRequestForm):
-        return await self._repo.authorize(
-            username=form.username, password=form.password
+        username, password = form.username, form.password
+        user = await self._repo.user_from_email(username)
+        if (
+            user is None
+            or not user.password_hash
+            or not self._password_context.verify(password, user.password_hash)
+        ):
+            raise Unauthorized("incorrect username or password")
+        # password has been validated, so from here we are just constrcting a user session,
+        # flushing to the database, and returning the token
+        token = base64.b64encode(token_bytes(TOKEN_BYTES)).decode()
+        await self._repo.add(
+            UserSession(
+                id=hashlib.sha512(token.encode()).hexdigest(),
+                user=user,
+                expires=datetime.now(UTC) + timedelta(ACCESS_TOKEN_EXPIRE_MINUTES),
+            )
         )
+        await self._repo.commit()
+        return Token(access_token=token)
 
-    async def register(self, user: UserRegister):
-        return UserRead.model_validate(
-            await self._repo.create_user(user), from_attributes=True
-        )
+    async def register(self, new_user: UserRegister):
+        user = User(**new_user.model_dump())
+        user.password_hash = self._password_context.hash(user.password)
+        user.password = ""  # forget the actual password.
+        await self._repo.add(user)
+        await self._repo.commit()
+        return UserRead.model_validate(user, from_attributes=True)
 
 
 async def service(db_session: Annotated[AsyncSession, Depends(db_session)]):
