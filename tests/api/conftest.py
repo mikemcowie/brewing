@@ -2,7 +2,7 @@ import pytest
 from fastapi import FastAPI
 from pytest_subtests import SubTests
 
-from tests.api.scenario import UserTestScenario
+from tests.api.test_user import UserTestScenario
 
 
 @pytest.fixture

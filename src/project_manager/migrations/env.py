@@ -12,15 +12,14 @@ def run_migrations_online() -> None:
 
     from project_manager.db import Base, Database  # noqa: PLC0415
 
-    db = Database()
-    with db.sync_engine.connect() as connection:
+    with Database().sync_engine.connect() as connection:
         context.configure(connection=connection, target_metadata=Base.metadata)
 
         with context.begin_transaction():
             context.run_migrations()
 
 
-if context.is_offline_mode():
-    raise NotADirectoryError()
+if context.is_offline_mode():  # pragma: no cover
+    raise NotImplementedError()
 else:
     run_migrations_online()

@@ -48,9 +48,9 @@ class UserAuth:
         return result
 
     def username_from_token(self) -> str:
-        if username := self.jwt_payload().get("sub"):
+        if username := self.jwt_payload().get("sub"):  # pragma: no branch
             return username
-        raise ValueError()
+        raise ValueError("sub not found in token")  # pragma: no cover
 
     async def user_from_db(self, user: str) -> User:
         result = (

@@ -39,7 +39,7 @@ def testcontainer_postgresql() -> Generator[None]:
 COMPOSE_FILE = Path(__file__).parents[2] / "compose.yaml"
 
 
-def dev_environment() -> None:
+def dev_environment() -> None:  # pragma: no cover
     compose_data = yaml.load(COMPOSE_FILE.read_text(), yaml.SafeLoader)
     os.environ["PGPASSWORD"] = compose_data["services"]["db"]["environment"][
         "POSTGRES_PASSWORD"
@@ -57,7 +57,7 @@ def dev_environment() -> None:
         executor.submit(run_compose)
 
 
-def run_compose() -> None:
+def run_compose() -> None:  # pragma: no cover
     subprocess.run(
         ["docker", "compose", "up", "-d"], check=False, cwd=COMPOSE_FILE.parent
     )

@@ -1,8 +1,56 @@
 from __future__ import annotations
 
-from fastapi import status
+from typing import TYPE_CHECKING
 
-from tests.api.scenario import Expectations, UserTestScenario
+import pytest
+from fastapi import FastAPI, status
+from pydantic import SecretStr
+
+from project_manager.endpoints import Endpoints
+from tests.api.scenario import Expectations, TestScenario, User
+
+if TYPE_CHECKING:
+    from pytest_subtests import SubTests
+
+
+class UserTestScenario(TestScenario):
+    def register(self, user: User, test_name: str, expectations: Expectations) -> None:
+        with self.subtests.test(test_name):
+            self.validate_expectations(
+                expectations,
+                user.client.post(
+                    Endpoints.USERS_REGISTER,
+                    json=user.register.model_dump(mode="json")
+                    | {"password": user.register.password.get_secret_value()},
+                ),
+            )
+
+    def login(self, user: User, test_name: str, expectations: Expectations) -> None:
+        with self.subtests.test(test_name):
+            payload = user.login.model_dump(mode="json") | {
+                "password": user.login.password.get_secret_value()
+            }
+            result = self.validate_expectations(
+                expectations,
+                user.client.post(Endpoints.USERS_LOGIN, data=payload),
+            )
+            if result.status_code == status.HTTP_200_OK:
+                user.client.headers["authorization"] = (
+                    f"Bearer {result.json()['access_token']}"
+                )
+
+    def retrieve_profile(
+        self, user: User, test_name: str, expectations: Expectations
+    ) -> None:
+        with self.subtests.test(test_name):
+            self.validate_expectations(
+                expectations, user.client.get(Endpoints.USERS_PROFILE)
+            )
+
+
+@pytest.fixture
+def scenario(subtests: SubTests, app: FastAPI) -> UserTestScenario:
+    return UserTestScenario(subtests=subtests, app=app)
 
 
 def test_retrieve_profile_with_no_registered_user(scenario: UserTestScenario) -> None:
@@ -42,5 +90,20 @@ def test_register_login_and_profile(scenario: UserTestScenario) -> None:
         test_name="retrieve-profile",
         expectations=Expectations(
             status=status.HTTP_200_OK, json={"email": scenario.user1.login.username}
+        ),
+    )
+
+
+def test_login_with_wrong_password(scenario: UserTestScenario) -> None:
+    scenario.register(
+        scenario.user1, "register", Expectations(status=status.HTTP_201_CREATED)
+    )
+    scenario.user1.login.password = SecretStr("WRONG-PASSWORD")
+    scenario.login(
+        scenario.user1,
+        test_name="wrong-password",
+        expectations=Expectations(
+            status=status.HTTP_401_UNAUTHORIZED,
+            json={"detail": "incorrect username or password"},
         ),
     )

@@ -20,7 +20,7 @@ cli.add_typer(db, name="db")
 dev.add_typer(dev_db, name="db")
 
 
-API = "project_manager.api:api"
+API = "project_manager.api:dev_api"
 
 
 @cli.command(name="api")

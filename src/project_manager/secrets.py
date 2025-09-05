@@ -7,6 +7,4 @@ if TYPE_CHECKING:
 
 
 def secret_value(value: str | SecretStr) -> str:
-    if isinstance(value, str):
-        return value
-    return value.get_secret_value()
+    return value if isinstance(value, str) else value.get_secret_value()
