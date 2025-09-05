@@ -66,7 +66,7 @@ class TestScenario:
     @staticmethod
     def validate_expectations(expectations: Expectations, result: Response) -> Response:
         assert expectations.status == result.status_code, result.content
-        if expectations.headers:
+        if expectations.headers:  # pragma: no cvoer
             assert expectations.headers.items() <= result.headers.items()
         if expectations.json:
             assert expectations.json.items() <= result.json().items()
