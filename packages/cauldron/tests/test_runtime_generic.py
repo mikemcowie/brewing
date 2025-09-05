@@ -19,19 +19,6 @@ class GenericThing[ModelT: Someclass]:
     generic_type: type[ModelT]
 
 
-def test_runtime_generic_decorator():
-    assert GenericThing[Someclass]().generic_type is Someclass, GenericThing[
-        Someclass
-    ]().generic_type
-    assert GenericThing[SomeSubClass]().generic_type is SomeSubClass, (
-        "failed to create correct concrete subclass"
-    )
-    assert GenericThing[Someclass] is GenericThing[Someclass], (
-        "subsequent calls should be cached"
-    )
-    assert GenericThing[SomeSubClass]().generic_type.extra_attribute == "foo"
-
-
 @runtime_generic
 class HasOneParam[T1]:
     t1: type[T1]
@@ -60,6 +47,24 @@ class B:
 
 class C:
     pass
+
+
+def test_adds_expected_attribute():
+    assert GenericThing[Someclass]().generic_type is Someclass, GenericThing[
+        Someclass
+    ]().generic_type
+    assert GenericThing[SomeSubClass]().generic_type is SomeSubClass, (
+        "failed to create correct concrete subclass"
+    )
+
+
+def test_cache():
+    assert GenericThing[Someclass] is GenericThing[Someclass], (
+        "subsequent calls should be cached"
+    )
+    assert GenericThing[Someclass] is not GenericThing[SomeSubClass], (
+        "different params should return different instances."
+    )
 
 
 def test_multiple_params():
