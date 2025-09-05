@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any
 
-from cauldron.http import CauldronHTTP
+from cauldron.http import CauldronHTTP, Depends
 from cauldron.http.viewset import (
     AbstractViewSet,
     APIPathConstant,
@@ -61,8 +61,25 @@ def test_http_response():
             return [Thing(name="thing1", is_large=large)]
 
     app = CauldronHTTP()
-    app.include_router(ViewSet().router)
+    app.include_viewset(ViewSet())
     client = TestClient(app)
     result = client.get("/")
     assert result.status_code == 200
     assert result.json() == [{"name": "thing1", "is_large": False}]
+
+
+def test_depends():
+    class ViewSet(ConcreteViewSet):
+        async def message(self):
+            return "something"
+
+        @collection.GET(status_code=200)
+        async def give_message(self, message: Annotated[str, Depends(message)]):
+            return message
+
+    app = CauldronHTTP()
+    app.include_viewset(ViewSet())
+    client = TestClient(app)
+    result = client.get("/")
+    assert result.status_code == 200, result.content
+    assert result.content == b'"something"'

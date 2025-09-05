@@ -161,6 +161,7 @@ class AbstractViewSet(ABC):
         self._router = APIRouter(
             tags=self.get_router_tags(), dependencies=self.get_router_dependencies()
         )
+        self._router.dependency_overrides_provider = {}
         self.setup_endpoints()
 
     @property
