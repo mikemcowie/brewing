@@ -101,12 +101,12 @@ class User(MappedAsDataclass, Base, kw_only=True):
         return Token(access_token=token)
 
     @classmethod
-    async def create_user(cls, session: AsyncSession, user: UserRegister) -> UserRead:
+    async def create_user(cls, session: AsyncSession, new_user: UserRegister) -> User:
         async with session.begin():
-            db_user = User(**user.model_dump())
-            session.add(db_user)
+            user = User(**new_user.model_dump())
+            session.add(user)
             await session.flush()
-            return UserRead.model_validate(db_user, from_attributes=True)
+            return user
 
 
 class UserSession(MappedAsDataclass, Base, kw_only=True):
@@ -198,4 +198,6 @@ async def register(
     user: UserRegister,
     db_session: Annotated[AsyncSession, Depends(db_session)],
 ) -> UserRead:
-    return await User.create_user(db_session, user)
+    return UserRead.model_validate(
+        await User.create_user(db_session, user), from_attributes=True
+    )
