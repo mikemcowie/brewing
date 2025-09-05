@@ -56,7 +56,15 @@ class AccessLevel(StrEnum):
         return self.is_contributor() or self == self.__class__.reader
 
 
-class Resource(MappedAsDataclass, db.Base, kw_only=True):
+class ResourceAttributes:
+    """Attributes for the resource model.
+
+    Implemtned as a separate class so inheritence can be used to create test versions
+    of the Resource class with different metada.
+    """
+
+    __tablename__: ClassVar[str]
+    __dataclass_fields__: ClassVar[list[str]]
     read_only_fields: ClassVar[tuple[str, ...]] = ("id", "created", "updated", "type")
     summary_fields: ClassVar[tuple[str, ...]] = ("id", "type")
     id: Mapped[UUID] = db.uuid_primary_key()
@@ -68,7 +76,7 @@ class Resource(MappedAsDataclass, db.Base, kw_only=True):
     @declared_attr  # type: ignore
     def __mapper_args__(cls) -> dict[str, str]:  # noqa: N805
         retval: dict[str, str] = {"polymorphic_identity": cls.__tablename__}
-        if cls.__name__ == "Resource":
+        if cls.__name__ == "Resource":  # type: ignore
             retval["polymorphic_on"] = "type"
         return retval
 
@@ -131,9 +139,26 @@ class Resource(MappedAsDataclass, db.Base, kw_only=True):
             update=update,
         )
 
-    @staticmethod
-    def primary_foreign_key_to(*, init: bool) -> MappedColumn[UUID]:
-        return mapped_column(ForeignKey("resource.id"), primary_key=True, init=init)
+    @classmethod
+    def primary_foreign_key_to(cls, *, init: bool) -> MappedColumn[UUID]:
+        return mapped_column(
+            ForeignKey(f"{cls.__tablename__}.id"), primary_key=True, init=init
+        )
+
+
+def create_resource_cls(base: type[db.Base]) -> type["Resource"]:
+    class Resource(MappedAsDataclass, base, ResourceAttributes, kw_only=True):
+        pass
+
+    return Resource  # type: ignore
+
+
+if TYPE_CHECKING:
+
+    class Resource(MappedAsDataclass, db.Base, ResourceAttributes, kw_only=True):
+        """Shared attribute DB model/table"""
+else:
+    Resource = create_resource_cls(db.Base)
 
 
 class ResourceAccess(MappedAsDataclass, db.Base, kw_only=True):
