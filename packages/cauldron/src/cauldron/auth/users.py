@@ -8,8 +8,8 @@ from functools import cached_property
 from secrets import token_bytes
 from typing import TYPE_CHECKING, Annotated
 
+from cauldronlib.generic import runtime_generic
 from passlib.context import CryptContext
-from runtime_generic import runtime_generic
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cauldron.auth.exceptions import InvalidToken

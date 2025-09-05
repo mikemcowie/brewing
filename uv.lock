@@ -10,8 +10,8 @@ resolution-markers = [
 members = [
     "cauldron",
     "cauldron-uv-workspace",
+    "cauldronlib-generic",
     "project-manager",
-    "runtime-generic",
 ]
 
 [[package]]
@@ -145,6 +145,7 @@ version = "0.0.1"
 source = { editable = "packages/cauldron" }
 dependencies = [
     { name = "alembic" },
+    { name = "cauldronlib-generic" },
     { name = "cryptography" },
     { name = "fastapi", extra = ["standard"] },
     { name = "passlib", extra = ["argon2"] },
@@ -153,7 +154,6 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyjwt" },
     { name = "pyyaml" },
-    { name = "runtime-generic" },
     { name = "sqlalchemy" },
     { name = "structlog" },
     { name = "typer" },
@@ -163,6 +163,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.16.2" },
+    { name = "cauldronlib-generic", editable = "libs/generic" },
     { name = "cryptography", specifier = ">=45.0.5" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.13" },
     { name = "passlib", extras = ["argon2"], specifier = ">=1.7.4" },
@@ -171,7 +172,6 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.9.1" },
     { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "runtime-generic", editable = "cauldronlib/runtime-generic" },
     { name = "sqlalchemy", specifier = ">=2.0.41" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "typer", specifier = ">=0.16.0" },
@@ -184,8 +184,8 @@ version = "0.0.1"
 source = { virtual = "." }
 dependencies = [
     { name = "cauldron" },
+    { name = "cauldronlib-generic" },
     { name = "project-manager" },
-    { name = "runtime-generic" },
 ]
 
 [package.dev-dependencies]
@@ -209,8 +209,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cauldron", editable = "packages/cauldron" },
+    { name = "cauldronlib-generic", editable = "libs/generic" },
     { name = "project-manager", editable = "packages/project-manager" },
-    { name = "runtime-generic", editable = "cauldronlib/runtime-generic" },
 ]
 
 [package.metadata.requires-dev]
@@ -230,6 +230,11 @@ dev = [
     { name = "testcontainers", specifier = ">=4.10.0" },
     { name = "types-passlib", specifier = ">=1.7.7.20250602" },
 ]
+
+[[package]]
+name = "cauldronlib-generic"
+version = "0.1.0"
+source = { editable = "libs/generic" }
 
 [[package]]
 name = "certifi"
@@ -1404,11 +1409,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/08/a5/34276984705bfe069cd383101c45077ee029c3fe3b28225bf67aa35f0647/ruff-0.12.11-py3-none-win_amd64.whl", hash = "sha256:a3283325960307915b6deb3576b96919ee89432ebd9c48771ca12ee8afe4a0fd", size = 13046600, upload-time = "2025-08-28T13:59:04.751Z" },
     { url = "https://files.pythonhosted.org/packages/84/a8/001d4a7c2b37623a3fd7463208267fb906df40ff31db496157549cfd6e72/ruff-0.12.11-py3-none-win_arm64.whl", hash = "sha256:bae4d6e6a2676f8fb0f98b74594a048bae1b944aab17e9f5d504062303c6dbea", size = 12135290, upload-time = "2025-08-28T13:59:06.933Z" },
 ]
-
-[[package]]
-name = "runtime-generic"
-version = "0.1.0"
-source = { editable = "cauldronlib/runtime-generic" }
 
 [[package]]
 name = "secretstorage"

@@ -7,19 +7,19 @@ requires-python = ">=3.13"
 dependencies = [
     "cauldron",
     "project-manager",
-    "runtime-generic"
+    "cauldronlib-generic",
 ]
 
 [tool.uv.workspace]
 members = [
     "packages/*",
-    "cauldronlib/*",
+    "libs/*",
 ]
 
 [tool.uv.sources]
 project-manager = { workspace = true }
 cauldron = { workspace = true }
-runtime-generic = { workspace = true }
+cauldronlib-generic = { workspace = true }
 
 [dependency-groups]
 dev = [

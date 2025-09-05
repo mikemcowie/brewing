@@ -4,8 +4,8 @@ from enum import Enum
 from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
+from cauldronlib.generic import runtime_generic
 from pydantic import BaseModel
-from runtime_generic import runtime_generic
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cauldron.auth.models import User

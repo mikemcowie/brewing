@@ -5,7 +5,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from runtime_generic import runtime_generic
+from cauldronlib.generic import runtime_generic
 from starlette.staticfiles import StaticFiles
 
 from cauldron import root_router
