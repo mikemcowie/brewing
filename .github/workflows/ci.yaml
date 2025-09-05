@@ -1,0 +1,21 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+
+      - name: run pre-commit
+        run: uv run pre-commit run --all-files
+
+      - name: run pytest
+        run: uv run pytest
