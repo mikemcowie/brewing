@@ -8,11 +8,11 @@ from project_manager import db
 from project_manager.endpoints import Endpoints
 from project_manager.exceptions import Unauthorized
 from project_manager.organizations.repo import (
-    CreateOrganization,
-    OrganizationRead,
+    CreateResource,
     OrganizationRepository,
-    OrganizationSummary,
-    UpdateOrganization,
+    ResourceRead,
+    ResourceSummary,
+    UpdateResource,
 )
 from project_manager.resources.models import AccessLevel, ResourceAccessItem
 from project_manager.users.models import User
@@ -61,44 +61,44 @@ async def access_org_reader(
 @router.post(
     Endpoints.ORGANIZATIONS,
     status_code=status.HTTP_201_CREATED,
-    response_model=OrganizationRead,
+    response_model=ResourceRead,
 )
 async def create_organization(
-    create: CreateOrganization, repo: Annotated[OrganizationRepository, Depends(repo)]
-) -> OrganizationRead:
+    create: CreateResource, repo: Annotated[OrganizationRepository, Depends(repo)]
+) -> ResourceRead:
     return await repo.create(create)
 
 
-@router.get(Endpoints.ORGANIZATIONS, response_model=list[OrganizationSummary])
+@router.get(Endpoints.ORGANIZATIONS, response_model=list[ResourceSummary])
 async def list_organization(
     repo: Annotated[OrganizationRepository, Depends(repo)],
-) -> list[OrganizationSummary]:
+) -> list[ResourceSummary]:
     return await repo.list_resources()
 
 
 @router.get(
     Endpoints.ORGANIZATIONS_ONE,
-    response_model=OrganizationRead,
+    response_model=ResourceRead,
     dependencies=[Depends(access_org_reader)],
 )
 async def read_organization(
     organization_id: UUID, repo: Annotated[OrganizationRepository, Depends(repo)]
-) -> OrganizationRead:
-    return OrganizationRead.model_validate(
+) -> ResourceRead:
+    return ResourceRead.model_validate(
         await repo.get(organization_id), from_attributes=True
     )
 
 
 @router.put(
     Endpoints.ORGANIZATIONS_ONE,
-    response_model=OrganizationRead,
+    response_model=ResourceRead,
     dependencies=[Depends(access_org_contributor)],
 )
 async def update_organization(
     organization_id: UUID,
-    update: UpdateOrganization,
+    update: UpdateResource,
     repo: Annotated[OrganizationRepository, Depends(repo)],
-) -> OrganizationRead:
+) -> ResourceRead:
     return await repo.update(organization_id, update)
 
 

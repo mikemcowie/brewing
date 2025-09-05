@@ -9,6 +9,7 @@ from project_manager.exceptions import Forbidden, NotFound
 from project_manager.organizations.models import Organization
 from project_manager.resources.models import (
     AccessLevel,
+    Resource,
     ResourceAccess,
     ResourceAccessItem,
 )
@@ -17,48 +18,50 @@ from project_manager.users.models import User
 if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     from pydantic import BaseModel
 
-    OrganizationRead = BaseModel
-    OrganizationSummary = BaseModel
-    CreateOrganization = BaseModel
-    UpdateOrganization = BaseModel
+    ResourceRead = BaseModel
+    ResourceSummary = BaseModel
+    CreateResource = BaseModel
+    UpdateResource = BaseModel
 else:  # At runtime we derive these from the sqlalchemy mapped class
-    OrganizationRead = Organization.schemas().read
-    OrganizationSummary = Organization.schemas().summary
-    CreateOrganization = Organization.schemas().create
-    UpdateOrganization = Organization.schemas().update
+    ResourceRead = Organization.schemas().read
+    ResourceSummary = Organization.schemas().summary
+    CreateResource = Organization.schemas().create
+    UpdateResource = Organization.schemas().update
 
 
 class OrganizationRepository:
+    db_model: type[Resource] = Organization
+
     def __init__(self, session: AsyncSession, user: User):
         self.session = session
         self.user = user
         self.base_query = (
-            select(Organization)
-            .where(Organization.deleted == None)  # noqa: E711
+            select(self.db_model)
+            .where(self.db_model.deleted == None)  # noqa: E711
             .join(ResourceAccess)
         )
 
-    async def create(self, new_organization: CreateOrganization):
-        organization = Organization(**new_organization.model_dump())
-        self.session.add(organization)
+    async def create(self, new_resource: CreateResource):
+        resource = self.db_model(**new_resource.model_dump())
+        self.session.add(resource)
         await self.session.flush()
         access = ResourceAccess(
-            resource_id=organization.id, user_id=self.user.id, access=AccessLevel.owner
+            resource_id=resource.id, user_id=self.user.id, access=AccessLevel.owner
         )
-        self.session.add_all((organization, access))
+        self.session.add_all((resource, access))
         await self.session.commit()
-        return OrganizationRead.model_validate(organization, from_attributes=True)
+        return ResourceRead.model_validate(resource, from_attributes=True)
 
     async def list_resources(self):
         return [
-            OrganizationSummary.model_validate(org, from_attributes=True)
-            for org in (await self.session.execute(self.base_query)).scalars()
+            ResourceSummary.model_validate(resource, from_attributes=True)
+            for resource in (await self.session.execute(self.base_query)).scalars()
         ]
 
     async def get(
-        self, organization_id: UUID, access_level: AccessLevel = AccessLevel.reader
+        self, resource_id: UUID, access_level: AccessLevel = AccessLevel.reader
     ):
-        query = self.base_query.where(Organization.id == organization_id).where(
+        query = self.base_query.where(self.db_model.id == resource_id).where(
             ResourceAccess.user_id == self.user.id
         )
         if org := (await self.session.execute(query)).scalar_one_or_none():
@@ -77,20 +80,20 @@ class OrganizationRepository:
                 return second_org_result
             raise Forbidden()
 
-        raise NotFound(detail=f"{organization_id=!s} not found.")
+        raise NotFound(detail=f"{resource_id=!s} not found.")
 
     async def update(
         self,
         organization_id: UUID,
-        update: UpdateOrganization,
-    ) -> OrganizationRead:
+        update: UpdateResource,
+    ) -> ResourceRead:
         organization = await self.get(
             organization_id, access_level=AccessLevel.contributor
         )
         for k, v in update.model_dump().items():
             setattr(organization, k, v)
         await self.session.commit()
-        return OrganizationRead.model_validate(organization, from_attributes=True)
+        return ResourceRead.model_validate(organization, from_attributes=True)
 
     async def delete(self, organization_id: UUID):
         org = await self.get(organization_id)
