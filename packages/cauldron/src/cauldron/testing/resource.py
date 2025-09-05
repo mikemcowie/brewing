@@ -10,6 +10,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from project_manager.app import Organization
 
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
+from cauldron.runtime_generic import runtime_generic
 from cauldron.testing.scenario import Expectations, User
 from cauldron.testing.user import UserTestScenario
 
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
     from cauldron.resources.models import ReadModelType
 
 
+@runtime_generic("db_model")
 class ResourceTestScenario[ModelT: Resource](UserTestScenario):
     db_model: type[ModelT]
 
@@ -99,10 +101,8 @@ class ResourceTestScenario[ModelT: Resource](UserTestScenario):
         return result
 
 
+@runtime_generic("model")
 class BaseTestResourceCrud[ModelT: Resource]:
-    def __class_getitem__(cls, model: type[Resource]):
-        return type(cls.__name__, (cls,), {"model": model})
-
     model: type[ModelT]
 
     @pytest.fixture(autouse=True)

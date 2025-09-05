@@ -12,6 +12,7 @@ from cauldron.resources.models import (
     ResourceAccess,
     ResourceAccessItem,
 )
+from cauldron.runtime_generic import runtime_generic
 
 if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     from uuid import UUID
@@ -27,11 +28,9 @@ if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     UpdateResource = BaseModel
 
 
+@runtime_generic("db_model")
 class CrudRepository[ModelT: Resource]:
     db_model: type[ModelT]
-
-    def __class_getitem__(cls, resource_type: type[Resource]):
-        return type(cls.__name__, (cls,), {"db_model": resource_type})
 
     def __init__(self, session: AsyncSession, user: User):
         if not getattr(self, "db_model", None):
