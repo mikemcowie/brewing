@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from functools import cache, cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 from alembic import command
 from alembic.config import Config
@@ -63,6 +63,13 @@ class Base(DeclarativeBase):
         return to_snake(cls.__name__)
 
 
+class DBSettingsType(Protocol):
+    """Protocol required for the DB settings class."""
+
+    def __init__(*_: Any, **__: Any) -> None: ...
+    def uri(self, use_async: bool) -> str: ...
+
+
 class PostgresqlSettings(BaseSettings):
     if TYPE_CHECKING:
 
@@ -76,9 +83,13 @@ class PostgresqlSettings(BaseSettings):
     PGUSER: str
     PGPASSWORD: SecretStr
 
+    def uri(self, use_async: bool) -> str:
+        driver = "asyncpg" if use_async else "psycopg"
+        return f"postgresql+{driver}://{self.PGUSER}:{self.PGPASSWORD.get_secret_value()}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}"
+
 
 @runtime_generic
-class Database[SettingsT: PostgresqlSettings]:
+class Database[SettingsT: DBSettingsType]:
     settings_cls: type[SettingsT]
 
     @cached_property
@@ -91,14 +102,11 @@ class Database[SettingsT: PostgresqlSettings]:
 
     @cached_property
     def async_engine(self):
-        return _async_engine(url=self.build_uri("asyncpg"))
+        return _async_engine(url=self.settings.uri(use_async=True))
 
     @cached_property
     def sync_engine(self):
-        return _engine(url=self.build_uri("psycopg"))
-
-    def build_uri(self, driver: str) -> str:
-        return f"postgresql+{driver}://{self.settings.PGUSER}:{self.settings.PGPASSWORD.get_secret_value()}@{self.settings.PGHOST}:{self.settings.PGPORT}/{self.settings.PGDATABASE}"
+        return _engine(url=self.settings.uri(use_async=False))
 
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession, Any]:
