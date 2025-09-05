@@ -19,7 +19,10 @@ import structlog
 from fastapi.params import Depends
 
 from cauldron.http import APIRouter
-from cauldron.http.viewset import endpoints  # noqa: TC001
+from cauldron.http.viewset import (
+    const,
+    endpoints,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -148,7 +151,7 @@ class AbstractViewSet(ABC):
             if getattr(item, "__self__", None):
                 self.setup_dependencies(item)
                 params: endpoints.EndpointParameters | None = getattr(
-                    item, "_cauldron_endpoint_params", None
+                    item, const.CAULDRON_ENDPOINT_PARAMS, None
                 )
                 if params:
                     self.setup_endpoint(attr, item, params)

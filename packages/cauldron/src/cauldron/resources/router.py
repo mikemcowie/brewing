@@ -18,6 +18,7 @@ from cauldron.http.viewset import (
     APIPathConstant,
     Endpoint,
     EndpointParameters,
+    const,
 )
 from cauldron.http.viewset.base import PathParameterPlaceholder
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
@@ -214,7 +215,7 @@ class ModelViewSet[ModelT: Resource](AbstractViewSet):
             item = getattr(self, attr)
 
             params: EndpointParameters | None = getattr(
-                item, "_cauldron_endpoint_params", None
+                item, const.CAULDRON_ENDPOINT_PARAMS, None
             )
 
             if params:

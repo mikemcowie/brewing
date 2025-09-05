@@ -10,6 +10,7 @@ from cauldron.http.viewset import (
     EndpointParameters,
     HTTPMethod,
     collection,
+    const,
 )
 from cauldron.testing import TestClient
 from pydantic import BaseModel
@@ -46,9 +47,11 @@ def test_routes_created():
         args=(),
         kwargs={"status_code": 200},
     )
-    assert ViewSet.list_things.__dict__["_cauldron_endpoint_params"] == expected_params
+    assert (
+        ViewSet.list_things.__dict__[const.CAULDRON_ENDPOINT_PARAMS] == expected_params
+    )
     vs = ViewSet()
-    assert vs.list_things.__dict__["_cauldron_endpoint_params"] == expected_params
+    assert vs.list_things.__dict__[const.CAULDRON_ENDPOINT_PARAMS] == expected_params
     assert vs.router.routes
 
 
