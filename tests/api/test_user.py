@@ -10,6 +10,7 @@ from project_manager.endpoints import Endpoints
 from tests.api.scenario import Expectations, TestScenario, User
 
 if TYPE_CHECKING:
+    from httpx import Response
     from pytest_subtests import SubTests
 
 
@@ -57,11 +58,11 @@ class UserTestScenario(TestScenario):
 
     def retrieve_profile(
         self, user: User, test_name: str, expectations: Expectations
-    ) -> None:
+    ) -> Response:
+        result = user.client.get(Endpoints.USERS_PROFILE)
         with self.subtests.test(test_name):
-            self.validate_expectations(
-                expectations, user.client.get(Endpoints.USERS_PROFILE)
-            )
+            self.validate_expectations(expectations, result)
+        return result
 
 
 @pytest.fixture

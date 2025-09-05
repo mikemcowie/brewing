@@ -6,7 +6,7 @@ from functools import cache
 from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, create_model
+from pydantic import BaseModel, ConfigDict, Field, create_model
 from sqlalchemy import ForeignKey, event
 from sqlalchemy.orm import (
     Mapped,
@@ -136,7 +136,7 @@ class ResourceAccess(MappedAsDataclass, db.Base, kw_only=True):
 
 
 class ResourceAccessItem(BaseModel):
-    principal_id: UUID
+    principal_id: UUID = Field(default=..., alias="user_id")
     access: AccessLevel
 
 

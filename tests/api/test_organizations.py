@@ -58,6 +58,13 @@ class OrganizationTestScenario(UserTestScenario):
         self.validate_expectations(expectations, result)
         return result
 
+    def read_access(
+        self, user: User, organization_id: str, expectations: Expectations
+    ) -> Response:
+        result = user.client.get(f"/organizations/{organization_id}/access/")
+        self.validate_expectations(expectations, result)
+        return result
+
 
 class TestOrganizationCrud:
     @pytest.fixture(autouse=True)
@@ -221,3 +228,21 @@ class TestOrganizationCrud:
             self.updated_org.model_dump(mode="json"),
             Expectations(status=status.HTTP_404_NOT_FOUND),
         )
+
+    def test_user_is_owner_after_create(self):
+        self.pre_create()
+        org = self.create()
+        access = self.scenario.read_access(
+            self.scenario.user1,
+            organization_id=str(org.id),
+            expectations=Expectations(status=status.HTTP_200_OK),
+        )
+        assert isinstance(access.json(), list)
+        assert len(access.json()) == 1
+        user_id = self.scenario.retrieve_profile(
+            self.scenario.user1,
+            "test-user-is-owner-find_user_id",
+            expectations=Expectations(),
+        ).json()["id"]
+        assert access.json()[0]["user_id"] == user_id
+        assert access.json()[0]["access"] == "owner"
