@@ -13,8 +13,12 @@ from typing import TYPE_CHECKING
 import yaml  # type:ignore[import-untyped]
 from testcontainers.postgres import PostgresContainer  # type:ignore[import-untyped]
 
+from project_manager.logging import get_logger
+
 if TYPE_CHECKING:
     from collections.abc import Generator
+
+logger = get_logger()
 
 
 @cache
@@ -40,6 +44,7 @@ COMPOSE_FILE = Path(__file__).parents[2] / "compose.yaml"
 
 
 def dev_environment() -> None:  # pragma: no cover
+    logger.info("setting up dev environment")
     compose_data = yaml.load(COMPOSE_FILE.read_text(), yaml.SafeLoader)
     os.environ["PGPASSWORD"] = compose_data["services"]["db"]["environment"][
         "POSTGRES_PASSWORD"
@@ -55,9 +60,11 @@ def dev_environment() -> None:  # pragma: no cover
     set_secret_key()
     with ThreadPoolExecutor() as executor:
         executor.submit(run_compose)
+    logger.info("finished setting up dev environment")
 
 
 def run_compose() -> None:  # pragma: no cover
+    logger.info("running docker compose")
     subprocess.run(
         ["docker", "compose", "up", "-d"], check=False, cwd=COMPOSE_FILE.parent
     )

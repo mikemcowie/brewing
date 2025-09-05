@@ -11,6 +11,7 @@ from starlette.staticfiles import StaticFiles
 from project_manager import root_router
 from project_manager.db import Database
 from project_manager.exceptions import DomainError
+from project_manager.logging import setup_logging
 from project_manager.organizations.router import router as organizations_router
 from project_manager.settings import Settings
 from project_manager.users.router import router as users_router
@@ -80,6 +81,7 @@ class ProjectManager:
         app_extra_args: dict[str, Any] | None = None,
         exception_handlers: tuple[ExceptionHandler[Any]] | None = None,
     ):
+        setup_logging()
         self.dev = dev
         self.settings = settings or Settings()
         self.database = database or Database(settings=self.settings)

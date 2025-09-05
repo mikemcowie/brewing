@@ -6,11 +6,14 @@ import typer
 import uvicorn
 
 from project_manager.db import Database
+from project_manager.logging import get_logger, setup_logging
 from project_manager.testing import (
     dev_environment,
     testcontainer_postgresql,
 )
 
+setup_logging()
+logger = get_logger()
 cli = typer.Typer(add_help_option=True, no_args_is_help=True)
 dev = typer.Typer(add_help_option=True, no_args_is_help=True)
 db = typer.Typer(add_help_option=True, no_args_is_help=True)
@@ -27,27 +30,36 @@ DEV_API = "project_manager.api:dev_api"
 @cli.command(name="api")
 def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]) -> None:
     """Run api"""
-
+    logger.info("starting API")
     uvicorn.run(API, workers=workers)
+    logger.info("shut down API")
 
 
 @dev.command("api")
 def dev_api() -> None:
     """Run development api woth hot reload."""
     dev_environment()
+    logger.info("starting dev API")
     uvicorn.run(DEV_API, reload=True)
+    logger.info("shut down dev API")
 
 
 def _db_upgrade(revision: str) -> None:
-    return Database().upgrade(revision=revision)
+    logger.info("upgrading database", revision=revision)
+    Database().upgrade(revision=revision)
+    logger.info("finished upgrading database", revision=revision)
 
 
 def _db_downgrade(revision: str) -> None:
-    return Database().downgrade(revision=revision)
+    logger.info("downgrading database", revision=revision)
+    Database().downgrade(revision=revision)
+    logger.info("finished downgrading database", revision=revision)
 
 
 def _db_stamp(revision: str) -> None:
-    return Database().stamp(revision=revision)
+    logger.info("stamping database", revision=revision)
+    Database().stamp(revision=revision)
+    logger.info("finished stamping database", revision=revision)
 
 
 @db.command("upgrade")
