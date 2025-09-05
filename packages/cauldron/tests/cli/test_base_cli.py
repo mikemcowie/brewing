@@ -104,3 +104,72 @@ def test_basic_cli_with_two_cmd(subtests: SubTests):
         result = runner.invoke(["also-something"])
         assert result.stdout.strip() == "also"
         assert result.exit_code == 0
+
+
+def test_instance_attribute(subtests: SubTests):
+    class SomeCLI(CLI):
+        def __init__(self, message: str):
+            self.message = message
+            super().__init__()
+
+        def quiet(self):
+            """Allows you to do something"""
+            print(self.message.lower())
+
+        def loud(self):
+            """Also allows you to do something"""
+            print(self.message.upper())
+
+    runner = CauldronCLIRunner(SomeCLI(message="Something"))
+
+    with subtests.test("quiet"):
+        result = runner.invoke(["quiet"])
+        assert result.stdout.strip() == "something"
+        assert result.exit_code == 0
+    with subtests.test("loud"):
+        result = runner.invoke(["loud"])
+        assert result.stdout.strip() == "SOMETHING"
+        assert result.exit_code == 0
+
+
+def test_basic_parameter(subtests: SubTests):
+    class SomeCLI(CLI):
+        def speak(self, a_message: str):
+            """Allows you to do speak"""
+            print(a_message)
+
+    runner = CauldronCLIRunner(SomeCLI())
+
+    with subtests.test("happy-path"):
+        result = runner.invoke(["speak", "hello"])
+        assert result.stdout.strip() == "hello"
+        assert result.exit_code == 0
+
+    with subtests.test("missing"):
+        result = runner.invoke(["speak"])
+        assert result.exit_code == 2
+        assert "Missing argument 'A_MESSAGE" in result.stderr
+
+
+def test_basic_option(subtests: SubTests):
+    class SomeCLI(CLI):
+        def speak(self, a_message: str = "hello"):
+            """Allows you to do speak"""
+            print(a_message)
+
+    runner = CauldronCLIRunner(SomeCLI())
+
+    with subtests.test("wrong-invoke"):
+        result = runner.invoke(["speak", "HI"])
+        assert result.exit_code == 2
+        assert "Got unexpected extra argument (HI)" in result.stderr, result.stderr
+
+    with subtests.test("missing"):
+        result = runner.invoke(["speak"])
+        assert result.exit_code == 0
+        assert result.stdout.strip() == "hello"
+
+    with subtests.test("provided"):
+        result = runner.invoke(["speak", "--a-message", "HI"])
+        assert result.exit_code == 0
+        assert result.stdout.strip() == "HI"
