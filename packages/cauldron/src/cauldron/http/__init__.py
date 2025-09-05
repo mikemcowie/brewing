@@ -6,7 +6,7 @@ from fastapi import Path as Path
 from fastapi import Request as Request
 from fastapi import status as status
 
-from .cauldron_http import CauldronHTTP as CauldronHTTP
+from .asgi import CauldronHTTP as CauldronHTTP
 from .responses import Response as Response
 
 __all__ = ["APIRouter", "CauldronHTTP", "Depends", "Request", "Response", "status"]
