@@ -8,14 +8,14 @@ from project_manager import db
 from project_manager.endpoints import Endpoints
 from project_manager.exceptions import Unauthorized
 from project_manager.organizations.models import Organization
-from project_manager.organizations.repo import (
+from project_manager.resources.models import AccessLevel, ResourceAccessItem
+from project_manager.resources.repo import (
     CreateResource,
     ResourceRead,
     ResourceRepository,
     ResourceSummary,
     UpdateResource,
 )
-from project_manager.resources.models import AccessLevel, ResourceAccessItem
 from project_manager.users.models import User
 from project_manager.users.router import user
 
