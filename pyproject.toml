@@ -2,7 +2,7 @@
 name = "cauldron-uv-workspace"
 version = "0.0.1"
 description = "Add your description here"
-readme = "README.md"
+readme = "docs/README.md"
 requires-python = ">=3.13"
 dependencies = [
     "cauldron",
@@ -31,6 +31,9 @@ cauldron-test-dependencies = { workspace = true }
 dev = [
     "cauldron-test-dependencies",
     "pre-commit>=4.3.0",
+]
+docs = [
+    "mkdocs>=1.6.1",
 ]
 
 [tool.ruff]
