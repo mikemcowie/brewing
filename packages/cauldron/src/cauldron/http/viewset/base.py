@@ -74,6 +74,17 @@ class AbstractViewSet(ABC):
     def router(self) -> APIRouter:
         return self._router
 
+    def setup_endpoint(
+        self, attr: str, item: Any, params: endpoints.EndpointParameters
+    ):
+        path_parts = list(self.get_base_path()) + list(params.path.parts)
+        path = Path("/", "/".join(path_parts))
+        path_str = str(path) + "/" if params.trailing_slash else str(path)
+        logger.debug(f"Creating fastapi endpoint for {self=} {attr=} {item=}")
+        wrapper: Callable[..., Any] = getattr(self.router, params.method.value.lower())
+        logger.info(f"wrapping {item=}")
+        wrapper(path_str, *params.args, **params.kwargs)(item)
+
     def setup_endpoints(self):
         """required method called to configure the router."""
         for attr in dir(self):
@@ -82,14 +93,7 @@ class AbstractViewSet(ABC):
                 item, "_cauldron_endpoint_params", None
             )
             if params:
-                path_parts = list(self.get_base_path()) + list(params.path.parts)
-                path = Path("/", "/".join(path_parts))
-                path_str = str(path) + "/" if params.trailing_slash else str(path)
-                logger.debug(f"Creating fastapi endpoint for {self=} {attr=} {item=}")
-                wrapper: Callable[..., Any] = getattr(
-                    self.router, params.method.value.lower()
-                )
-                wrapper(path_str, *params.args, **params.kwargs)(item)
+                self.setup_endpoint(attr, item, params)
 
     @abstractmethod
     def get_base_path(self) -> ViewSetBasePath:
