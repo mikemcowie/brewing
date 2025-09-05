@@ -57,11 +57,11 @@ class Database[SettingsT: DBSettingsType]:
 
     @cached_property
     def async_engine(self):
-        return _async_engine(url=self.settings.uri(use_async=True))
+        return _async_engine(url=self.settings.uri())
 
     @cached_property
     def sync_engine(self):
-        return _engine(url=self.settings.uri(use_async=False))
+        return _engine(url=self.settings.uri())
 
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession, Any]:

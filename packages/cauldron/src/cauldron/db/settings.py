@@ -8,7 +8,7 @@ class DBSettingsType(Protocol):
     """Protocol required for the DB settings class."""
 
     def __init__(*_: Any, **__: Any) -> None: ...
-    def uri(self, use_async: bool) -> str: ...
+    def uri(self) -> str: ...
 
 
 class PostgresqlSettings(BaseSettings):
@@ -24,6 +24,7 @@ class PostgresqlSettings(BaseSettings):
     PGUSER: str
     PGPASSWORD: SecretStr
 
-    def uri(self, use_async: bool) -> str:
-        driver = "asyncpg" if use_async else "psycopg"
-        return f"postgresql+{driver}://{self.PGUSER}:{self.PGPASSWORD.get_secret_value()}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}"
+    def uri(self) -> str:
+        uri = f"postgresql+psycopg://{self.PGUSER}:{self.PGPASSWORD.get_secret_value()}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}"
+        # raise Exception(uri)
+        return uri
