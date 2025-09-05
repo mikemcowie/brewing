@@ -1,0 +1,14 @@
+[project]
+name = "cauldron-incubator"
+version = "0.1.0"
+description = "Experimental/preview modules for cauldron."
+readme = "README.md"
+authors = [
+    { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
