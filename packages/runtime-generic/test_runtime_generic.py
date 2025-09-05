@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal
 
 import pytest
-from cauldron.runtime_generic import runtime_generic
+from runtime_generic import runtime_generic
 
 
 class Someclass:

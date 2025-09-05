@@ -3,6 +3,8 @@
 from functools import cache
 from typing import get_type_hints
 
+__all__ = ["runtime_generic"]
+
 
 def runtime_generic[T](cls: type[T]) -> type[T]:
     """Decorator that makes some class's generic be able to be instantiated.

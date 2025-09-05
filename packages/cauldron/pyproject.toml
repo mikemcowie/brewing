@@ -18,6 +18,7 @@ dependencies = [
     "pydantic[email]>=2.11.7",
     "pyjwt>=2.10.1",
     "pyyaml>=6.0.2",
+    "runtime-generic",
     "sqlalchemy>=2.0.41",
     "structlog>=25.4.0",
     "typer>=0.16.0",
@@ -33,3 +34,6 @@ dev = "cauldron.cli:dev"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.uv.sources]
+runtime-generic = { workspace = true }

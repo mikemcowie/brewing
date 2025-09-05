@@ -8,9 +8,9 @@ import pytest
 from fastapi import FastAPI, status
 from polyfactory.factories.pydantic_factory import ModelFactory
 from project_manager.app import Organization
+from runtime_generic import runtime_generic
 
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
-from cauldron.runtime_generic import runtime_generic
 from cauldron.testing.scenario import Expectations, User
 from cauldron.testing.user import UserTestScenario
 

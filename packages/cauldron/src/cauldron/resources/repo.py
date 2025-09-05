@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from runtime_generic import runtime_generic
 from sqlalchemy import select
 
 from cauldron.exceptions import Forbidden, NotFound
@@ -12,7 +13,6 @@ from cauldron.resources.models import (
     ResourceAccess,
     ResourceAccessItem,
 )
-from cauldron.runtime_generic import runtime_generic
 
 if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     from uuid import UUID
