@@ -8,7 +8,9 @@ from typing import TYPE_CHECKING, Any
 from alembic import command
 from alembic.config import Config
 from project_manager import migrations
+from pydantic import SecretStr  # noqa: TC002
 from pydantic.alias_generators import to_snake
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from runtime_generic import runtime_generic
 from sqlalchemy import DateTime, MetaData, func, text
 from sqlalchemy.dialects import postgresql as pg
@@ -22,7 +24,6 @@ from sqlalchemy.orm import (
 )
 
 from cauldron.http import Request as _Request
-from cauldron.settings import Settings
 
 Request = _Request  # So that ruff won't hide it behind type checking
 MIGRATIONS_DIR = Path(migrations.__file__).parent.resolve()
@@ -62,8 +63,22 @@ class Base(DeclarativeBase):
         return to_snake(cls.__name__)
 
 
+class PostgresqlSettings(BaseSettings):
+    if TYPE_CHECKING:
+
+        def __init__(*_: Any, **__: Any) -> None:
+            pass
+
+    model_config = SettingsConfigDict(frozen=True)
+    PGHOST: str
+    PGPORT: int
+    PGDATABASE: str
+    PGUSER: str
+    PGPASSWORD: SecretStr
+
+
 @runtime_generic
-class Database[SettingsT: Settings]:
+class Database[SettingsT: PostgresqlSettings]:
     settings_cls: type[SettingsT]
 
     @cached_property

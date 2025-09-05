@@ -6,8 +6,7 @@ import pytest
 from cauldron import db as db_
 from cauldron import development
 from cauldron.application import Application
-from cauldron.db import Database
-from cauldron.settings import Settings
+from cauldron.db import Database, PostgresqlSettings
 from sqlalchemy.pool import NullPool
 
 if TYPE_CHECKING:
@@ -30,7 +29,7 @@ def postgresql() -> Generator[None, Any]:
 
 @pytest.fixture
 def db(postgresql: None) -> Generator[None, Any]:
-    db_ = Database[Settings]()
+    db_ = Database[PostgresqlSettings]()
     db_.upgrade()
     yield
     db_.downgrade("base")
@@ -38,7 +37,7 @@ def db(postgresql: None) -> Generator[None, Any]:
 
 @pytest.fixture
 def project_manager(
-    postgresql: None, db: Database[Settings]
+    postgresql: None, db: Database[PostgresqlSettings]
 ) -> Application[Configuration]:
     from project_manager.app import Configuration, routers  # noqa: PLC0415
 

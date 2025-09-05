@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import os
-import random
-import string
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -37,16 +35,9 @@ class DevelopmentEnvironment:
         ]
         os.environ["PGHOST"] = "127.0.0.1"
         os.environ["PGPORT"] = "5432"
-        self.set_secret_key()
         with ThreadPoolExecutor() as executor:
             executor.submit(self._run_compose)
         logger.info("finished setting up dev environment")
-
-    def set_secret_key(self) -> None:
-        if not os.environ.get("SECRET_KEY"):
-            os.environ["SECRET_KEY"] = "".join(
-                random.choice(string.ascii_letters) for _ in range(32)
-            )
 
     @contextmanager
     def testcontainer_postgresql(self) -> Generator[None]:
@@ -56,7 +47,6 @@ class DevelopmentEnvironment:
             os.environ["PGUSER"] = pg.username
             os.environ["PGHOST"] = "127.0.0.1"
             os.environ["PGPORT"] = str(pg.get_exposed_port(pg.port))
-            self.set_secret_key()
             yield
 
     def _run_compose(self) -> None:  # pragma: no cover

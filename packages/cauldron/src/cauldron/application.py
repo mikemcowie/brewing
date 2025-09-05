@@ -10,12 +10,11 @@ from starlette.staticfiles import StaticFiles
 
 from cauldron import root_router
 from cauldron.configuration import BaseConfiguration
-from cauldron.db import Database
+from cauldron.db import Database, PostgresqlSettings
 from cauldron.exceptions import DomainError
 from cauldron.http import APIRouter, CauldronHTTP, Request
 from cauldron.http.responses import JSONResponse, Response
 from cauldron.logging import setup_logging
-from cauldron.settings import Settings
 from cauldron.users import router as users_router
 
 if TYPE_CHECKING:
@@ -83,7 +82,7 @@ class Application[ConfigT: BaseConfiguration]:
     ):
         setup_logging()
         self.config = self.config_type()
-        self._database = Database[Settings]()
+        self._database = Database[PostgresqlSettings]()
         self.routers = tuple(routers) + self.default_routers
         self.exception_handlers = exception_handlers or self.default_exception_handlers
 
