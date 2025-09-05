@@ -212,10 +212,10 @@ async def user_own_profile(user: Annotated[User, Depends(user)]) -> User:
 @router.post("/users/login")
 async def login(
     form: Annotated[OAuth2PasswordRequestForm, Depends()],
-    auth: Annotated[UserRepo, Depends(user_auth)],
+    db_session: Annotated[AsyncSession, Depends(db_session)],
 ) -> Token:
-    return await auth.login(
-        username=form.username, password=secret_value(form.password)
+    return await User.authorize(
+        db_session, email=form.username, password=secret_value(form.password)
     )
 
 
