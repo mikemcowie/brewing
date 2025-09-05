@@ -23,6 +23,8 @@ if TYPE_CHECKING:
 
     from starlette.types import ASGIApp
 
+    from cauldron.http.viewset import AbstractViewSet
+
 
 @dataclass
 class MountedApp:
@@ -78,14 +80,14 @@ class Application[ConfigT: BaseConfiguration]:
 
     def __init__(
         self,
-        routers: Sequence[APIRouter],
+        viewsets: Sequence[AbstractViewSet | APIRouter],
         exception_handlers: tuple[ExceptionHandler[Any]] | None = None,
     ):
         setup_logging()
         self.config = self.config_type()
         self._database = Database[PostgresqlSettings]()
-        self.routers = tuple(routers) + self.default_routers
         self.exception_handlers = exception_handlers or self.default_exception_handlers
+        self.viewsets = viewsets
 
     def _create_app(self, dev: bool):
         mounts = self.dev_default_mounts if dev else self.prod_default_mounts
@@ -95,8 +97,10 @@ class Application[ConfigT: BaseConfiguration]:
             description=self.config.description,
         )
         app.project_manager = self  # type: ignore
-        for router in self.routers:
-            app.include_router(router)
+        for viewset in list(self.default_routers) + list(self.viewsets):
+            app.include_router(viewset) if isinstance(
+                viewset, APIRouter
+            ) else app.include_viewset(viewset)
         for mount in mounts:
             app.mount(mount.path, mount.app, mount.name)
         for handler in self.exception_handlers:

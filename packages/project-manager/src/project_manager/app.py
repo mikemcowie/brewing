@@ -23,8 +23,7 @@ class Configuration(BaseConfiguration):
     cli_provider = build_cli
 
 
-routers = (ModelViewSet[Organization]().router,)
-application = Application[Configuration](routers=routers)
+application = Application[Configuration](viewsets=[ModelViewSet[Organization]()])
 
 
 def dev_api():

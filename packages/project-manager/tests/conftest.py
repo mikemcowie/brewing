@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from cauldron import development
-from cauldron.application import Application
 from cauldron.db import database as database
 from cauldron.db.database import Database
 from cauldron.db.settings import PostgresqlSettings
@@ -13,6 +12,7 @@ from sqlalchemy.pool import NullPool
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+    from cauldron.application import Application
     from fastapi import FastAPI
     from project_manager.app import Configuration
 
@@ -40,9 +40,9 @@ def db(postgresql: None) -> Generator[None, Any]:
 def project_manager(
     postgresql: None, db: Database[PostgresqlSettings]
 ) -> Application[Configuration]:
-    from project_manager.app import Configuration, routers  # noqa: PLC0415
+    from project_manager.app import application  # noqa: PLC0415
 
-    return Application[Configuration](routers=routers)
+    return application
 
 
 @pytest.fixture
