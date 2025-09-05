@@ -137,9 +137,6 @@ async def service(db_session: Annotated[AsyncSession, Depends(db_session)]):
     return UserService[UserRepo, AuthConfig](session=db_session)
 
 
-router = APIRouter(tags=["users"])
-
-
 async def user(
     request: Request,
     service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
@@ -147,22 +144,33 @@ async def user(
     return await service.user_from_request(request)
 
 
-@router.get("/users/profile")
-async def user_own_profile(user: Annotated[User, Depends(user)]) -> User:
-    return user
+class UserViewSet:
+    def __init__(self):
+        self._router = APIRouter(tags=["users"])
+        self.setup_endpoints()
+
+    @property
+    def router(self):
+        return self._router
+
+    def setup_endpoints(self):
+        @self.router.get("/users/profile")
+        async def user_own_profile(user: Annotated[User, Depends(user)]) -> User:
+            return user
+
+        @self.router.post("/users/login")
+        async def login(
+            form: Annotated[OAuth2PasswordRequestForm, Depends()],
+            service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
+        ) -> Token:
+            return await service.authorize(form)
+
+        @self.router.post("/users/register", status_code=status.HTTP_201_CREATED)
+        async def register(
+            user: UserRegister,
+            service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
+        ) -> UserRead:
+            return await service.register(user)
 
 
-@router.post("/users/login")
-async def login(
-    form: Annotated[OAuth2PasswordRequestForm, Depends()],
-    service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
-) -> Token:
-    return await service.authorize(form)
-
-
-@router.post("/users/register", status_code=status.HTTP_201_CREATED)
-async def register(
-    user: UserRegister,
-    service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
-) -> UserRead:
-    return await service.register(user)
+router = UserViewSet().router
