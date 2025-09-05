@@ -13,6 +13,7 @@ from project_manager.organizations.repo import (
     OrganizationSummary,
     UpdateOrganization,
 )
+from project_manager.resources.models import ResourceAccessItem
 from project_manager.users.models import User
 from project_manager.users.router import user
 
@@ -39,7 +40,7 @@ async def create_organization(
 async def list_organization(
     repo: Annotated[OrganizationRepository, Depends(repo)],
 ) -> list[OrganizationSummary]:
-    return await repo.list()
+    return await repo.list_resources()
 
 
 @router.get(Endpoints.ORGANIZATIONS_ONE, response_model=OrganizationRead)
@@ -66,3 +67,34 @@ async def delete_organization(
     repo: Annotated[OrganizationRepository, Depends(repo)],
 ) -> None:
     await repo.delete(organization_id)
+
+
+@router.get(Endpoints.ORGANIZATIONS_ONE_ACCESS, response_model=list[ResourceAccessItem])
+async def get_access(
+    organization_id: UUID, repo: Annotated[OrganizationRepository, Depends(repo)]
+) -> list[ResourceAccessItem]:
+    return await repo.get_access(organization_id)
+
+
+@router.get(
+    Endpoints.ORGANIZATIONS_ONE_ACCESS_ONE, response_model=list[ResourceAccessItem]
+)
+async def get_access_one(
+    organization_id: UUID,
+    principal_id: UUID,
+    repo: Annotated[OrganizationRepository, Depends(repo)],
+) -> ResourceAccessItem:
+    return await repo.get_access_one(organization_id, principal_id)
+
+
+@router.post(
+    Endpoints.ORGANIZATIONS_ONE_ACCESS, response_model=list[ResourceAccessItem]
+)
+async def set_access(
+    organization_id: UUID,
+    access: ResourceAccessItem | list[ResourceAccessItem],
+    repo: Annotated[OrganizationRepository, Depends(repo)],
+) -> list[ResourceAccessItem]:
+    if isinstance(access, ResourceAccessItem):
+        access = [access]
+    return await repo.set_access(organization_id, access)

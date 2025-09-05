@@ -131,8 +131,13 @@ class ResourceAccess(MappedAsDataclass, db.Base, kw_only=True):
     resource_id: Mapped[UUID] = Resource.primary_foreign_key_to()
     user_id: Mapped[UUID] = User.primary_foreign_key_to()
     access: Mapped[AccessLevel]
-    resource: Mapped[Resource] = relationship(lazy="joined")
-    user: Mapped[User] = relationship(lazy="joined")
+    resource: Mapped[Resource] = relationship(lazy="joined", init=False)
+    user: Mapped[User] = relationship(lazy="joined", init=False)
+
+
+class ResourceAccessItem(BaseModel):
+    principal_id: UUID
+    access: AccessLevel
 
 
 def update_modified_on_update_listener(_: Any, __: Any, target: Resource) -> None:
