@@ -1,7 +1,23 @@
 """Provides a decorator that makes a given generic class able to be instantiated with generic syntax."""
 
 from functools import cache
-from typing import TypeVar, get_type_hints
+from typing import Any, TypeVar, get_type_hints
+
+
+def _get_type_hints(cls: type):
+    hints: dict[str, Any] = {}
+
+    for item in reversed(cls.__mro__):
+        hints = hints | get_type_hints(item)
+    return hints
+
+
+def _get_class_attributes(cls: type):
+    attrs: set[str] = set()
+    for item in cls.__mro__:
+        for key in item.__dict__:
+            attrs.add(key)
+    return attrs
 
 
 def runtime_generic[T](cls: type[T]) -> type[T]:
@@ -34,9 +50,9 @@ def runtime_generic[T](cls: type[T]) -> type[T]:
     def subclass(types: type | tuple[type | TypeVar, ...]):
         """Function applied to class as __class_getitem__  in order to enable runtime generic."""
         nonlocal cls
-        all_annotations = get_type_hints(cls)
+        all_annotations = _get_type_hints(cls)
         unbound_class_attributes = set(all_annotations.keys()).difference(
-            cls.__dict__.keys()
+            _get_class_attributes(cls)
         )
         annotations = {
             k: v for k, v in all_annotations.items() if k in unbound_class_attributes
@@ -47,7 +63,7 @@ def runtime_generic[T](cls: type[T]) -> type[T]:
             return cls
         if len(unbound_class_attributes) != len(types):
             raise TypeError(
-                f"expected {len(unbound_class_attributes)} parameter(s), got {len(types)} parameter(s)."
+                f"for {cls}, expected {len(unbound_class_attributes)} parameter(s), got {len(types)} parameter(s)."
             )
         return type(
             f"{cls.__name__}[{','.join(t.__name__ for t in types)}]",

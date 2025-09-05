@@ -1,4 +1,5 @@
 from .base import AbstractViewSet as AbstractViewSet
+from .base import ViewSet as ViewSet
 from .endpoints import APIPathComponent as APIPathComponent
 from .endpoints import APIPathConstant as APIPathConstant
 from .endpoints import APIPathParam as APIPathParam

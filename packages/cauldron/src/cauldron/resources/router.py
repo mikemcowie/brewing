@@ -37,7 +37,7 @@ class ModelViewSet[ModelT: Resource](AbstractViewSet):
     def get_router_tags(self) -> list[str | Enum]:
         return [self.model.plural_name]
 
-    def get_router_dependencies(self) -> Sequence[Any]:
+    def get_dependencies(self) -> Sequence[Any]:
         return [Depends(user)]
 
     def setup_endpoints(self):  # noqa: C901

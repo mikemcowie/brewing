@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 
 class ConcreteViewSet(AbstractViewSet):
-    def get_router_dependencies(self) -> Sequence[Any]:
+    def get_dependencies(self) -> Sequence[Any]:
         return []
 
     def get_router_tags(self) -> list[str | Enum]:

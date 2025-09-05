@@ -23,6 +23,7 @@ class Configuration(BaseConfiguration):
     cli_provider = build_cli
 
 
+vs = ModelViewSet[Organization]()
 application = Application[Configuration](viewsets=[ModelViewSet[Organization]()])
 
 

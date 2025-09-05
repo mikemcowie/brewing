@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import cached_property
 from secrets import token_bytes
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated
 
 from passlib.context import CryptContext
 from runtime_generic import runtime_generic
@@ -21,12 +21,9 @@ from cauldron.db.session import (
 from cauldron.exceptions import Unauthorized
 from cauldron.http import Depends, Request, status
 from cauldron.http.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from cauldron.http.viewset import AbstractViewSet, APIPathConstant, Endpoint
+from cauldron.http.viewset import Endpoint, ViewSet
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-    from enum import Enum
-
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -111,15 +108,10 @@ async def user(
     return await service.user_from_request(request)
 
 
-class UserViewSet(AbstractViewSet):
-    def get_router_tags(self) -> list[str | Enum]:
-        return ["users"]
-
-    def get_router_dependencies(self) -> Sequence[Any]:
-        return []
-
-    def get_base_path(self):
-        return [APIPathConstant("users")]
+class UserViewSet(ViewSet):
+    tags = ("users",)
+    dependencies = ()
+    base_path = ("users",)
 
     async def service(self, db_session: Annotated[AsyncSession, Depends(db_session)]):
         return UserService[UserRepo, AuthConfig](session=db_session)

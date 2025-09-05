@@ -39,17 +39,33 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger()
 
+type ViewSetTags = Sequence[str | Enum]
+type ViewSetDependencies = Sequence[Any]
+type ViewSetBasePath = Sequence[str]
+
 
 class AbstractViewSet(ABC):
     """The basic viewset base class.
 
-    It contains a partial implementation that may be used
-    via inheritence, though this is entirely optional.
+    The intended use-cae of this is as a base for
+    a more dynamic viewset.
     """
 
-    def __init__(self):
+    tags: ViewSetTags = ()
+    dependencies: ViewSetDependencies = ()
+    base_path: ViewSetBasePath = ()
+
+    def __init__(
+        self,
+        tags: ViewSetTags | None = None,
+        dependencies: ViewSetDependencies | None = None,
+        base_path: ViewSetBasePath | None = None,
+    ):
+        self.tags = tags or self.tags
+        self.dependencies = dependencies or self.dependencies
+        self.base_path = base_path or self.base_path
         self._router = APIRouter(
-            tags=self.get_router_tags(), dependencies=self.get_router_dependencies()
+            tags=list(self.get_router_tags()), dependencies=self.get_dependencies()
         )
         self._router.dependency_overrides_provider = {}
         self.setup_endpoints()
@@ -76,13 +92,41 @@ class AbstractViewSet(ABC):
                 wrapper(path_str, *params.args, **params.kwargs)(item)
 
     @abstractmethod
-    def get_base_path(self) -> Sequence[str]:
+    def get_base_path(self) -> ViewSetBasePath:
         """Give the components of the base path for all routes on the router."""
 
     @abstractmethod
-    def get_router_dependencies(self) -> Sequence[Any]:
-        """required method called to determine the router tags"""
+    def get_dependencies(self) -> ViewSetDependencies:
+        """required method called for viewset-wide dependencies"""
 
     @abstractmethod
-    def get_router_tags(self) -> list[str | Enum]:
+    def get_router_tags(self) -> ViewSetTags:
         """required method called to determine the router tags"""
+
+
+class ViewSet(AbstractViewSet):
+    """A basic viewset with simple implementations of each required method.
+
+    If you just want to write your own HTTP endpoints, this is the no-frills
+    class-based viewset to use.
+    """
+
+    def __init__(
+        self,
+        tags: ViewSetTags | None = None,
+        dependencies: ViewSetDependencies | None = None,
+        base_path: ViewSetBasePath | None = None,
+    ):
+        self.tags = tags or self.tags
+        self.dependencies = dependencies or self.dependencies
+        self.base_path = base_path or self.base_path
+        super().__init__()
+
+    def get_router_tags(self) -> ViewSetTags:
+        return self.tags
+
+    def get_dependencies(self) -> ViewSetDependencies:
+        return self.dependencies
+
+    def get_base_path(self) -> ViewSetBasePath:
+        return self.base_path
