@@ -18,6 +18,13 @@ dependencies = [
     "uvicorn>=0.34.3",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+]
+
+
+
 [project.scripts]
 project-manager = "project_manager.cli:cli"
 dev = "project_manager.cli:dev"
@@ -112,11 +119,3 @@ exclude_also = [
 
 [tool.mypy]
 check_untyped_defs = true
-
-[dependency-groups]
-dev = [
-    "mypy>=1.16.1",
-    "pytest>=8.4.1",
-    "pytest-cov>=6.2.1",
-    "ruff>=0.12.0",
-]

@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, FastAPI
 
-from project_manager import root_router
+from project_manager import constants, root_router
 
 
 def default_routers():
@@ -16,4 +16,8 @@ def api_factory(routers: list[APIRouter] | None = None, **kwargs: Any):
     return api
 
 
-api = api_factory()
+api = api_factory(
+    title=constants.TITLE,
+    description=constants.DESCRIPION,
+    version=constants.API_VERSION,
+)

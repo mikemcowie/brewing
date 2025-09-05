@@ -3,22 +3,23 @@ from typing import Annotated
 import typer
 import uvicorn
 
-from project_manager.api import api_factory
-
 cli = typer.Typer(add_help_option=True, no_args_is_help=True)
 dev = typer.Typer(add_help_option=True, no_args_is_help=True)
 cli.add_typer(dev, name="dev")
 
 
+API = "project_manager.api:api"
+
+
 @cli.command(name="api")
-def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]):
+async def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]):
     """Run api"""
 
-    uvicorn.run(f"{api_factory.__module__}:{api_factory.__name__}", workers=workers)
+    uvicorn.run("project_manager.api:api", workers=workers)
 
 
 @dev.command("api")
-def dev_api():
+async def dev_api():
     """Run development api woth hot reload."""
 
-    uvicorn.run(f"{api_factory.__module__}:{api_factory.__name__}", reload=True)
+    uvicorn.run("project_manager.api:api", reload=True)
