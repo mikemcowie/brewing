@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import JSONResponse, Response
@@ -48,6 +48,7 @@ def handle_exception(request: Request, exc: DomainError) -> JSONResponse:
 
 class ProjectManager:
     # ruff: noqa: PLR0913
+    default_app_args: ClassVar[dict[str, str]] = {"title": "Project Manager"}
     default_routers = (root_router.router, users_router, organizations_router)
     prod_default_mounts: tuple[MountedApp, ...] = ()
     dev_default_mounts: tuple[MountedApp, ...] = (
@@ -92,8 +93,12 @@ class ProjectManager:
             self.dev_default_mounts if self.dev else self.prod_default_mounts
         )
         self.mounts = mounts or default_mounts
-        self.app_extra_args = app_extra_args or {}
+        self.app_args = self.default_app_args | (app_extra_args or {})
         self.exception_handlers = exception_handlers or self.default_exception_handlers
-        self.app = FastAPI(**self.app_extra_args)
+        self.app = FastAPI(**self.app_args)
         for router in self.routers:
             self.app.include_router(router)
+        for mount in self.mounts:
+            self.app.mount(mount.path, mount.app, mount.name)
+        for handler in self.exception_handlers:
+            self.app.add_exception_handler(handler.exception_type, handler.handler)

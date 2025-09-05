@@ -5,17 +5,17 @@ import pytest
 from fastapi import FastAPI
 from sqlalchemy.pool import NullPool
 
-import project_manager.db
+from project_manager import db as db_
 from project_manager import testing
-from project_manager.api import api_factory
 from project_manager.db import Database
+from project_manager.project_manager import ProjectManager
 
 
 @pytest.fixture(scope="session")
 def postgresql() -> Generator[None, Any]:
     # override the sqlalchemy poolclass as the queuepool works
     # badly in tests
-    project_manager.db.ASYNC_ENGINE_KWARGS["poolclass"] = NullPool
+    db_.ASYNC_ENGINE_KWARGS["poolclass"] = NullPool
     with testing.testcontainer_postgresql():
         yield
 
@@ -29,5 +29,10 @@ def db(postgresql: None) -> Generator[None, Any]:
 
 
 @pytest.fixture
-def app(db: Database) -> FastAPI:
-    return api_factory()
+def project_manager(postgresql: None, db: Database) -> ProjectManager:
+    return ProjectManager(dev=True)
+
+
+@pytest.fixture
+def app(project_manager: ProjectManager) -> FastAPI:
+    return project_manager.app
