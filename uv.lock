@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -157,7 +157,7 @@ wheels = [
 [[package]]
 name = "cauldron"
 version = "0.0.1"
-source = { editable = "cauldron" }
+source = { editable = "packages/cauldron" }
 dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
@@ -222,8 +222,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cauldron", editable = "cauldron" },
-    { name = "project-manager", editable = "project-manager" },
+    { name = "cauldron", editable = "packages/cauldron" },
+    { name = "project-manager", editable = "packages/project-manager" },
 ]
 
 [package.metadata.requires-dev]
@@ -1003,13 +1003,13 @@ wheels = [
 [[package]]
 name = "project-manager"
 version = "0.0.1"
-source = { editable = "project-manager" }
+source = { editable = "packages/project-manager" }
 dependencies = [
     { name = "cauldron" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "cauldron", editable = "cauldron" }]
+requires-dist = [{ name = "cauldron", editable = "packages/cauldron" }]
 
 [[package]]
 name = "prompt-toolkit"

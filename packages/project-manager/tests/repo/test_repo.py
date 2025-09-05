@@ -1,5 +1,4 @@
 import pytest
-
 from cauldron.resources import models, repo
 
 

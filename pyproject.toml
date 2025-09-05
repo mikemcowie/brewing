@@ -11,8 +11,7 @@ dependencies = [
 
 [tool.uv.workspace]
 members = [
-    "project-manager",
-    "cauldron",
+    "packages/*"
 ]
 
 [tool.uv.sources]

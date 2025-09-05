@@ -2,13 +2,12 @@ from collections.abc import Generator
 from typing import Any
 
 import pytest
-from fastapi import FastAPI
-from sqlalchemy.pool import NullPool
-
 from cauldron import db as db_
 from cauldron import testing
 from cauldron.application import Application
 from cauldron.db import Database
+from fastapi import FastAPI
+from sqlalchemy.pool import NullPool
 
 pytest.register_assert_rewrite("tests.api.scenario")
 

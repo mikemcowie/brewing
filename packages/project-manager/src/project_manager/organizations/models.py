@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy.orm import Mapped, mapped_column
-
 from cauldron.resources.models import Resource
+from sqlalchemy.orm import Mapped, mapped_column
 
 UUID = uuid.UUID
 

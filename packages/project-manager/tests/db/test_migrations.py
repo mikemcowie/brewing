@@ -1,12 +1,11 @@
 # ruff: noqa:F403
 import pytest
 from alembic.config import Config
+from cauldron.db import Database
 
 # The actual test cases are imported from this file.
 from pytest_alembic.tests.default import *  # type: ignore
 from sqlalchemy.engine import Engine
-
-from cauldron.db import Database
 
 
 @pytest.fixture
