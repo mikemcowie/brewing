@@ -25,10 +25,10 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
     path_param_name = f"{model_type.singular_name}_id"
 
     class Endpoints:
-        ORGANIZATIONS = f"/{model_type.plural_name}/"
-        ORGANIZATIONS_ONE = "{}{}".format(ORGANIZATIONS, f"{{{path_param_name}}}")
-        ORGANIZATIONS_ONE_ACCESS = f"{ORGANIZATIONS_ONE}/access"
-        ORGANIZATIONS_ONE_ACCESS_ONE = f"{ORGANIZATIONS_ONE}/access/{{user_id}}"
+        RESOURCES = f"/{model_type.plural_name}/"
+        RESOURCES_ONE = "{}{}".format(RESOURCES, f"{{{path_param_name}}}")
+        RESOURCES_ONE_ACCESS = f"{RESOURCES_ONE}/access"
+        RESOURCES_ONE_ACCESS_ONE = f"{RESOURCES_ONE}/access/{{user_id}}"
 
     InstancePathParams = make_dataclass(  # noqa: N806
         "InstancePathParams", [(path_param_name, Annotated[UUID, Path()])]
@@ -73,7 +73,7 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         raise Unauthorized(detail="access denied")
 
     @router.post(
-        Endpoints.ORGANIZATIONS,
+        Endpoints.RESOURCES,
         status_code=status.HTTP_201_CREATED,
         response_model=ResourceRead,
     )
@@ -82,14 +82,14 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
     ) -> ResourceRead:
         return await repo.create(create)
 
-    @router.get(Endpoints.ORGANIZATIONS, response_model=list[ResourceSummary])
+    @router.get(Endpoints.RESOURCES, response_model=list[ResourceSummary])
     async def list_resource(
         repo: Annotated[CrudRepository[ModelT], Depends(repo)],
     ) -> list[ResourceSummary]:
         return await repo.list_resources()
 
     @router.get(
-        Endpoints.ORGANIZATIONS_ONE,
+        Endpoints.RESOURCES_ONE,
         response_model=ResourceRead,
         dependencies=[Depends(access_org_reader)],
     )
@@ -102,7 +102,7 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         )
 
     @router.put(
-        Endpoints.ORGANIZATIONS_ONE,
+        Endpoints.RESOURCES_ONE,
         response_model=ResourceRead,
         dependencies=[Depends(access_org_contributor)],
     )
@@ -114,7 +114,7 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         return await repo.update(resource_id, update)
 
     @router.delete(
-        Endpoints.ORGANIZATIONS_ONE,
+        Endpoints.RESOURCES_ONE,
         status_code=status.HTTP_204_NO_CONTENT,
         dependencies=[Depends(access_org_owner)],
     )
@@ -125,7 +125,7 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         await repo.delete(resource_id)
 
     @router.get(
-        Endpoints.ORGANIZATIONS_ONE_ACCESS,
+        Endpoints.RESOURCES_ONE_ACCESS,
         response_model=list[ResourceAccessItem],
         dependencies=[Depends(access_org_contributor)],
     )
@@ -136,7 +136,7 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         return await repo.get_access(resource_id)
 
     @router.get(
-        Endpoints.ORGANIZATIONS_ONE_ACCESS_ONE,
+        Endpoints.RESOURCES_ONE_ACCESS_ONE,
         response_model=ResourceAccessItem,
         dependencies=[Depends(access_org_contributor)],
     )
@@ -148,7 +148,7 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         return await repo.get_access_one(resource_id, user_id)
 
     @router.post(
-        Endpoints.ORGANIZATIONS_ONE_ACCESS,
+        Endpoints.RESOURCES_ONE_ACCESS,
         response_model=list[ResourceAccessItem],
         dependencies=[Depends(access_org_owner)],
     )
