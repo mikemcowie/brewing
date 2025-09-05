@@ -11,8 +11,8 @@ from project_manager.organizations.models import Organization
 from project_manager.resources.models import AccessLevel, ResourceAccessItem
 from project_manager.resources.repo import (
     CreateResource,
+    CrudRepository,
     ResourceRead,
-    ResourceRepository,
     ResourceSummary,
     UpdateResource,
 )
@@ -22,7 +22,7 @@ from project_manager.users.router import user
 router = APIRouter(tags=["organizations"], dependencies=[Depends(user)])
 
 
-OrganizationRepository = ResourceRepository[Organization]
+OrganizationRepository = CrudRepository[Organization]
 
 
 async def repo(

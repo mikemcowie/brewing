@@ -29,7 +29,7 @@ else:  # At runtime we derive these from the sqlalchemy mapped class
     UpdateResource = Organization.schemas().update
 
 
-class ResourceRepository[ModelT: Resource]:
+class CrudRepository[ModelT: Resource]:
     db_model: type[ModelT]
 
     def __class_getitem__(cls, resource_type: type[Resource]):
