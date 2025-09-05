@@ -4,9 +4,9 @@ from typing import Annotated
 
 import typer
 import uvicorn
-from cauldron.db import Database
 
-from project_manager.logging import get_logger, setup_logging
+from cauldron.db import Database
+from cauldron.logging import get_logger, setup_logging
 from project_manager.testing import (
     dev_environment,
     testcontainer_postgresql,
