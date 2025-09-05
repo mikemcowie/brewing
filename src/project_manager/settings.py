@@ -16,3 +16,4 @@ class Settings(BaseSettings):
     PGDATABASE: str
     PGUSER: str
     PGPASSWORD: SecretStr
+    SECRET_KEY: SecretStr

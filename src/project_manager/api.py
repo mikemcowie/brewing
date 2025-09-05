@@ -1,6 +1,7 @@
 from typing import Any
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from project_manager import constants, root_router, users
 
@@ -9,10 +10,18 @@ def default_routers():
     return [root_router.router, users.router]
 
 
+def handle_exception(request: Request, exc: users.DomainError):
+    return JSONResponse(
+        {"detail": exc.detail, "resource": request.url.path},
+        status_code=exc.status_code,
+    )
+
+
 def api_factory(routers: list[APIRouter] | None = None, **kwargs: Any):
     api = FastAPI(**kwargs)
     for router in routers or default_routers():
         api.include_router(router)
+    api.add_exception_handler(users.DomainError, handle_exception)  # type: ignore[arg-type]
     return api
 
 

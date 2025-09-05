@@ -40,7 +40,7 @@ def dev_api():
 
 
 def _db_upgrade(revision: str):
-    return Database().downgrade(revision=revision)
+    return Database().upgrade(revision=revision)
 
 
 def _db_downgrade(revision: str):
@@ -70,16 +70,19 @@ def stamp(revision: Annotated[str | None, typer.Option()] = None):
 def dev_upgrade(
     revision: Annotated[str | None, typer.Option(envvar="DB_REVISION")] = None,
 ):
+    dev_environment()
     _db_upgrade(revision=revision or "head")
 
 
-@dev_db.command("upgrade")
+@dev_db.command("downgrade")
 def dev_downgrade(revision: Annotated[str | None, typer.Option()] = None):
+    dev_environment()
     _db_downgrade(revision=revision or "-1")
 
 
 @dev_db.command("stamp")
 def dev_stamp(revision: Annotated[str | None, typer.Option()] = None):
+    dev_environment()
     _db_stamp(revision=revision or "head")
 
 

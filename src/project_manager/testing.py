@@ -1,10 +1,20 @@
 import os
+import random
+import string
 import subprocess
 from contextlib import contextmanager
+from functools import cache
 from pathlib import Path
 
 import yaml  # type:ignore[import-untyped]
 from testcontainers.postgres import PostgresContainer  # type:ignore[import-untyped]
+
+
+@cache
+def set_secret_key():
+    os.environ["SECRET_KEY"] = "".join(
+        random.choice(string.ascii_letters) for _ in range(32)
+    )
 
 
 @contextmanager
@@ -15,6 +25,7 @@ def testcontainer_postgresql():
         os.environ["PGUSER"] = pg.username
         os.environ["PGHOST"] = "127.0.0.1"
         os.environ["PGPORT"] = str(pg.get_exposed_port(pg.port))
+        set_secret_key()
         yield
 
 
@@ -34,6 +45,7 @@ def dev_environment():
     ]
     os.environ["PGHOST"] = "127.0.0.1"
     os.environ["PGPORT"] = "5432"
+    set_secret_key()
 
 
 def run_compose():

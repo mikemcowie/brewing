@@ -11,9 +11,11 @@ dependencies = [
     "alembic>=1.16.2",
     "asyncpg>=0.30.0",
     "fastapi[standard]>=0.115.13",
+    "passlib[argon,argon2]>=1.7.4",
     "psycopg[binary]>=3.2.9",
     "pydantic-settings>=2.9.1",
     "pydantic[email]>=2.11.7",
+    "pyjwt>=2.10.1",
     "pyyaml>=6.0.2",
     "sqlalchemy>=2.0.41",
     "typer>=0.16.0",
@@ -27,6 +29,7 @@ dev = [
     "pytest-alembic>=0.12.1",
     "pytest-subtests>=0.14.2",
     "testcontainers>=4.10.0",
+    "types-passlib>=1.7.7.20250602",
 ]
 
 
@@ -101,7 +104,6 @@ python_files = [
     "*_test.py",
     "feat_*.py",
 ]
-asyncio_default_fixture_loop_scope = "session"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]

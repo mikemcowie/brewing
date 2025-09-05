@@ -14,7 +14,7 @@ from project_manager.endpoints import Endpoints
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    username: EmailStr
     password: SecretStr
 
 
@@ -36,7 +36,7 @@ class User:
     @classmethod
     def build(cls, app: FastAPI):
         login = UserLoginFactory.build()
-        register = UserRegister.model_validate(login, from_attributes=True)
+        register = UserRegister(email=login.username, password=login.password)
         client = TestClient(app)
         return cls(login, register, client)
 
@@ -59,7 +59,7 @@ class UserTestScenario:
 
     @staticmethod
     def validate_expectations(expectations: Expectations, result: Response):
-        assert expectations.status == result.status_code
+        assert expectations.status == result.status_code, result.content
         assert expectations.headers.items() <= result.headers.items()
         assert expectations.json.items() <= result.json().items()
 
@@ -68,7 +68,7 @@ class UserTestScenario:
             self.validate_expectations(
                 expectations,
                 user.client.post(
-                    Endpoints.USERS_REGISTER, json=user.register.model_dump()
+                    Endpoints.USERS_REGISTER, json=user.register.model_dump(mode="json")
                 ),
             )
 
@@ -77,7 +77,7 @@ class UserTestScenario:
             self.validate_expectations(
                 expectations,
                 user.client.post(
-                    Endpoints.USERS_REGISTER, data=user.login.model_dump()
+                    Endpoints.USERS_LOGIN, data=user.login.model_dump(mode="json")
                 ),
             )
 
@@ -99,7 +99,7 @@ def test_retrieve_profile_with_no_registered_user(scenario: UserTestScenario):
         "expect-fail-if-not-logged-in",
         Expectations(
             status=status.HTTP_401_UNAUTHORIZED,
-            json={"detail": "authentication required"},
+            json={"detail": "unauthorized"},
         ),
     )
 

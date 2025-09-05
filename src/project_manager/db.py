@@ -28,7 +28,7 @@ else:
 
     @cache
     def _async_engine(*args, **kwargs):
-        return create_engine(*args, **kwargs)
+        return create_async_engine(*args, **kwargs)
 
 
 class Database:
