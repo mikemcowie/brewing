@@ -10,6 +10,8 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel, EmailStr, SecretStr
 from pytest_subtests import SubTests
 
+from project_manager.endpoints import Endpoints
+
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -39,12 +41,6 @@ class User:
         return cls(login, register, client)
 
 
-class Endpoints:
-    USERS_REGISTER = "/users/register"
-    USERS = "/users/login"
-    USERS_PROFILE = "/users/me/profile"
-
-
 @dataclass
 class Expectations:
     status: int = status.HTTP_200_OK
@@ -64,8 +60,8 @@ class UserTestScenario:
     @staticmethod
     def validate_expectations(expectations: Expectations, result: Response):
         assert expectations.status == result.status_code
-        assert expectations.headers.items() in result.headers.items()
-        assert expectations.json.items() in result.json().items()
+        assert expectations.headers.items() <= result.headers.items()
+        assert expectations.json.items() <= result.json().items()
 
     def register(self, user: User, test_name: str, expectations: Expectations):
         with self.subtests.test(test_name):

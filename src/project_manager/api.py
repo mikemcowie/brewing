@@ -2,11 +2,11 @@ from typing import Any
 
 from fastapi import APIRouter, FastAPI
 
-from project_manager import constants, root_router
+from project_manager import constants, root_router, users
 
 
 def default_routers():
-    return [root_router.router]
+    return [root_router.router, users.router]
 
 
 def api_factory(routers: list[APIRouter] | None = None, **kwargs: Any):
