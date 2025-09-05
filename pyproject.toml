@@ -8,6 +8,7 @@ dependencies = [
     "cauldron",
     "project-manager",
     "cauldronlib-generic",
+    "cauldronlib-cli",
 ]
 
 [tool.uv.workspace]
@@ -20,6 +21,7 @@ members = [
 project-manager = { workspace = true }
 cauldron = { workspace = true }
 cauldronlib-generic = { workspace = true }
+cauldronlib-cli = { workspace = true }
 
 [dependency-groups]
 dev = [

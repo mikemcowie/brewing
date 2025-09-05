@@ -3,7 +3,7 @@ from functools import partial
 
 from typer.testing import CliRunner
 
-from cauldron.cli.cli import CLI
+from .cli import CLI
 
 
 class CauldronCLIRunner:

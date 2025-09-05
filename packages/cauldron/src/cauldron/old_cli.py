@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Annotated
 
 import typer
 import uvicorn
+from cauldronlib.cli import CLI
 
-from cauldron.cli import CLI
 from cauldron.development import (
     DevelopmentEnvironment,
 )

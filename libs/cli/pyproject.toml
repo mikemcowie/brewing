@@ -1,0 +1,17 @@
+[project]
+name = "cauldronlib-cli"
+version = "0.1.0"
+description = "Cauldronlib's CLI system, a wrapper around Tiangolo's typer."
+readme = "README.md"
+authors = [
+    { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cauldronlib"]

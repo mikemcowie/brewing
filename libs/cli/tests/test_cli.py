@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from cauldron.cli.cli import CLI
-from cauldron.cli.testing import CauldronCLIRunner
+from cauldronlib.cli import CLI
+from cauldronlib.cli.testing import CauldronCLIRunner
 
 if TYPE_CHECKING:
     from pytest_subtests import SubTests
