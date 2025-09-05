@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
@@ -9,6 +10,8 @@ from project_manager import db
 from project_manager.endpoints import Endpoints
 from project_manager.exceptions import NotFound
 from project_manager.organizations.models import Organization
+from project_manager.resources.models import AccessLevel, ResourceAccess
+from project_manager.users.models import User
 from project_manager.users.router import user
 
 router = APIRouter(tags=["organizations"], dependencies=[Depends(user)])
@@ -30,63 +33,94 @@ else:  # At runtime we derive these from the sqlalchemy mapped class
     UpdateOrganization = Organization.schemas().update
 
 
+class OrganizationRepository:
+    def __init__(self, session: AsyncSession, user: User):
+        self.session = session
+        self.user = user
+        self.base_query = select(Organization).where(Organization.deleted == None)  # noqa: E711
+
+    async def create(self, new_organization: CreateOrganization):
+        organization = Organization(**new_organization.model_dump())
+        access = ResourceAccess(
+            resource=organization, user=self.user, access=AccessLevel.owner
+        )
+        self.session.add_all((organization, access))
+        await self.session.commit()
+        return OrganizationRead.model_validate(organization, from_attributes=True)
+
+    async def list(self):
+        return [
+            OrganizationSummary.model_validate(org, from_attributes=True)
+            for org in (await self.session.execute(self.base_query)).scalars()
+        ]
+
+    async def get(self, organization_id: UUID):
+        if org := (
+            await self.session.execute(
+                self.base_query.where(Organization.id == organization_id)
+            )
+        ).scalar_one_or_none():
+            return org
+        raise NotFound(detail=f"{organization_id=!s} not found.")
+
+    async def update(
+        self,
+        organization_id: UUID,
+        update: UpdateOrganization,
+    ) -> OrganizationRead:
+        organization = await self.get(organization_id)
+        for k, v in update.model_dump().items():
+            setattr(organization, k, v)
+        await self.session.commit()
+        return OrganizationRead.model_validate(organization, from_attributes=True)
+
+    async def delete(self, organization_id: UUID):
+        org = await self.get(organization_id)
+        org.deleted = datetime.now(UTC)
+        await self.session.commit()
+
+
+async def repo(db_session: DBSessionAnnotation, user: Annotated[User, Depends(user)]):
+    return OrganizationRepository(db_session, user)
+
+
 @router.post(
     Endpoints.ORGANIZATIONS, status_code=status.HTTP_201_CREATED
 )  # response_model=OrganizationRead)
 async def create_organization(
-    create: CreateOrganization, db_session: DBSessionAnnotation
+    create: CreateOrganization, repo: Annotated[OrganizationRepository, Depends(repo)]
 ) -> OrganizationRead:
-    organization = Organization(**create.model_dump())
-    db_session.add(organization)
-    await db_session.commit()
-    return OrganizationRead.model_validate(organization, from_attributes=True)
+    return await repo.create(create)
 
 
 @router.get(Endpoints.ORGANIZATIONS, response_model=list[OrganizationSummary])
 async def list_organization(
-    db_session: DBSessionAnnotation,
+    repo: Annotated[OrganizationRepository, Depends(repo)],
 ) -> list[OrganizationSummary]:
-    return [
-        OrganizationSummary.model_validate(org, from_attributes=True)
-        for org in (await db_session.execute(select(Organization))).scalars()
-    ]
-
-
-async def organization(
-    organization_id: UUID, db_session: DBSessionAnnotation
-) -> Organization:
-    if org := (
-        await db_session.execute(
-            select(Organization).where(Organization.id == organization_id)
-        )
-    ).scalar_one_or_none():
-        return org
-    raise NotFound(detail=f"{organization_id=!s} not found.")
-
-
-OrganizationAnnotation = Annotated[Organization, Depends(organization)]
+    return await repo.list()
 
 
 @router.get(Endpoints.ORGANIZATIONS_ONE, response_model=OrganizationRead)
-async def read_organization(organization: OrganizationAnnotation) -> OrganizationRead:
-    return OrganizationRead.model_validate(organization, from_attributes=True)
+async def read_organization(
+    organization_id: UUID, repo: Annotated[OrganizationRepository, Depends(repo)]
+) -> OrganizationRead:
+    return OrganizationRead.model_validate(
+        await repo.get(organization_id), from_attributes=True
+    )
 
 
 @router.put(Endpoints.ORGANIZATIONS_ONE, response_model=OrganizationRead)
 async def update_organization(
-    organization: OrganizationAnnotation,
+    organization_id: UUID,
     update: UpdateOrganization,
-    db_session: DBSessionAnnotation,
+    repo: Annotated[OrganizationRepository, Depends(repo)],
 ) -> OrganizationRead:
-    for k, v in update.model_dump().items():
-        setattr(organization, k, v)
-    await db_session.commit()
-    return OrganizationRead.model_validate(organization, from_attributes=True)
+    return await repo.update(organization_id, update)
 
 
 @router.delete(Endpoints.ORGANIZATIONS_ONE, status_code=status.HTTP_204_NO_CONTENT)
 async def delete_organization(
-    db_session: DBSessionAnnotation, organization: OrganizationAnnotation
+    organization_id: UUID,
+    repo: Annotated[OrganizationRepository, Depends(repo)],
 ) -> None:
-    await db_session.delete(organization)
-    await db_session.commit()
+    await repo.delete(organization_id)

@@ -14,6 +14,7 @@ from sqlalchemy.orm import (
     MappedColumn,
     declared_attr,
     mapped_column,
+    relationship,
 )
 
 from project_manager import db
@@ -53,6 +54,7 @@ class Resource(MappedAsDataclass, db.Base, kw_only=True):
     created: Mapped[datetime] = db.created_field()
     updated: Mapped[datetime] = db.updated_field()
     type: Mapped[str] = mapped_column(index=True, init=False)
+    deleted: Mapped[datetime | None] = db.deleted_field()
 
     @declared_attr  # type: ignore
     def __mapper_args__(cls) -> dict[str, str]:  # noqa: N805
@@ -129,6 +131,8 @@ class ResourceAccess(MappedAsDataclass, db.Base, kw_only=True):
     resource_id: Mapped[UUID] = Resource.primary_foreign_key_to()
     user_id: Mapped[UUID] = User.primary_foreign_key_to()
     access: Mapped[AccessLevel]
+    resource: Mapped[Resource] = relationship(lazy="joined")
+    user: Mapped[User] = relationship(lazy="joined")
 
 
 def update_modified_on_update_listener(_: Any, __: Any, target: Resource) -> None:

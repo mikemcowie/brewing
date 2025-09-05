@@ -133,6 +133,12 @@ def updated_field() -> MappedColumn[datetime]:
     )
 
 
+def deleted_field() -> MappedColumn[datetime]:
+    return mapped_column(
+        DateTime(timezone=True), default=None, index=True, nullable=True
+    )
+
+
 async def db_session(request: Request) -> AsyncGenerator[AsyncSession, Any]:
     from project_manager.application import ProjectManager
 
