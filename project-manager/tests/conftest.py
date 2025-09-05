@@ -3,10 +3,10 @@ from typing import Any
 
 import pytest
 from fastapi import FastAPI
-from project_manager import testing
 from sqlalchemy.pool import NullPool
 
 from cauldron import db as db_
+from cauldron import testing
 from cauldron.application import Application
 from cauldron.db import Database
 

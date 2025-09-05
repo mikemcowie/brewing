@@ -7,7 +7,7 @@ import uvicorn
 
 from cauldron.db import Database
 from cauldron.logging import get_logger, setup_logging
-from project_manager.testing import (
+from cauldron.testing import (
     dev_environment,
     testcontainer_postgresql,
 )
