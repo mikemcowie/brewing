@@ -1,7 +1,8 @@
+from dataclasses import make_dataclass
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from project_manager import db
@@ -20,15 +21,21 @@ from project_manager.users.router import user
 
 
 def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
-    router = APIRouter(tags=["organizations"], dependencies=[Depends(user)])
+    router = APIRouter(tags=[model_type.plural_name], dependencies=[Depends(user)])
+    path_param_name = f"{model_type.singular_name}_id"
 
     class Endpoints:
         ORGANIZATIONS = f"/{model_type.plural_name}/"
-        ORGANIZATIONS_ONE = "{}{}".format(
-            ORGANIZATIONS, f"{{{model_type.singular_name}_id}}"
-        )
+        ORGANIZATIONS_ONE = "{}{}".format(ORGANIZATIONS, f"{{{path_param_name}}}")
         ORGANIZATIONS_ONE_ACCESS = f"{ORGANIZATIONS_ONE}/access"
         ORGANIZATIONS_ONE_ACCESS_ONE = f"{ORGANIZATIONS_ONE}/access/{{user_id}}"
+
+    InstancePathParams = make_dataclass(  # noqa: N806
+        "InstancePathParams", [(path_param_name, Annotated[UUID, Path()])]
+    )
+
+    def resource_id(param: Annotated[InstancePathParams, Depends()]):  # type: ignore
+        return getattr(param, path_param_name)
 
     async def repo(
         db_session: Annotated[AsyncSession, Depends(db.db_session)],
@@ -37,10 +44,11 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         return CrudRepository[model_type](db_session, user)
 
     async def access_level(
-        repo: Annotated[CrudRepository[ModelT], Depends(repo)], organization_id: UUID
+        repo: Annotated[CrudRepository[ModelT], Depends(repo)],
+        resource_id: Annotated[UUID, Depends(resource_id)],
     ) -> AccessLevel:
         return (
-            await repo.get_access_one(resource_id=organization_id, user_id=repo.user.id)
+            await repo.get_access_one(resource_id=resource_id, user_id=repo.user.id)
         ).access
 
     async def access_org_owner(
@@ -69,13 +77,13 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         status_code=status.HTTP_201_CREATED,
         response_model=ResourceRead,
     )
-    async def create_organization(
+    async def create_resource(
         create: CreateResource, repo: Annotated[CrudRepository[ModelT], Depends(repo)]
     ) -> ResourceRead:
         return await repo.create(create)
 
     @router.get(Endpoints.ORGANIZATIONS, response_model=list[ResourceSummary])
-    async def list_organization(
+    async def list_resource(
         repo: Annotated[CrudRepository[ModelT], Depends(repo)],
     ) -> list[ResourceSummary]:
         return await repo.list_resources()
@@ -85,11 +93,12 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         response_model=ResourceRead,
         dependencies=[Depends(access_org_reader)],
     )
-    async def read_organization(
-        organization_id: UUID, repo: Annotated[CrudRepository[ModelT], Depends(repo)]
+    async def read_resource(
+        resource_id: Annotated[UUID, Depends(resource_id)],
+        repo: Annotated[CrudRepository[ModelT], Depends(repo)],
     ) -> ResourceRead:
         return ResourceRead.model_validate(
-            await repo.get(organization_id), from_attributes=True
+            await repo.get(resource_id), from_attributes=True
         )
 
     @router.put(
@@ -97,23 +106,23 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         response_model=ResourceRead,
         dependencies=[Depends(access_org_contributor)],
     )
-    async def update_organization(
-        organization_id: UUID,
+    async def update_resource(
+        resource_id: Annotated[UUID, Depends(resource_id)],
         update: UpdateResource,
         repo: Annotated[CrudRepository[ModelT], Depends(repo)],
     ) -> ResourceRead:
-        return await repo.update(organization_id, update)
+        return await repo.update(resource_id, update)
 
     @router.delete(
         Endpoints.ORGANIZATIONS_ONE,
         status_code=status.HTTP_204_NO_CONTENT,
         dependencies=[Depends(access_org_owner)],
     )
-    async def delete_organization(
-        organization_id: UUID,
+    async def delete_resource(
+        resource_id: Annotated[UUID, Depends(resource_id)],
         repo: Annotated[CrudRepository[ModelT], Depends(repo)],
     ) -> None:
-        await repo.delete(organization_id)
+        await repo.delete(resource_id)
 
     @router.get(
         Endpoints.ORGANIZATIONS_ONE_ACCESS,
@@ -121,9 +130,10 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         dependencies=[Depends(access_org_contributor)],
     )
     async def get_access(
-        organization_id: UUID, repo: Annotated[CrudRepository[ModelT], Depends(repo)]
+        resource_id: Annotated[UUID, Depends(resource_id)],
+        repo: Annotated[CrudRepository[ModelT], Depends(repo)],
     ) -> list[ResourceAccessItem]:
-        return await repo.get_access(organization_id)
+        return await repo.get_access(resource_id)
 
     @router.get(
         Endpoints.ORGANIZATIONS_ONE_ACCESS_ONE,
@@ -131,11 +141,11 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         dependencies=[Depends(access_org_contributor)],
     )
     async def get_access_one(
-        organization_id: UUID,
+        resource_id: Annotated[UUID, Depends(resource_id)],
         user_id: UUID,
         repo: Annotated[CrudRepository[ModelT], Depends(repo)],
     ) -> ResourceAccessItem:
-        return await repo.get_access_one(organization_id, user_id)
+        return await repo.get_access_one(resource_id, user_id)
 
     @router.post(
         Endpoints.ORGANIZATIONS_ONE_ACCESS,
@@ -143,13 +153,13 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         dependencies=[Depends(access_org_owner)],
     )
     async def set_access(
-        organization_id: UUID,
+        resource_id: Annotated[UUID, Depends(resource_id)],
         access: ResourceAccessItem | list[ResourceAccessItem],
         repo: Annotated[CrudRepository[ModelT], Depends(repo)],
     ) -> list[ResourceAccessItem]:
         if isinstance(access, ResourceAccessItem):
             access = [access]
-        return await repo.set_access(organization_id, access)
+        return await repo.set_access(resource_id, access)
 
     return router
 
