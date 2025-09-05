@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 import pytest
 from runtime_generic import runtime_generic
@@ -17,6 +17,12 @@ class SomeSubClass(Someclass):
 @runtime_generic
 class GenericThing[ModelT: Someclass]:
     generic_type: type[ModelT]
+
+    def __init__(self):
+        self.generic_instance = self.generic_type()
+
+    def do_something(self) -> str:
+        return str(self.generic_instance)
 
 
 @runtime_generic
@@ -153,3 +159,22 @@ def test_nongeneric_class():
             foo = "bar"
 
     assert "Cannot decorate non-generic class 'NonGeneric'" in error.exconly()
+
+
+def test_with_other_class_attributes():
+    @runtime_generic
+    class HasOtherClassAttributes[T1, T2]:
+        a: type[T1]
+        b: type[T2]
+        c: ClassVar[dict[str, str]] = {}
+
+    # Test that other class attributes like
+    # this mutable dictionary behaves as you would expect
+    # through subclassing.
+    assert HasOtherClassAttributes[A, B]().c == {}
+    HasOtherClassAttributes[A, B]().c["foo"] = "bar"
+    assert HasOtherClassAttributes[A, B]().c == {"foo": "bar"}
+    # Given class attribute c is on the parent class
+    # It is also shared by subclasses if they don't do anything
+    # To change the situation.
+    assert HasOtherClassAttributes[B, A]().c == {"foo": "bar"}
