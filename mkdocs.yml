@@ -1,0 +1,9 @@
+site_name: Cauldron
+theme: readthedocs
+nav:
+- Introduction: README.md
+- CLI: cli.md
+plugins:
+  - gh-admonitions
+markdown_extensions:
+  - admonition
