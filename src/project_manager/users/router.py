@@ -18,9 +18,7 @@ async def user_auth(
     token: Annotated[str | None, Depends(oauth2_scheme)],
     db_session: Annotated[AsyncSession, Depends(db_session)],
 ) -> UserAuth:
-    return UserAuth(
-        token=Token.model_validate_json(token) if token else None, db_session=db_session
-    )
+    return UserAuth(token=token, db_session=db_session)
 
 
 async def user(auth: Annotated[UserAuth, Depends(user_auth)]) -> User:

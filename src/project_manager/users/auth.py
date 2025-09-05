@@ -29,7 +29,7 @@ class UserAuth:
     def __init__(
         self,
         db_session: AsyncSession,
-        token: Token | None,
+        token: str | None,
         settings: Settings | None = None,
     ) -> None:
         self.db_session = db_session

@@ -33,9 +33,9 @@ repos:
         entry: uv run ruff check --fix
         language: system
         types: [python]
-    -   id: mypy
-        name: mypy
-        entry: uv run mypy
+    -   id: pyright
+        name: pytright
+        entry: uv run pyright
         language: system
         types: [python]
 -   repo: https://github.com/compilerla/conventional-pre-commit
