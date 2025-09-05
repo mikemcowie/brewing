@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from functools import cached_property
 from typing import TYPE_CHECKING, Annotated
 
 from runtime_generic import runtime_generic
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cauldron.auth.exceptions import InvalidToken
@@ -27,6 +30,25 @@ def secret_value(value: str | SecretStr) -> str:
 class UserRepo:
     def __init__(self, session: AsyncSession):
         self._session = session
+
+    async def validated(self, token: str) -> UserSession | None:
+        user_session = (
+            await self._session.execute(
+                select(UserSession)
+                .where(UserSession.id == hashlib.sha512(token.encode()).hexdigest())
+                .where(UserSession.expires > datetime.now(UTC))
+            )
+        ).scalar_one_or_none()
+        if not user_session:
+            return None
+        return user_session
+
+    async def authenticated_user(self, token: str | None) -> User | None:
+        if not token:
+            return None
+        if user_session := await self.validated(token):
+            return user_session.user
+        raise InvalidToken(detail="invalid token")
 
 
 @dataclass
@@ -53,9 +75,7 @@ class UserService[RepoT: UserRepo, AuthConfigT: AuthConfig]:
         return await self.oauth_scheme(request)
 
     async def user_from_request(self, request: Request):
-        user = await UserSession.authenticated_user(
-            self._repo._session, await self.token(request)
-        )
+        user = await self._repo.authenticated_user(await self.token(request))
         if not user:
             raise InvalidToken("unauthorized")
         return user
