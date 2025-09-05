@@ -331,3 +331,65 @@ class TestOrganizationCrud:
             str(org.id),
             Expectations(status=status.HTTP_401_UNAUTHORIZED),
         )
+
+    def test_contributor_access(self):
+        org = self.user1_assigns_user2_access(AccessLevel.contributor)
+        user2_id = self.scenario.retrieve_profile(
+            self.scenario.user2, "test-user2-access-read", expectations=Expectations()
+        ).json()["id"]
+        self.scenario.read_organization(
+            self.scenario.user2, str(org.id), Expectations(status=status.HTTP_200_OK)
+        )
+        self.scenario.update_organization(
+            self.scenario.user2,
+            str(org.id),
+            self.updated_org.model_dump(mode="json"),
+            Expectations(status=status.HTTP_200_OK),
+        )
+        self.scenario.delete_organization(
+            self.scenario.user2,
+            str(org.id),
+            Expectations(status=status.HTTP_401_UNAUTHORIZED),
+        )
+        self.scenario.read_access(
+            self.scenario.user2,
+            str(org.id),
+            Expectations(status=status.HTTP_200_OK),
+        )
+        self.scenario.set_access(
+            self.scenario.user2,
+            [ResourceAccessItem(user_id=UUID(user2_id), access=AccessLevel.owner)],
+            str(org.id),
+            Expectations(status=status.HTTP_401_UNAUTHORIZED),
+        )
+
+    def test_owner_access(self):
+        org = self.user1_assigns_user2_access(AccessLevel.owner)
+        user2_id = self.scenario.retrieve_profile(
+            self.scenario.user2, "test-user2-access-read", expectations=Expectations()
+        ).json()["id"]
+        self.scenario.read_organization(
+            self.scenario.user2, str(org.id), Expectations(status=status.HTTP_200_OK)
+        )
+        self.scenario.update_organization(
+            self.scenario.user2,
+            str(org.id),
+            self.updated_org.model_dump(mode="json"),
+            Expectations(status=status.HTTP_200_OK),
+        )
+        self.scenario.delete_organization(
+            self.scenario.user2,
+            str(org.id),
+            Expectations(status=status.HTTP_204_NO_CONTENT),
+        )
+        self.scenario.read_access(
+            self.scenario.user2,
+            str(org.id),
+            Expectations(status=status.HTTP_200_OK),
+        )
+        self.scenario.set_access(
+            self.scenario.user2,
+            [ResourceAccessItem(user_id=UUID(user2_id), access=AccessLevel.owner)],
+            str(org.id),
+            Expectations(status=status.HTTP_200_OK),
+        )
