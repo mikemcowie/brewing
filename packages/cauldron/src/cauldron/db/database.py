@@ -21,6 +21,15 @@ Request = _Request  # So that ruff won't hide it behind type checking
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
+
+MIGRATIONS_DIR = Path(migrations.__file__).parent.resolve()
+VERSIONS_DIR = MIGRATIONS_DIR / "versions"
+# keyword args for engine creation, which are written to be overwritten for tests
+ASYNC_ENGINE_KWARGS: dict[str, Any] = {}
+SYNC_ENGINE_KWARGS: dict[str, Any] = {}
+
+
+if TYPE_CHECKING:
     _engine = create_engine
     _async_engine = create_async_engine
 else:
@@ -32,13 +41,6 @@ else:
     @cache
     def _async_engine(*args, **kwargs):
         return create_async_engine(*args, **kwargs | ASYNC_ENGINE_KWARGS)
-
-
-MIGRATIONS_DIR = Path(migrations.__file__).parent.resolve()
-VERSIONS_DIR = MIGRATIONS_DIR / "versions"
-# keyword args for engine creation, which are written to be overwritten for tests
-ASYNC_ENGINE_KWARGS: dict[str, Any] = {}
-SYNC_ENGINE_KWARGS: dict[str, Any] = {}
 
 
 @runtime_generic
