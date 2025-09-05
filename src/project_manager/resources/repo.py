@@ -36,6 +36,12 @@ class CrudRepository[ModelT: Resource]:
         return type(cls.__name__, (cls,), {"db_model": resource_type})
 
     def __init__(self, session: AsyncSession, user: User):
+        if not getattr(self, "db_model", None):
+            raise NotImplementedError(
+                "Cannot instantiate unspecialized CrudRepository."
+                "Create a subclass or attach a particular model type via "
+                f"{self.__class__.__name__}[ResourceModelType]"
+            )
         self.session = session
         self.user = user
         self.base_query = (
