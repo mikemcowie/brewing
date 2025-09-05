@@ -1,1 +1,1 @@
-from .project_manager import ProjectManager as ProjectManager
+from .application import ProjectManager as ProjectManager

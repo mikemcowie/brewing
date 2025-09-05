@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from project_manager.db import db_session
 from project_manager.endpoints import Endpoints
-from project_manager.secrets import secret_value
+from project_manager.secret import secret_value
 from project_manager.users.auth import UserAuth
 from project_manager.users.models import User
 from project_manager.users.schemas import Token, UserRead, UserRegister

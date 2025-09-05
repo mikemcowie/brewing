@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from project_manager import constants
-from project_manager.project_manager import ProjectManager
+from project_manager.application import ProjectManager
 
 app_extra_args = {
     "title": constants.TITLE,

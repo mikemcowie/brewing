@@ -134,7 +134,7 @@ def updated_field() -> MappedColumn[datetime]:
 
 
 async def db_session(request: Request) -> AsyncGenerator[AsyncSession, Any]:
-    from project_manager.project_manager import ProjectManager
+    from project_manager.application import ProjectManager
 
     assert isinstance(request.app.project_manager, ProjectManager)
     async with request.app.project_manager.database.session() as session:

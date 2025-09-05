@@ -7,8 +7,8 @@ from sqlalchemy.pool import NullPool
 
 from project_manager import db as db_
 from project_manager import testing
+from project_manager.application import ProjectManager
 from project_manager.db import Database
-from project_manager.project_manager import ProjectManager
 
 
 @pytest.fixture(scope="session")
