@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from project_manager import db
 from project_manager.endpoints import Endpoints
-from project_manager.exceptions import NotFound
+from project_manager.exceptions import Forbidden, NotFound
 from project_manager.organizations.models import Organization
 from project_manager.resources.models import AccessLevel, ResourceAccess
 from project_manager.users.models import User
@@ -37,7 +37,11 @@ class OrganizationRepository:
     def __init__(self, session: AsyncSession, user: User):
         self.session = session
         self.user = user
-        self.base_query = select(Organization).where(Organization.deleted == None)  # noqa: E711
+        self.base_query = (
+            select(Organization)
+            .where(Organization.deleted == None)  # noqa: E711
+            .join(ResourceAccess)
+        )
 
     async def create(self, new_organization: CreateOrganization):
         organization = Organization(**new_organization.model_dump())
@@ -54,13 +58,28 @@ class OrganizationRepository:
             for org in (await self.session.execute(self.base_query)).scalars()
         ]
 
-    async def get(self, organization_id: UUID):
-        if org := (
-            await self.session.execute(
-                self.base_query.where(Organization.id == organization_id)
-            )
-        ).scalar_one_or_none():
-            return org
+    async def get(
+        self, organization_id: UUID, access_level: AccessLevel = AccessLevel.reader
+    ):
+        query = self.base_query.where(Organization.id == organization_id).where(
+            ResourceAccess.user_id == self.user.id
+        )
+        if org := (await self.session.execute(query)).scalar_one_or_none():
+            if access_level == AccessLevel.reader:
+                return org
+            if access_level == AccessLevel.contributor:
+                query = query.where(
+                    ResourceAccess.access.in_(
+                        (AccessLevel.owner, AccessLevel.contributor)
+                    )
+                )
+            if access_level == AccessLevel.owner:
+                query = query.where(ResourceAccess.access == AccessLevel.owner)
+            second_org_result = (await self.session.execute(query)).scalar_one_or_none()
+            if second_org_result:
+                return second_org_result
+            raise Forbidden()
+
         raise NotFound(detail=f"{organization_id=!s} not found.")
 
     async def update(
@@ -68,7 +87,10 @@ class OrganizationRepository:
         organization_id: UUID,
         update: UpdateOrganization,
     ) -> OrganizationRead:
-        organization = await self.get(organization_id)
+        organization = await self.get(organization_id, access_level=AccessLevel.reader)
+        organization = await self.get(
+            organization_id, access_level=AccessLevel.contributor
+        )
         for k, v in update.model_dump().items():
             setattr(organization, k, v)
         await self.session.commit()

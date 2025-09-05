@@ -219,5 +219,5 @@ class TestOrganizationCrud:
             self.scenario.user2,
             str(org.id),
             self.updated_org.model_dump(mode="json"),
-            Expectations(status=status.HTTP_403_FORBIDDEN),
+            Expectations(status=status.HTTP_404_NOT_FOUND),
         )

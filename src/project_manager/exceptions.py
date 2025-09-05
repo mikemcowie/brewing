@@ -19,3 +19,8 @@ class NotFound(DomainError):
 class Unauthorized(DomainError):
     status_code = status.HTTP_401_UNAUTHORIZED
     detail = "unauthorized"
+
+
+class Forbidden(DomainError):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = "forbidden"
