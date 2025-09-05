@@ -28,7 +28,7 @@ if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     UpdateResource = BaseModel
 
 
-@runtime_generic("db_model")
+@runtime_generic
 class CrudRepository[ModelT: Resource]:
     db_model: type[ModelT]
 

@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from cauldron.resources.models import ReadModelType
 
 
-@runtime_generic("db_model")
+@runtime_generic
 class ResourceTestScenario[ModelT: Resource](UserTestScenario):
     db_model: type[ModelT]
 
@@ -101,7 +101,7 @@ class ResourceTestScenario[ModelT: Resource](UserTestScenario):
         return result
 
 
-@runtime_generic("model")
+@runtime_generic
 class BaseTestResourceCrud[ModelT: Resource]:
     model: type[ModelT]
 
