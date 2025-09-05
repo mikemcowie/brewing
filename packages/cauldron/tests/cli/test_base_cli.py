@@ -1,12 +1,18 @@
 # ruff: noqa: T201
+from __future__ import annotations
+
 import string
-from collections.abc import Mapping
 from functools import partial
+from typing import TYPE_CHECKING
 
 from pydantic.alias_generators import to_snake
-from pytest_subtests import SubTests
 from typer import Typer
 from typer.testing import CliRunner
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from pytest_subtests import SubTests
 
 
 def to_dash_case(value: str):
@@ -14,12 +20,18 @@ def to_dash_case(value: str):
 
 
 class CLI:
-    def __init__(self, /, typer: Typer | None = None):
-        self._typer = typer or Typer()
+    def __init__(self, name: str, /, *children: CLI, typer: Typer | None = None):
+        self._name = name
+        self._typer = typer or Typer(name=name)
+        self._children = children
         self._setup_typer()
 
     @property
-    def typer(self):
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def typer(self) -> Typer:
         return self._typer
 
     def _setup_typer(self):
@@ -36,6 +48,8 @@ class CLI:
                 and getattr(obj, "__self__", None) is self
             ):
                 self.typer.command(to_dash_case(obj.__name__))(obj)
+        for child in self._children:
+            self.typer.add_typer(child.typer, name=child.name)
 
 
 class CauldronCLIRunner:
@@ -66,7 +80,7 @@ def test_basic_cli_with_one_cmd(subtests: SubTests):
             """Allows you to do something"""
             print("something")
 
-    runner = CauldronCLIRunner(SomeCLI())
+    runner = CauldronCLIRunner(SomeCLI("root"))
     with subtests.test("help"):
         result = runner.invoke(["--help"])
         assert result.exit_code == 0
@@ -89,7 +103,7 @@ def test_basic_cli_with_two_cmd(subtests: SubTests):
             """Also allows you to do something"""
             print("also")
 
-    runner = CauldronCLIRunner(SomeCLI())
+    runner = CauldronCLIRunner(SomeCLI("root"))
     with subtests.test("help"):
         help_result = runner.invoke(["--help"], color=False)
         assert help_result.exit_code == 0
@@ -108,9 +122,9 @@ def test_basic_cli_with_two_cmd(subtests: SubTests):
 
 def test_instance_attribute(subtests: SubTests):
     class SomeCLI(CLI):
-        def __init__(self, message: str):
+        def __init__(self, name: str, message: str):
             self.message = message
-            super().__init__()
+            super().__init__(name)
 
         def quiet(self):
             """Allows you to do something"""
@@ -120,7 +134,7 @@ def test_instance_attribute(subtests: SubTests):
             """Also allows you to do something"""
             print(self.message.upper())
 
-    runner = CauldronCLIRunner(SomeCLI(message="Something"))
+    runner = CauldronCLIRunner(SomeCLI(name="root", message="Something"))
 
     with subtests.test("quiet"):
         result = runner.invoke(["quiet"])
@@ -138,7 +152,7 @@ def test_basic_parameter(subtests: SubTests):
             """Allows you to do speak"""
             print(a_message)
 
-    runner = CauldronCLIRunner(SomeCLI())
+    runner = CauldronCLIRunner(SomeCLI("root"))
 
     with subtests.test("happy-path"):
         result = runner.invoke(["speak", "hello"])
@@ -157,7 +171,7 @@ def test_basic_option(subtests: SubTests):
             """Allows you to do speak"""
             print(a_message)
 
-    runner = CauldronCLIRunner(SomeCLI())
+    runner = CauldronCLIRunner(SomeCLI("root"))
 
     with subtests.test("wrong-invoke"):
         result = runner.invoke(["speak", "HI"])
@@ -173,3 +187,46 @@ def test_basic_option(subtests: SubTests):
         result = runner.invoke(["speak", "--a-message", "HI"])
         assert result.exit_code == 0
         assert result.stdout.strip() == "HI"
+
+
+def test_nested_cli(subtests: SubTests):
+    class Parent(CLI):
+        def read(self):
+            print("parent read")
+
+        def write(self):
+            print("parent write")
+
+    class Child(CLI):
+        def read(self):
+            print("child read")
+
+        def write(self):
+            print("child write")
+
+    cli = Parent("parent", Child("child"))
+    runner = CauldronCLIRunner(cli)
+
+    with subtests.test("parent-read"):
+        result = runner.invoke(["read"])
+        assert result.exit_code == 0
+        assert result.stdout.strip() == "parent read"
+
+    with subtests.test("parent-write"):
+        result = runner.invoke(["write"])
+        assert result.exit_code == 0
+        assert result.stdout.strip() == "parent write"
+
+    with subtests.test("child"):
+        result = runner.invoke(["child"])
+        assert "Usage: parent child [OPTIONS] COMMAND [ARGS]..." in result.stderr
+
+    with subtests.test("child-read"):
+        result = runner.invoke(["child", "read"])
+        assert result.exit_code == 0
+        assert result.stdout.strip() == "child read"
+
+    with subtests.test("parent-write"):
+        result = runner.invoke(["child", "write"])
+        assert result.exit_code == 0
+        assert result.stdout.strip() == "child write"
