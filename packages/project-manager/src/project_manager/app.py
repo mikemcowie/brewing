@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import uuid
 from functools import partial
-from typing import TYPE_CHECKING
 
 from cauldron import (
-    APIRouter,
     Application,
     BaseConfiguration,
     Resource,
@@ -13,9 +11,6 @@ from cauldron import (
     model_crud_router,
 )
 from sqlalchemy.orm import Mapped, mapped_column
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 UUID = uuid.UUID
 
@@ -35,12 +30,6 @@ class Configuration(BaseConfiguration):
 
 
 routers = (model_crud_router(Organization),)
-
-
-def make_api(dev: bool, routers: Sequence[APIRouter]):
-    return Application[Configuration](dev=dev, routers=routers).app
-
-
-dev_api = partial(make_api, True, routers)
-api = partial(make_api, False, routers)
+dev_api = partial(lambda: Application[Configuration](dev=True, routers=routers).app)
+api = partial(lambda: Application[Configuration](dev=False, routers=routers).app)
 cli = build_cli("project_manager.app:api", "project_manager.app:dev_api")
