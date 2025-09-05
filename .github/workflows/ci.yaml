@@ -19,3 +19,33 @@ jobs:
 
       - name: run pytest
         run: uv run pytest -v
+
+      - name: ensure docs build
+        run: make docs-build
+
+  docs:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment: github-pages
+    permissions:
+      pages: write
+      id-token: write
+    needs:
+    - test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+
+      - name: build docs
+        run: make docs-build
+
+      - name: Create artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

@@ -8,6 +8,7 @@ lint-fix:
 .PHONY: docs
 
 docs:
-	uv sync --group docs
-	uv run --group docs mkdocs build
 	uv run --group docs mkdocs serve
+
+docs-build:
+	uv run --group docs mkdocs build
