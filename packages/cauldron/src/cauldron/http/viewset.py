@@ -37,9 +37,9 @@ if TYPE_CHECKING:
     _UNUSED_PATH = "/unused"
 
 
-class _Collection:
-    def __init__(self, path: str):
-        self.path = path
+class _EndpointDecoratorMaker:
+    def __init__(self, path: Sequence[str]):
+        self.path = [p for p in path if p]
         # We trick IDEs to be more helpful for the near-complete spec of a Fastapi endpoint decorator
         # Except without the "path" part
         # by showing it an entirely different reality to the actual implementation...
@@ -79,7 +79,7 @@ class _Collection:
             else partial(self._method, HTTPMethod.OPTIONS)
         )
 
-    def _method(self: _Collection, wrappedmethod: HTTPMethod, *args, **kwargs):
+    def _method(self, wrappedmethod: HTTPMethod, *args: Any, **kwargs: Any):
         """Our own endpoint method decorator.
 
         The public interface to it is the http-method based partials which prepopulate
@@ -95,8 +95,11 @@ class _Collection:
         """
 
         def decorator(func: Callable[..., Any]):
+            path = "/".join(self.path)
+            if len(path) == 0 or path[0] != "/":
+                path = "/" + path
             func.__dict__["_cauldron_endpoint_params"] = {
-                "path": self.path,
+                "path": path,
                 "method": wrappedmethod.value,
                 "args": args,
                 "kwargs": kwargs,
@@ -106,7 +109,16 @@ class _Collection:
         return decorator
 
 
-collection = _Collection("/")
+class _Collection(_EndpointDecoratorMaker):
+    def path_parameter(self, param_name: str) -> _Single:
+        return _Single([*self.path, APIPathParam(param_name)])
+
+
+class _Single(_EndpointDecoratorMaker):
+    pass
+
+
+collection = _Collection(())
 
 
 logger = structlog.get_logger()
@@ -121,14 +133,14 @@ class APIPathComponent(str):
     APIPathParam
     """
 
-    _ALLOWED_CHARS = string.ascii_letters + string.digits + "-" + "_"
+    _ALLOWED_CHARS = string.ascii_letters + string.digits + "-" + "_" + "{}"
 
     def __new__(cls, value: str):
         if not set(cls._ALLOWED_CHARS).issuperset(value):
             raise ValueError(
                 f"invalid characters for path component in {value}, {set(value).difference(cls._ALLOWED_CHARS)}"
             )
-        return cls(value)
+        return str(value)
 
 
 class APIPathConstant(APIPathComponent):
@@ -137,7 +149,12 @@ class APIPathConstant(APIPathComponent):
     e.g.. in /things/{thing_id}, things is a path constant.
     """
 
-    pass
+    def __new__(cls, value: str):
+        if set("{}").intersection(value):
+            raise ValueError(
+                f"Cannot use '{' or '}' in constant path segments in value {value}"
+            )
+        return super().__new__(cls, value)
 
 
 class APIPathParam(APIPathComponent):
@@ -181,7 +198,7 @@ class AbstractViewSet(ABC):
                 wrapper(params["path"], *params["args"], **params["kwargs"])(item)
 
     @abstractmethod
-    def get_base_path(self) -> Sequence[APIPathConstant | APIPathParam]:
+    def get_base_path(self) -> Sequence[str]:
         """Give the components of the base path for all routes on the router."""
 
     @abstractmethod

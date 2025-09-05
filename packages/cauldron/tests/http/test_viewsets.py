@@ -6,7 +6,6 @@ from cauldron.http import CauldronHTTP, Depends
 from cauldron.http.viewset import (
     AbstractViewSet,
     APIPathConstant,
-    APIPathParam,
     collection,
 )
 from cauldron.testing import TestClient
@@ -20,7 +19,7 @@ class ConcreteViewSet(AbstractViewSet):
     def get_router_tags(self) -> list[str | Enum]:
         return ["test"]
 
-    def get_base_path(self) -> Sequence[APIPathConstant | APIPathParam]:
+    def get_base_path(self) -> Sequence[str]:
         return [APIPathConstant("test")]
 
 
@@ -83,3 +82,17 @@ def test_depends():
     result = client.get("/")
     assert result.status_code == 200, result.content
     assert result.content == b'"something"'
+
+
+def test_path_parameter():
+    class ViewSet(ConcreteViewSet):
+        @collection.path_parameter("message_id").GET(status_code=200)
+        async def give_message(self, message_id: int):
+            return message_id
+
+    app = CauldronHTTP()
+    app.include_viewset(ViewSet())
+    client = TestClient(app)
+    result = client.get("/5")
+    assert result.status_code == 200
+    assert result.content == b"5"
