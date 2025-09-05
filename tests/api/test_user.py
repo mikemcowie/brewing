@@ -6,7 +6,6 @@ import pytest
 from fastapi import FastAPI, status
 from pydantic import SecretStr
 
-from project_manager.endpoints import Endpoints
 from tests.api.scenario import Expectations, TestScenario, User
 
 if TYPE_CHECKING:
@@ -20,7 +19,7 @@ class UserTestScenario(TestScenario):
             self.validate_expectations(
                 expectations,
                 user.client.post(
-                    Endpoints.USERS_REGISTER,
+                    "/users/register",
                     json=user.register.model_dump(mode="json")
                     | {"password": user.register.password.get_secret_value()},
                 ),
@@ -49,7 +48,7 @@ class UserTestScenario(TestScenario):
             }
             result = self.validate_expectations(
                 expectations,
-                user.client.post(Endpoints.USERS_LOGIN, data=payload),
+                user.client.post("/users/login", data=payload),
             )
             if result.status_code == status.HTTP_200_OK:
                 user.client.headers["authorization"] = (
@@ -59,7 +58,7 @@ class UserTestScenario(TestScenario):
     def retrieve_profile(
         self, user: User, test_name: str, expectations: Expectations
     ) -> Response:
-        result = user.client.get(Endpoints.USERS_PROFILE)
+        result = user.client.get("/users/profile")
         with self.subtests.test(test_name):
             self.validate_expectations(expectations, result)
         return result

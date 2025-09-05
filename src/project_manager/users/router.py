@@ -5,12 +5,11 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from project_manager.db import db_session
-from project_manager.endpoints import Endpoints
 from project_manager.secret import secret_value
 from project_manager.users.auth import InvalidToken, UserAuth
 from project_manager.users.models import Token, User, UserRead, UserRegister
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=Endpoints.USERS_LOGIN, auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login", auto_error=False)
 router = APIRouter(tags=["users"])
 
 
@@ -28,12 +27,12 @@ async def user(auth: Annotated[UserAuth, Depends(user_auth)]) -> User:
     return user
 
 
-@router.get(Endpoints.USERS_PROFILE)
+@router.get("/users/profile")
 async def user_own_profile(user: Annotated[User, Depends(user)]) -> User:
     return user
 
 
-@router.post(Endpoints.USERS_LOGIN)
+@router.post("/users/login")
 async def login(
     form: Annotated[OAuth2PasswordRequestForm, Depends()],
     auth: Annotated[UserAuth, Depends(user_auth)],
@@ -43,7 +42,7 @@ async def login(
     )
 
 
-@router.post(Endpoints.USERS_REGISTER, status_code=status.HTTP_201_CREATED)
+@router.post("/users/register", status_code=status.HTTP_201_CREATED)
 async def register(
     user: UserRegister, auth: Annotated[UserAuth, Depends(user_auth)]
 ) -> UserRead:

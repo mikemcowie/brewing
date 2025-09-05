@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from project_manager import db
-from project_manager.endpoints import Endpoints
 from project_manager.exceptions import Unauthorized
 from project_manager.organizations.models import Organization
 from project_manager.resources.models import AccessLevel, Resource, ResourceAccessItem
@@ -22,6 +21,14 @@ from project_manager.users.router import user
 
 def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
     router = APIRouter(tags=["organizations"], dependencies=[Depends(user)])
+
+    class Endpoints:
+        ORGANIZATIONS = f"/{model_type.plural_name}/"
+        ORGANIZATIONS_ONE = "{}{}".format(
+            ORGANIZATIONS, f"{{{model_type.singular_name}_id}}"
+        )
+        ORGANIZATIONS_ONE_ACCESS = f"{ORGANIZATIONS_ONE}/access"
+        ORGANIZATIONS_ONE_ACCESS_ONE = f"{ORGANIZATIONS_ONE}/access/{{user_id}}"
 
     async def repo(
         db_session: Annotated[AsyncSession, Depends(db.db_session)],

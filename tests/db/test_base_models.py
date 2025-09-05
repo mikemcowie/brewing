@@ -33,6 +33,17 @@ def test_test_resource_cls():
     assert Resource.metadata is not create_test_resource_cls().metadata
 
 
+def test_plural_name_must_be_defined():
+    resource = create_test_resource_cls()
+
+    with pytest.raises(TypeError) as err:
+
+        class SubResource(resource):
+            id = resource.primary_foreign_key_to(init=True)
+
+    assert "TypeError: Subclass SubResource must define 'plural_name'" in err.exconly()
+
+
 class TestSchemaGeneration:
     def db_model(self):
         resource = create_test_resource_cls()

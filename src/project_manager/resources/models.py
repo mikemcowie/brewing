@@ -67,6 +67,8 @@ class ResourceAttributes:
 
     __tablename__: ClassVar[str]
     __dataclass_fields__: ClassVar[list[str]]
+    plural_name: ClassVar[str]
+    singular_name: ClassVar[str]
     read_only_fields: ClassVar[tuple[str, ...]] = ("id", "created", "updated", "type")
     summary_fields: ClassVar[tuple[str, ...]] = ("id", "type")
     id: Mapped[UUID] = db.uuid_primary_key()
@@ -160,7 +162,12 @@ class ResourceAttributes:
 
 def create_resource_cls(base: type[db.Base]) -> type["Resource"]:
     class Resource(MappedAsDataclass, base, ResourceAttributes, kw_only=True):
-        pass
+        def __init_subclass__(cls, **kwargs):
+            super().__init_subclass__(**kwargs)
+            required_attributes = ("plural_name", "singular_name")
+            for attr in required_attributes:
+                if not hasattr(cls, attr):
+                    raise TypeError(f"Subclass {cls.__name__} must define '{attr}'")
 
     return Resource  # type: ignore
 
@@ -169,6 +176,7 @@ if TYPE_CHECKING:
 
     class Resource(MappedAsDataclass, db.Base, ResourceAttributes, kw_only=True):
         """Shared attribute DB model/table"""
+
 else:
     Resource = create_resource_cls(db.Base)
 
