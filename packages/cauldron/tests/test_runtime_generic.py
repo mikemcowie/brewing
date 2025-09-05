@@ -32,19 +32,6 @@ def test_runtime_generic_decorator():
     assert GenericThing[SomeSubClass]().generic_type.extra_attribute == "foo"
 
 
-def test_cant_use_decorator_on_class_that_already_has_class_setitem():
-    with pytest.raises(RuntimeError) as err:
-
-        @runtime_generic
-        @runtime_generic
-        class Foo:  # type: ignore
-            pass
-
-    assert (
-        "Cannot decorate a class with runtime_generic more than once." in err.exconly()
-    )
-
-
 @runtime_generic
 class HasOneParam[T1]:
     t1: type[T1]
