@@ -21,7 +21,7 @@ from cauldron.db.session import (
 from cauldron.exceptions import Unauthorized
 from cauldron.http import Depends, Request, status
 from cauldron.http.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from cauldron.http.viewset import AbstractViewSet
+from cauldron.http.viewset import AbstractViewSet, APIPathConstant
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -117,6 +117,9 @@ class UserViewSet(AbstractViewSet):
 
     def get_router_dependencies(self) -> Sequence[Any]:
         return []
+
+    def get_base_path(self):
+        return [APIPathConstant("users")]
 
     def setup_endpoints(self):
         @self.router.get("/users/profile")

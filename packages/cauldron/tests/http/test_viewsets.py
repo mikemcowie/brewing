@@ -3,8 +3,12 @@ from enum import Enum
 from typing import Any
 
 from cauldron.http import CauldronHTTP
-from cauldron.http.collection import collection
-from cauldron.http.viewset import AbstractViewSet
+from cauldron.http.viewset import (
+    AbstractViewSet,
+    APIPathConstant,
+    APIPathParam,
+    collection,
+)
 from cauldron.testing import TestClient
 from pydantic import BaseModel
 
@@ -15,6 +19,9 @@ class ConcreteViewSet(AbstractViewSet):
 
     def get_router_tags(self) -> list[str | Enum]:
         return ["test"]
+
+    def get_base_path(self) -> Sequence[APIPathConstant | APIPathParam]:
+        return [APIPathConstant("test")]
 
 
 def test_routes_created():

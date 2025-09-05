@@ -12,7 +12,7 @@ from cauldron.auth.users import user
 from cauldron.db import session
 from cauldron.exceptions import Unauthorized
 from cauldron.http import Depends, Path, status
-from cauldron.http.viewset import AbstractViewSet
+from cauldron.http.viewset import AbstractViewSet, APIPathConstant, APIPathParam
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from cauldron.resources.repo import (
     CrudRepository,
@@ -30,6 +30,9 @@ if TYPE_CHECKING:
 @runtime_generic
 class ModelViewSet[ModelT: Resource](AbstractViewSet):
     model: type[ModelT]
+
+    def get_base_path(self) -> Sequence[APIPathConstant | APIPathParam]:
+        return [APIPathConstant(self.model.plural_name)]
 
     def get_router_tags(self) -> list[str | Enum]:
         return [self.model.plural_name]
