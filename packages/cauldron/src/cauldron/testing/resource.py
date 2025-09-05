@@ -5,20 +5,21 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 import pytest
-from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from fastapi import FastAPI, status
 from polyfactory.factories.pydantic_factory import ModelFactory
 from project_manager.app import Organization
 
-from tests.api.scenario import Expectations, User
-from tests.api.test_user import UserTestScenario
+from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
+from cauldron.testing.scenario import Expectations, User
+from cauldron.testing.user import UserTestScenario
 
 if TYPE_CHECKING:
-    from cauldron.resources.models import ReadModelType
     from httpx import Response
     from polyfactory.factories import BaseFactory
     from pydantic import BaseModel
     from pytest_subtests import SubTests
+
+    from cauldron.resources.models import ReadModelType
 
 
 class ResourceTestScenario[ModelT: Resource](UserTestScenario):
@@ -302,7 +303,7 @@ class BaseTestResourceCrud[ModelT: Resource]:
             resource_id=str(org.id),
             expectations=Expectations(status=status.HTTP_200_OK),
         )
-        assert len(access.json()) == 2
+        assert len(access.json()) == 2  # noqa: PLR2004
         assert user2_id in [a["user_id"] for a in access.json()]
         self.scenario.read_access_one(
             self.scenario.user1,
@@ -407,7 +408,3 @@ class BaseTestResourceCrud[ModelT: Resource]:
             str(org.id),
             Expectations(status=status.HTTP_200_OK),
         )
-
-
-class TestOrganization(BaseTestResourceCrud[Organization]):
-    pass
