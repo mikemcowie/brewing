@@ -7,7 +7,7 @@ from sqlalchemy.pool import NullPool
 
 from project_manager import db as db_
 from project_manager import testing
-from project_manager.application import ProjectManager
+from project_manager.application import Application
 from project_manager.db import Database
 
 pytest.register_assert_rewrite("tests.api.scenario")
@@ -31,10 +31,10 @@ def db(postgresql: None) -> Generator[None, Any]:
 
 
 @pytest.fixture
-def project_manager(postgresql: None, db: Database) -> ProjectManager:
-    return ProjectManager(dev=True)
+def project_manager(postgresql: None, db: Database) -> Application:
+    return Application(dev=True)
 
 
 @pytest.fixture
-def app(project_manager: ProjectManager) -> FastAPI:
+def app(project_manager: Application) -> FastAPI:
     return project_manager.app

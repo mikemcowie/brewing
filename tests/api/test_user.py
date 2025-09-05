@@ -13,7 +13,17 @@ if TYPE_CHECKING:
     from pytest_subtests import SubTests
 
 
-class UserTestScenario(TestScenario):
+class UserTestScenario:
+    def __init__(self, subtests: SubTests, app: FastAPI):
+        self.scenario = TestScenario(subtests=subtests, app=app)
+        self.subtests = self.scenario.subtests
+        self.user1, self.user2, self.bad_guy = (
+            self.scenario.user1,
+            self.scenario.user2,
+            self.scenario.bad_guy,
+        )
+        self.validate_expectations = self.scenario.validate_expectations
+
     def register(self, user: User, test_name: str, expectations: Expectations) -> None:
         with self.subtests.test(test_name):
             self.validate_expectations(

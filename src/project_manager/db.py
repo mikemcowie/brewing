@@ -140,8 +140,8 @@ def deleted_field() -> MappedColumn[datetime]:
 
 
 async def db_session(request: Request) -> AsyncGenerator[AsyncSession, Any]:
-    from project_manager.application import ProjectManager
+    from project_manager.application import Application
 
-    assert isinstance(request.app.project_manager, ProjectManager)
+    assert isinstance(request.app.project_manager, Application)
     async with request.app.project_manager.database.session() as session:
         yield session

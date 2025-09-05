@@ -43,7 +43,7 @@ def handle_exception(request: Request, exc: DomainError) -> JSONResponse:
     )
 
 
-class ProjectManager:
+class Application:
     # ruff: noqa: PLR0913
     default_app_args: ClassVar[dict[str, str]] = {"title": "Project Manager"}
     default_routers = (
