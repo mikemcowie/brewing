@@ -12,6 +12,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import make_dataclass
 from pathlib import Path
+from types import EllipsisType  # noqa: TC003
 from typing import TYPE_CHECKING, Annotated, Any, get_type_hints
 from uuid import UUID
 
@@ -27,7 +28,6 @@ from cauldron.http.viewset import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from enum import Enum
-    from types import EllipsisType
 
     from pydantic import BaseModel
 
