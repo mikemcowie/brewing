@@ -1,27 +1,17 @@
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Literal
-from uuid import UUID
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import HTTPException, status
 from passlib.context import CryptContext
-from pydantic import BaseModel, EmailStr, SecretStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from project_manager.db import Database
-from project_manager.endpoints import Endpoints
 from project_manager.models import User
 from project_manager.settings import Settings
-
-router = APIRouter(tags=["users"])
-
+from project_manager.users.schemas import Token, UserRead, UserRegister
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
 ALGORITHM = "HS256"
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=Endpoints.USERS_LOGIN, auto_error=False)
 
 
 class DomainError(Exception):
@@ -45,21 +35,6 @@ class LoginFailure(DomainError):
 class Unauthorized(DomainError):
     status_code = status.HTTP_401_UNAUTHORIZED
     detail = "unauthorized"
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: Literal["bearer"] = "bearer"
-
-
-class UserRead(BaseModel):
-    id: UUID
-    username: str
-
-
-class UserRegister(BaseModel):
-    email: EmailStr
-    password: SecretStr
 
 
 class UserAuth:
@@ -143,49 +118,3 @@ class UserAuth:
             self.db_session.add(db_user)
             await self.db_session.flush()
             return UserRead.model_validate(db_user, from_attributes=True)
-
-
-def settings():
-    return Settings()
-
-
-async def db_session(settings: Annotated[Settings, Depends(settings)]):
-    async with Database(settings=settings).async_session() as session:
-        yield session
-
-
-async def user_auth(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db_session: Annotated[AsyncSession, Depends(db_session)],
-):
-    return UserAuth(token=token, db_session=db_session)
-
-
-async def user(auth: Annotated[UserAuth, Depends(user_auth)]):
-    return await auth.token_user()
-
-
-@router.get(Endpoints.USERS_PROFILE)
-async def user_own_profile(user: Annotated[User, Depends(user)]):
-    return user
-
-
-def secret_value(value: str | SecretStr):
-    if isinstance(value, str):
-        return value
-    return value.get_secret_value()
-
-
-@router.post(Endpoints.USERS_LOGIN)
-async def login(
-    form: Annotated[OAuth2PasswordRequestForm, Depends()],
-    auth: Annotated[UserAuth, Depends(user_auth)],
-):
-    return await auth.authenticate(
-        username=form.username, password=secret_value(form.password)
-    )
-
-
-@router.post(Endpoints.USERS_REGISTER, status_code=status.HTTP_201_CREATED)
-async def register(user: UserRegister, auth: Annotated[UserAuth, Depends(user_auth)]):
-    return await auth.create_user(user)
