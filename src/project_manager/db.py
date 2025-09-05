@@ -38,6 +38,13 @@ class Database:
         self.settings = settings or Settings()
         self.async_engine = _async_engine(url=self.build_uri("asyncpg"))
         self.sync_engine = _engine(url=self.build_uri("psycopg"))
+        self.models = self.load_models()
+
+    def load_models(self):
+        # ruff: noqa:PLC0415
+        from project_manager import models
+
+        return models
 
     def build_uri(self, driver: str):
         return f"postgresql+{driver}://{self.settings.PGUSER}:{self.settings.PGPASSWORD.get_secret_value()}@{self.settings.PGHOST}:{self.settings.PGPORT}/{self.settings.PGDATABASE}"

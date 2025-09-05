@@ -1,16 +1,15 @@
-import os
-import subprocess
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
-from pathlib import Path
 from typing import Annotated
 
 import typer
 import uvicorn
-import yaml  # type: ignore[import-untyped]
-from testcontainers.postgres import PostgresContainer  # type: ignore[import-untyped]
 
 from project_manager.db import Database
+from project_manager.testing import (
+    dev_environment,
+    run_compose,
+    testcontainer_postgresql,
+)
 
 cli = typer.Typer(add_help_option=True, no_args_is_help=True)
 dev = typer.Typer(add_help_option=True, no_args_is_help=True)
@@ -22,46 +21,13 @@ dev.add_typer(dev_db, name="db")
 
 
 API = "project_manager.api:api"
-COMPOSE_FILE = Path(__file__).parents[2] / "compose.yaml"
-
-
-def run_compose():
-    subprocess.run(
-        ["docker", "compose", "up", "-d"], check=False, cwd=COMPOSE_FILE.parent
-    )
-
-
-def dev_environment():
-    compose_data = yaml.load(COMPOSE_FILE.read_text(), yaml.SafeLoader)
-    os.environ["PGPASSWORD"] = compose_data["services"]["db"]["environment"][
-        "POSTGRES_PASSWORD"
-    ]
-    os.environ["PGDATABASE"] = compose_data["services"]["db"]["environment"][
-        "POSTGRES_DB"
-    ]
-    os.environ["PGUSER"] = compose_data["services"]["db"]["environment"][
-        "POSTGRES_USER"
-    ]
-    os.environ["PGHOST"] = "127.0.0.1"
-    os.environ["PGPORT"] = "5432"
-
-
-@contextmanager
-def testcontainer_postgresql():
-    with PostgresContainer() as pg:
-        os.environ["PGPASSWORD"] = pg.password
-        os.environ["PGDATABASE"] = pg.dbname
-        os.environ["PGUSER"] = pg.username
-        os.environ["PGHOST"] = "127.0.0.1"
-        os.environ["PGPORT"] = str(pg.get_exposed_port(pg.port))
-        yield
 
 
 @cli.command(name="api")
 def api(workers: Annotated[int, typer.Option(envvar="API_WORKERS")]):
     """Run api"""
 
-    uvicorn.run("project_manager.api:api", workers=workers)
+    uvicorn.run(API, workers=workers)
 
 
 @dev.command("api")
@@ -70,7 +36,7 @@ def dev_api():
     dev_environment()
     with ThreadPoolExecutor() as executor:
         executor.submit(run_compose)
-        uvicorn.run("project_manager.api:api", reload=True)
+        uvicorn.run(API, reload=True)
 
 
 def _db_upgrade(revision: str):

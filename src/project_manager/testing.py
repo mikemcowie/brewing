@@ -1,0 +1,42 @@
+import os
+import subprocess
+from contextlib import contextmanager
+from pathlib import Path
+
+import yaml  # type:ignore[import-untyped]
+from testcontainers.postgres import PostgresContainer  # type:ignore[import-untyped]
+
+
+@contextmanager
+def testcontainer_postgresql():
+    with PostgresContainer() as pg:
+        os.environ["PGPASSWORD"] = pg.password
+        os.environ["PGDATABASE"] = pg.dbname
+        os.environ["PGUSER"] = pg.username
+        os.environ["PGHOST"] = "127.0.0.1"
+        os.environ["PGPORT"] = str(pg.get_exposed_port(pg.port))
+        yield
+
+
+COMPOSE_FILE = Path(__file__).parents[2] / "compose.yaml"
+
+
+def dev_environment():
+    compose_data = yaml.load(COMPOSE_FILE.read_text(), yaml.SafeLoader)
+    os.environ["PGPASSWORD"] = compose_data["services"]["db"]["environment"][
+        "POSTGRES_PASSWORD"
+    ]
+    os.environ["PGDATABASE"] = compose_data["services"]["db"]["environment"][
+        "POSTGRES_DB"
+    ]
+    os.environ["PGUSER"] = compose_data["services"]["db"]["environment"][
+        "POSTGRES_USER"
+    ]
+    os.environ["PGHOST"] = "127.0.0.1"
+    os.environ["PGPORT"] = "5432"
+
+
+def run_compose():
+    subprocess.run(
+        ["docker", "compose", "up", "-d"], check=False, cwd=COMPOSE_FILE.parent
+    )
