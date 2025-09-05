@@ -5,20 +5,21 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
 import pytest
-from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from fastapi import FastAPI, status
 from polyfactory.factories.pydantic_factory import ModelFactory
-
 from project_manager.organizations.models import Organization
+
+from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from tests.api.scenario import Expectations, User
 from tests.api.test_user import UserTestScenario
 
 if TYPE_CHECKING:
-    from cauldron.resources.models import ReadModelType
     from httpx import Response
     from polyfactory.factories import BaseFactory
     from pydantic import BaseModel
     from pytest_subtests import SubTests
+
+    from cauldron.resources.models import ReadModelType
 
 
 class ResourceTestScenario[ModelT: Resource](UserTestScenario):

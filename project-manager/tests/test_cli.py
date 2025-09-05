@@ -1,10 +1,9 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from typer.testing import CliRunner
-
 from project_manager.cli import cli
 from project_manager.migrations import versions
+from typer.testing import CliRunner
 
 
 def test_run_cli() -> None:

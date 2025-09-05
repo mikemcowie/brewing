@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from cauldron.application import Application
 from project_manager import constants
-from project_manager.application import Application
 
 app_extra_args = {
     "title": constants.TITLE,

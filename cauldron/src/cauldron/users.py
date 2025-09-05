@@ -11,6 +11,7 @@ from uuid import UUID  # noqa
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
+from project_manager.settings import Settings
 from pydantic import BaseModel, EmailStr, SecretStr
 from sqlalchemy import DateTime, ForeignKey, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +31,6 @@ from cauldron.db import (
     uuid_primary_key,
 )
 from cauldron.exceptions import DomainError, Unauthorized
-from project_manager.settings import Settings
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession

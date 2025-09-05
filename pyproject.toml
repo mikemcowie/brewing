@@ -80,7 +80,7 @@ extend-ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = [
+"**/tests/**" = [
     "ARG001", # pytest fixtures may cause unused function args to be valid
     "PLR2004" # magic values are reasonable in tests
     ]

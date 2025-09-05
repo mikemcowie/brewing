@@ -9,6 +9,8 @@ from alembic import command
 from alembic.config import Config
 from fastapi import Depends
 from fastapi import Request as _Request
+from project_manager import migrations
+from project_manager.settings import Settings
 from pydantic.alias_generators import to_snake
 from sqlalchemy import DateTime, MetaData, func, text
 from sqlalchemy.dialects import postgresql as pg
@@ -21,9 +23,6 @@ from sqlalchemy.orm import (
     declared_attr,
     mapped_column,
 )
-
-from project_manager import migrations
-from project_manager.settings import Settings
 
 Request = _Request  # So that ruff won't hide it behind type checking
 MIGRATIONS_DIR = Path(migrations.__file__).parent.resolve()
@@ -74,6 +73,7 @@ class Database:
     def load_models(self) -> None:
         # ruff: noqa: F401,PLC0415
         import project_manager.organizations.models
+
         import cauldron.resources.models
         import cauldron.users
 
@@ -140,7 +140,7 @@ def deleted_field() -> MappedColumn[datetime]:
 
 
 async def db_session(request: Request) -> AsyncGenerator[AsyncSession, Any]:
-    from project_manager.application import Application
+    from cauldron.application import Application
 
     assert isinstance(request.app.project_manager, Application)
     async with request.app.project_manager.database.session() as session:
