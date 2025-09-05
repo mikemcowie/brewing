@@ -40,6 +40,8 @@ class OrganizationRepository:
 
     async def create(self, new_organization: CreateOrganization):
         organization = Organization(**new_organization.model_dump())
+        self.session.add(organization)
+        await self.session.flush()
         access = ResourceAccess(
             resource_id=organization.id, user_id=self.user.id, access=AccessLevel.owner
         )

@@ -123,13 +123,13 @@ class Resource(MappedAsDataclass, db.Base, kw_only=True):
         )
 
     @staticmethod
-    def primary_foreign_key_to() -> MappedColumn[UUID]:
-        return mapped_column(ForeignKey("resource.id"), primary_key=True, init=False)
+    def primary_foreign_key_to(*, init: bool) -> MappedColumn[UUID]:
+        return mapped_column(ForeignKey("resource.id"), primary_key=True, init=init)
 
 
 class ResourceAccess(MappedAsDataclass, db.Base, kw_only=True):
-    resource_id: Mapped[UUID] = Resource.primary_foreign_key_to()
-    user_id: Mapped[UUID] = User.primary_foreign_key_to()
+    resource_id: Mapped[UUID] = Resource.primary_foreign_key_to(init=True)
+    user_id: Mapped[UUID] = User.primary_foreign_key_to(init=True)
     access: Mapped[AccessLevel]
     resource: Mapped[Resource] = relationship(lazy="joined", init=False)
     user: Mapped[User] = relationship(lazy="joined", init=False)

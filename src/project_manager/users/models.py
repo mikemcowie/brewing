@@ -54,8 +54,8 @@ class User(MappedAsDataclass, Base, kw_only=True):
             self.password = ""  # forget the actual password.
 
     @staticmethod
-    def primary_foreign_key_to() -> MappedColumn[UUID]:
-        return mapped_column(ForeignKey("user.id"), primary_key=True, init=False)
+    def primary_foreign_key_to(*, init: bool) -> MappedColumn[UUID]:
+        return mapped_column(ForeignKey("user.id"), primary_key=True, init=init)
 
     @property
     def username(self) -> str:
