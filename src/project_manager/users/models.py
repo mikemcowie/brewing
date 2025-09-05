@@ -1,30 +1,18 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic.alias_generators import to_snake
 from sqlalchemy import DateTime, func, text
 from sqlalchemy.dialects import postgresql as pg
 from sqlalchemy.orm import (
-    DeclarativeBase,
     Mapped,
     MappedAsDataclass,
-    declared_attr,
     mapped_column,
     registry,
 )
 
-from project_manager.db import Database
+from project_manager.db import Base
 
 reg = registry()
-
-
-class Base(DeclarativeBase):
-    __abstract__ = True
-    metadata = Database.metadata
-
-    @declared_attr  # type: ignore
-    def __tablename__(cls) -> str:  # noqa: N805
-        return to_snake(cls.__name__)
 
 
 def uuid_primary_key():

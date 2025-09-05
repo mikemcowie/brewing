@@ -6,10 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from project_manager.db import Database
 from project_manager.endpoints import Endpoints
-from project_manager.models import User
 from project_manager.secrets import secret_value
 from project_manager.settings import Settings
 from project_manager.users.auth import UserAuth
+from project_manager.users.models import User
 from project_manager.users.schemas import UserRegister
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=Endpoints.USERS_LOGIN, auto_error=False)

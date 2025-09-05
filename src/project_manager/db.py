@@ -5,10 +5,11 @@ from typing import TYPE_CHECKING, Any
 
 from alembic import command
 from alembic.config import Config
+from pydantic.alias_generators import to_snake
 from sqlalchemy import MetaData
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import DeclarativeBase, Session, declared_attr
 
 from project_manager import migrations
 from project_manager.settings import Settings
@@ -34,14 +35,25 @@ else:
         return create_async_engine(*args, **kwargs | ASYNC_ENGINE_KWARGS)
 
 
-class Database:
-    metadata = MetaData()
+metadata = MetaData()
 
+
+class Base(DeclarativeBase):
+    __abstract__ = True
+    metadata = metadata
+
+    @declared_attr  # type: ignore
+    def __tablename__(cls) -> str:  # noqa: N805
+        return to_snake(cls.__name__)
+
+
+class Database:
     def __init__(self, settings: Settings | None = None):
         self.settings = settings or Settings()
         self.async_engine = _async_engine(url=self.build_uri("asyncpg"))
         self.sync_engine = _engine(url=self.build_uri("psycopg"))
         self.models = self.load_models()
+        self.metadata = metadata
 
     def load_models(self):
         # ruff: noqa:PLC0415

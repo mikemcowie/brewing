@@ -7,8 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from project_manager.exceptions import DomainError, NotFound, Unauthorized
-from project_manager.models import User
 from project_manager.settings import Settings
+from project_manager.users.models import User
 from project_manager.users.schemas import Token, UserRead, UserRegister
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12

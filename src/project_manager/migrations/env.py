@@ -10,11 +10,11 @@ def run_migrations_online() -> None:
     """
     # late import to avoid circular import
 
-    from project_manager.db import Database  # noqa: PLC0415
+    from project_manager.db import Base, Database  # noqa: PLC0415
 
     db = Database()
     with db.sync_engine.connect() as connection:
-        context.configure(connection=connection, target_metadata=db.metadata)
+        context.configure(connection=connection, target_metadata=Base.metadata)
 
         with context.begin_transaction():
             context.run_migrations()
