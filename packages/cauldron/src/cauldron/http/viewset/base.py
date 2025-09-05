@@ -10,7 +10,7 @@ They contain a set of related "views" or "endpoints"
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, make_dataclass
+from dataclasses import make_dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, get_type_hints
 from uuid import UUID
@@ -27,6 +27,7 @@ from cauldron.http.viewset import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from enum import Enum
+    from types import EllipsisType
 
     from pydantic import BaseModel
 
@@ -46,7 +47,6 @@ type ViewSetDependencies = Sequence[Any]
 type ViewSetBasePath = Sequence[str]
 
 
-@dataclass
 class PathParameterPlaceholder:
     """represents the path parameters of a request.
 
@@ -128,10 +128,14 @@ class AbstractViewSet(ABC):
                     for md in metadata
                 )
 
+    def _parse_path_component(self, component: str | EllipsisType):
+        return "{" + self.get_path_param_name() + "}" if component is ... else component
+
     def setup_endpoint(
         self, attr: str, item: Any, params: endpoints.EndpointParameters
     ):
-        path = list(self.get_base_path()) + params.path
+        path_params = [self._parse_path_component(p) for p in params.path]
+        path = list(self.get_base_path()) + path_params
         path_obj = Path("/" + "/".join(path))
         path_str = str(path_obj) + "/" if params.trailing_slash else str(path_obj)
         logger.debug(f"Creating fastapi endpoint for {self=} {attr=} {item=}")
@@ -157,7 +161,7 @@ class AbstractViewSet(ABC):
                     self.setup_endpoint(attr, item, params)
 
     @abstractmethod
-    def get_base_path(self) -> ViewSetBasePath:
+    def get_base_path(self) -> Sequence[str]:
         """Give the components of the base path for all routes on the router."""
 
     @abstractmethod

@@ -115,7 +115,7 @@ class ModelViewSet[ModelT: Resource](AbstractViewSet):
         raise Unauthorized(detail="access denied")
 
     collection = Endpoint(trailing_slash=True)
-    single = collection.path_parameter("organization_id")
+    single = collection.path_parameter()
     access = single.action("access")
     access_single = access.path_parameter("user_id")
 

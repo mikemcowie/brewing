@@ -20,6 +20,7 @@ from cauldron.http.viewset import const
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from types import EllipsisType
 
     from pydantic import BaseModel
 
@@ -39,14 +40,16 @@ if TYPE_CHECKING:
 @dataclass
 class EndpointParameters:
     trailing_slash: bool
-    path: list[str]
+    path: list[str | EllipsisType]
     method: HTTPMethod
     args: Sequence[Any]
     kwargs: dict[str, Any]
 
 
 class Endpoint:
-    def __init__(self, path: Sequence[str] | None = None, *, trailing_slash: bool):
+    def __init__(
+        self, path: Sequence[str | EllipsisType] | None = None, *, trailing_slash: bool
+    ):
         self.trailing_slash = trailing_slash
         path = path if path else []
         self.path = [p for p in path if p]
@@ -118,8 +121,9 @@ class Endpoint:
 
         return decorator
 
-    def path_parameter(self, param_name: str) -> Endpoint:
-        return Endpoint([*self.path, APIPathParam(param_name)], trailing_slash=False)
+    def path_parameter(self, param_name: str | EllipsisType = ...) -> Endpoint:
+        param = param_name if param_name is ... else APIPathParam(param_name)
+        return Endpoint([*self.path, param], trailing_slash=False)
 
     def action(self, param_name: str) -> Endpoint:
         return Endpoint(
