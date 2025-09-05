@@ -6,15 +6,15 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import JSONResponse, Response
-from project_manager import root_router
 from project_manager.organizations.models import Organization
-from project_manager.settings import Settings
 from starlette.staticfiles import StaticFiles
 
+from cauldron import root_router
 from cauldron.db import Database
 from cauldron.exceptions import DomainError
 from cauldron.logging import setup_logging
 from cauldron.resources.router import model_crud_router
+from cauldron.settings import Settings
 from cauldron.users import router as users_router
 
 if TYPE_CHECKING:

@@ -10,7 +10,6 @@ from alembic.config import Config
 from fastapi import Depends
 from fastapi import Request as _Request
 from project_manager import migrations
-from project_manager.settings import Settings
 from pydantic.alias_generators import to_snake
 from sqlalchemy import DateTime, MetaData, func, text
 from sqlalchemy.dialects import postgresql as pg
@@ -23,6 +22,8 @@ from sqlalchemy.orm import (
     declared_attr,
     mapped_column,
 )
+
+from cauldron.settings import Settings
 
 Request = _Request  # So that ruff won't hide it behind type checking
 MIGRATIONS_DIR = Path(migrations.__file__).parent.resolve()

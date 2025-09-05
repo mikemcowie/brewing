@@ -5,15 +5,12 @@ from typing import TYPE_CHECKING
 from fastapi import APIRouter, FastAPI, Request
 from pydantic import BaseModel
 
-from project_manager._version import version
-
 router = APIRouter(tags=["root"])
 
 
 class APIRootResponse(BaseModel):
     title: str
     description: str
-    deployed_version: str
     api_version: str
 
 
@@ -25,6 +22,5 @@ async def api_root(request: Request) -> APIRootResponse:
     return APIRootResponse(
         title=app.title,
         description=app.description,
-        deployed_version=version,
         api_version=app.version,
     )
