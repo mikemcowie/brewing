@@ -9,6 +9,7 @@ resolution-markers = [
 [manifest]
 members = [
     "cauldron",
+    "cauldron-incubator",
     "cauldron-test-dependencies",
     "cauldron-uv-workspace",
     "cauldronlib-cli",
@@ -204,6 +205,11 @@ requires-dist = [
 ]
 
 [[package]]
+name = "cauldron-incubator"
+version = "0.1.0"
+source = { editable = "incubator" }
+
+[[package]]
 name = "cauldron-test-dependencies"
 version = "0.1.0"
 source = { editable = "test-dependencies" }
@@ -250,6 +256,7 @@ version = "0.0.1"
 source = { virtual = "." }
 dependencies = [
     { name = "cauldron" },
+    { name = "cauldron-incubator" },
     { name = "cauldron-test-dependencies" },
     { name = "cauldronlib-cli" },
     { name = "cauldronlib-generic" },
@@ -269,6 +276,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "cauldron", editable = "framework" },
+    { name = "cauldron-incubator", editable = "incubator" },
     { name = "cauldron-test-dependencies", editable = "test-dependencies" },
     { name = "cauldronlib-cli", editable = "libs/cli" },
     { name = "cauldronlib-generic", editable = "libs/generic" },

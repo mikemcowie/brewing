@@ -10,6 +10,7 @@ dependencies = [
     "cauldronlib-generic",
     "cauldronlib-cli",
     "cauldron-test-dependencies",
+    "cauldron-incubator",
 ]
 
 [tool.uv.workspace]
@@ -18,6 +19,7 @@ members = [
     "libs/*",
     "samples/*",
     "test-dependencies",
+    "incubator",
 ]
 
 [tool.uv.sources]
@@ -26,6 +28,7 @@ cauldron = { workspace = true }
 cauldronlib-generic = { workspace = true }
 cauldronlib-cli = { workspace = true }
 cauldron-test-dependencies = { workspace = true }
+cauldron-incubator = {workspace=true}
 
 [dependency-groups]
 dev = [
@@ -89,13 +92,13 @@ extend-ignore = [
     ]
 
 [tool.pytest.ini_options]
-addopts = "--import-mode=importlib --cov-report=html --cov-report=term --cov=. --cov-fail-under=90 --cov-context=test --cov-branch --html=testreport/index.html --markdown-docs --ignore framework/src/cauldron/db/migrations/"
+addopts = "--import-mode=importlib --cov-report=html --cov-report=term --cov=. --cov-fail-under=90 --cov-context=test --cov-branch --html=testreport/index.html --markdown-docs"
 python_files = [
     "test_*.py",
     "*_test.py",
     "feat_*.py",
 ]
-ignore_glob = "**/env.py"
+norecursedirs = ".venv framework/src/cauldron/db/migrations"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]
