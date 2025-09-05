@@ -1,0 +1,122 @@
+[project]
+name = "project-manager"
+dynamic = ["version", "urls"]
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "asyncpg>=0.30.0",
+    "fastapi[standard]>=0.115.13",
+    "psycopg>=3.2.9",
+    "pydantic-settings>=2.9.1",
+    "pydantic[email]>=2.11.7",
+    "sqlalchemy>=2.0.41",
+    "typer>=0.16.0",
+    "uvicorn>=0.34.3",
+]
+
+[project.scripts]
+project-manager = "project_manager.cli:cli"
+dev = "project_manager.cli:dev"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/project_manager/_version.py"
+
+[tool.hatch.metadata.hooks.vcs]
+
+[tool.ruff.format]
+docstring-code-format = true
+line-ending = "lf"
+
+[tool.ruff.lint]
+extend-select = [
+    "A",
+    "B",
+    "Q",
+    "C4",
+    "DTZ",
+    "FIX",
+    "ISC",
+    "ICN",
+    "LOG",
+    "T",
+    "PT",
+    "SLF",
+    "SIM",
+    "TID",
+    "ARG",
+    "PTH",
+    "I",
+    "C90",
+    "N",
+    "UP",
+    "FURB",
+    "RUF",
+    "TRY",
+    "TC",
+    "PERF",
+    "PL",
+    "UP",
+    ]
+extend-ignore = [
+    "A002",
+    "TRY003", # disagree about error message length
+    "N818", # disagree about error naming
+    "PLC0414",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "ARG001", # pytest fixtures may cause unused function args to be valid
+    "PLR2004" # magic values are reasonable in tests
+    ]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib --cov-report=html --cov-report=term --cov=. --cov-fail-under=100 --cov-context=test --cov-branch"
+python_files = [
+    "test_*.py",
+    "*_test.py",
+    "feat_*.py",
+]
+asyncio_default_fixture_loop_scope = "session"
+
+[tool.coverage.run]
+concurrency = ["thread", "greenlet"]
+
+[tool.coverage.report]
+omit = [
+    "src/openlms/_version.py"
+]
+exclude_also = [
+    'def __repr__',
+    'if self.debug:',
+    'if settings.DEBUG',
+    'raise AssertionError',
+    'raise NotImplementedError',
+    'if 0:',
+    'if __name__ == .__main__.:',
+    'if TYPE_CHECKING:',
+    'class .*\bProtocol\):',
+    '@(abc\.)?abstractmethod',
+]
+
+[tool.mypy]
+check_untyped_defs = true
+
+[dependency-groups]
+dev = [
+    "mypy>=1.16.1",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "ruff>=0.12.0",
+]

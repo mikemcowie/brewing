@@ -1,0 +1,49 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+    -   id: check-case-conflict
+    -   id: check-json
+    -   id: check-merge-conflict
+    -   id: check-symlinks
+    -   id: check-toml
+    -   id: detect-private-key
+    -   id: mixed-line-ending
+    -   id: no-commit-to-branch
+-   repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: "0.7.4"
+    hooks:
+    -   id: uv-lock
+-   repo: local
+    hooks:
+    -   id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+    -   id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+    -   id: mypy
+        name: mypy
+        entry: uv run mypy
+        language: system
+        types: [python]
+-   repo: https://github.com/compilerla/conventional-pre-commit
+    rev: 37b5f0 # main 2025/05/17
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: []
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
