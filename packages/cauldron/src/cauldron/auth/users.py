@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING, Annotated
 
 from passlib.context import CryptContext
 from runtime_generic import runtime_generic
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from cauldron.auth.exceptions import InvalidToken
 from cauldron.auth.models import Token, User, UserRead, UserRegister, UserSession
+from cauldron.auth.repo import UserRepo
 from cauldron.db.session import (
     db_session,
 )
@@ -28,36 +28,6 @@ if TYPE_CHECKING:
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
 TOKEN_BYTES = 48
-
-
-class UserRepo:
-    def __init__(self, session: AsyncSession):
-        self._session = session
-
-    async def flush(self):
-        await self._session.flush()
-
-    async def commit(self):
-        await self._session.commit()
-
-    async def validated(self, token: str) -> UserSession | None:
-        return (
-            await self._session.execute(
-                select(UserSession)
-                .where(UserSession.id == hashlib.sha512(token.encode()).hexdigest())
-                .where(UserSession.expires > datetime.now(UTC))
-            )
-        ).scalar_one_or_none()
-
-    async def user_from_email(self, username: str) -> User | None:
-        return (
-            await self._session.execute(select(User).where(User.email == username))
-        ).scalar_one_or_none()
-
-    async def add(self, item: UserSession | User, flush: bool = False):
-        self._session.add(item)
-        if flush:
-            await self._session.flush()
 
 
 @dataclass
@@ -88,7 +58,9 @@ class UserService[RepoT: UserRepo, AuthConfigT: AuthConfig]:
         token = await self.token(request)
         if not token:
             raise Unauthorized("unauthorized")
-        user_session = await self._repo.validated(token)
+        user_session = await self._repo.validated(
+            hashlib.sha512(token.encode()).hexdigest()
+        )
         if not user_session:
             raise InvalidToken("unauthorized")
         return user_session.user
