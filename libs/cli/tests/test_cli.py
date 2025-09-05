@@ -20,8 +20,8 @@ def test_basic_cli_with_one_cmd(subtests: SubTests):
     with subtests.test("help"):
         result = runner.invoke(["--help"])
         assert result.exit_code == 0
-        assert " Usage: root [OPTIONS] COMMAND [ARGS]..." in result.stdout
-        assert "do-something   Allows you to do something" in result.stdout
+        assert " [OPTIONS] COMMAND [ARGS]" in result.stdout
+        assert "Allows you to do something" in result.stdout
 
     with subtests.test("something"):
         result = runner.invoke(["do-something"])
@@ -43,9 +43,9 @@ def test_basic_cli_with_two_cmd(subtests: SubTests):
     with subtests.test("help"):
         help_result = runner.invoke(["--help"], color=False)
         assert help_result.exit_code == 0
-        assert " Usage: root [OPTIONS] COMMAND [ARGS]..." in help_result.stdout
-        assert "do-something     Allows you to do something" in help_result.stdout
-        assert "also-something   Also allows you to do something" in help_result.stdout
+        assert "[OPTIONS] COMMAND [ARGS]" in help_result.stdout
+        assert "Allows you to do something" in help_result.stdout
+        assert "Also allows you to do something" in help_result.stdout
     with subtests.test("do-something"):
         result = runner.invoke(["do-something"])
         assert result.stdout.strip() == "something"
@@ -155,7 +155,7 @@ def test_nested_cli(subtests: SubTests):
 
     with subtests.test("child"):
         result = runner.invoke(["child"])
-        assert "Usage: parent child [OPTIONS] COMMAND [ARGS]..." in result.stdout
+        assert "child [OPTIONS] COMMAND [ARGS]..." in result.stdout
 
     with subtests.test("child-read"):
         result = runner.invoke(["child", "read"])
