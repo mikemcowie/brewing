@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from project_manager import db
 from project_manager.exceptions import Unauthorized
-from project_manager.organizations.models import Organization
 from project_manager.resources.models import AccessLevel, Resource, ResourceAccessItem
 from project_manager.resources.repo import (
     CreateResource,
@@ -162,6 +161,3 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         return await repo.set_access(resource_id, access)
 
     return router
-
-
-router = model_crud_router(Organization)

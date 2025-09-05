@@ -12,7 +12,8 @@ from project_manager import root_router
 from project_manager.db import Database
 from project_manager.exceptions import DomainError
 from project_manager.logging import setup_logging
-from project_manager.organizations.router import router as organizations_router
+from project_manager.organizations.models import Organization
+from project_manager.resources.router import model_crud_router
 from project_manager.settings import Settings
 from project_manager.users.router import router as users_router
 
@@ -45,7 +46,11 @@ def handle_exception(request: Request, exc: DomainError) -> JSONResponse:
 class ProjectManager:
     # ruff: noqa: PLR0913
     default_app_args: ClassVar[dict[str, str]] = {"title": "Project Manager"}
-    default_routers = (root_router.router, users_router, organizations_router)
+    default_routers = (
+        root_router.router,
+        users_router,
+        model_crud_router(Organization),
+    )
     prod_default_mounts: tuple[MountedApp, ...] = ()
     dev_default_mounts: tuple[MountedApp, ...] = (
         MountedApp(
