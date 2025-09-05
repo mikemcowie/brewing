@@ -20,12 +20,17 @@ class _GenericClassProcessor:
     def parameters(self) -> tuple[TypeVar]:
         return self.cls.__parameters__
 
-    def subclass_attributes(self, generic_type: tuple[type, ...]):
+    def subclass_attributes(self, types: tuple[type, ...]):
+        attributes = tuple(attr for attr in self.unbound_class_attributes)
+        if len(attributes) != len(types):
+            raise TypeError(
+                f"expected {len(attributes)} parameter(s), got {len(types)} parameter(s)."
+            )
         return dict(
             zip(
-                (attr for attr in self.unbound_class_attributes),
-                generic_type,
-                strict=False,
+                attributes,
+                types,
+                strict=True,
             )
         )
 
@@ -37,14 +42,12 @@ class _GenericClassProcessor:
         """
 
         def subclass(generic_type: type | tuple[type, ...]):
-            # raise Exception(self.unbound_class_attributes)
-            # raise Exception((self.parameters[0] == list(self.annotations.values())[0].__parameters__[0]))
             if not isinstance(generic_type, tuple):
                 generic_type = (generic_type,)
             return type(
                 f"{self.cls.__name__}[{','.join(t.__name__ for t in generic_type)}]",
                 (self.cls,),
-                self.subclass_attributes(generic_type=generic_type),
+                self.subclass_attributes(types=generic_type),
             )
 
         return subclass

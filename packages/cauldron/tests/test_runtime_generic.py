@@ -64,22 +64,32 @@ class HasThreeParam[T1, T2, T3]:
 
 
 def test_cannot_pass_wrong_number_of_params():
+    class A:
+        pass
+
+    class B:
+        pass
+
+    class C:
+        pass
+
+    # raise Exception(HasOneParam[A,B]())
     with pytest.raises(TypeError) as err:
-        HasOneParam[object, object]  # type: ignore
+        HasOneParam[A, B]  # type: ignore
     assert "expected 1 parameter(s), got 2 parameter(s)." in err.exconly()
 
     with pytest.raises(TypeError) as err:
-        HasTwoParam[object]  # type: ignore
+        HasTwoParam[A]  # type: ignore
     assert "expected 2 parameter(s), got 1 parameter(s)." in err.exconly()
 
     with pytest.raises(TypeError) as err:
-        HasTwoParam[object, object, object]  # type: ignore
+        HasTwoParam[A, B, C]  # type: ignore
     assert "expected 2 parameter(s), got 3 parameter(s)." in err.exconly()
 
     with pytest.raises(TypeError) as err:
-        HasThreeParam[object]  # type: ignore
+        HasThreeParam[A]  # type: ignore
     assert "expected 3 parameter(s), got 1 parameter(s)." in err.exconly()
 
     with pytest.raises(TypeError) as err:
-        HasThreeParam[object, object]  # type: ignore
+        HasThreeParam[A, B]  # type: ignore
     assert "expected 3 parameter(s), got 2 parameter(s)." in err.exconly()
