@@ -44,9 +44,10 @@ class EndpointParameters:
     kwargs: dict[str, Any]
 
 
-class EndpointDecoratorMaker:
-    def __init__(self, path: Sequence[str], *, trailing_slash: bool):
+class Endpoint:
+    def __init__(self, path: Sequence[str] | None = None, *, trailing_slash: bool):
         self.trailing_slash = trailing_slash
+        path = path if path else []
         self.path = [p for p in path if p]
         # We trick IDEs to be more helpful for the near-complete spec of a Fastapi endpoint decorator
         # Except without the "path" part
@@ -116,18 +117,16 @@ class EndpointDecoratorMaker:
 
         return decorator
 
-    def path_parameter(self, param_name: str) -> EndpointDecoratorMaker:
-        return EndpointDecoratorMaker(
-            [*self.path, APIPathParam(param_name)], trailing_slash=False
-        )
+    def path_parameter(self, param_name: str) -> Endpoint:
+        return Endpoint([*self.path, APIPathParam(param_name)], trailing_slash=False)
 
-    def action(self, param_name: str) -> EndpointDecoratorMaker:
-        return EndpointDecoratorMaker(
+    def action(self, param_name: str) -> Endpoint:
+        return Endpoint(
             [*self.path, APIPathComponent(param_name)], trailing_slash=False
         )
 
 
-collection = EndpointDecoratorMaker([], trailing_slash=True)
+collection = Endpoint([], trailing_slash=True)
 
 
 class APIPathComponent(str):

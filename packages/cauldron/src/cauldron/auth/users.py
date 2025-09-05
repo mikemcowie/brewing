@@ -21,7 +21,7 @@ from cauldron.db.session import (
 from cauldron.exceptions import Unauthorized
 from cauldron.http import Depends, Request, status
 from cauldron.http.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from cauldron.http.viewset import AbstractViewSet, APIPathConstant
+from cauldron.http.viewset import AbstractViewSet, APIPathConstant, Endpoint
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -121,24 +121,40 @@ class UserViewSet(AbstractViewSet):
     def get_base_path(self):
         return [APIPathConstant("users")]
 
-    def setup_endpoints(self):
-        @self.router.get("/users/profile")
-        async def user_own_profile(user: Annotated[User, Depends(user)]) -> User:
-            return user
+    async def service(self, db_session: Annotated[AsyncSession, Depends(db_session)]):
+        return UserService[UserRepo, AuthConfig](session=db_session)
 
-        @self.router.post("/users/login")
-        async def login(
-            form: Annotated[OAuth2PasswordRequestForm, Depends()],
-            service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
-        ) -> Token:
-            return await service.authorize(form)
+    async def user(
+        self,
+        request: Request,
+        service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
+    ) -> User:
+        return await service.user_from_request(request)
 
-        @self.router.post("/users/register", status_code=status.HTTP_201_CREATED)
-        async def register(
-            user: UserRegister,
-            service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
-        ) -> UserRead:
-            return await service.register(user)
+    users_endpoint = Endpoint(trailing_slash=True)
+    profile_endpoint = users_endpoint.action("profile")
+    login_endpoint = users_endpoint.action("login")
+    register_endpoint = users_endpoint.action("register")
+
+    @profile_endpoint.GET()
+    async def user_own_profile(self, user: Annotated[User, Depends(user)]) -> User:
+        return user
+
+    @login_endpoint.POST()
+    async def login(
+        self,
+        form: Annotated[OAuth2PasswordRequestForm, Depends()],
+        service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
+    ) -> Token:
+        return await service.authorize(form)
+
+    @register_endpoint.POST(status_code=status.HTTP_201_CREATED)
+    async def register(
+        self,
+        user: UserRegister,
+        service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
+    ) -> UserRead:
+        return await service.register(user)
 
 
 router = UserViewSet().router
