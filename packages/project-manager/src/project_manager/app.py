@@ -5,6 +5,7 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 from cauldron import (
+    APIRouter,
     Application,
     BaseConfiguration,
     Resource,
@@ -15,8 +16,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from fastapi import APIRouter
 
 UUID = uuid.UUID
 
