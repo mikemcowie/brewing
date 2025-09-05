@@ -1,10 +1,11 @@
-from collections.abc import Iterable
+from __future__ import annotations
+
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum, auto
 from functools import cache
 from typing import TYPE_CHECKING, Any, ClassVar
-from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from sqlalchemy import ForeignKey, event
@@ -18,9 +19,14 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from cauldron import db
+from cauldron.db import base, columns
+from cauldron.db.base import Base
 from cauldron.users import User
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+UUID = uuid.UUID
 TypeBaseModel = type[BaseModel]
 
 
@@ -71,11 +77,11 @@ class ResourceAttributes:
     singular_name: ClassVar[str]
     read_only_fields: ClassVar[tuple[str, ...]] = ("id", "created", "updated", "type")
     summary_fields: ClassVar[tuple[str, ...]] = ("id", "type")
-    id: Mapped[UUID] = db.uuid_primary_key()
-    created: Mapped[datetime] = db.created_field()
-    updated: Mapped[datetime] = db.updated_field()
+    id: Mapped[UUID] = columns.uuid_primary_key()
+    created: Mapped[datetime] = columns.created_field()
+    updated: Mapped[datetime] = columns.updated_field()
     type: Mapped[str] = mapped_column(index=True, init=False)
-    deleted: Mapped[datetime | None] = db.deleted_field()
+    deleted: Mapped[datetime | None] = columns.deleted_field()
 
     @declared_attr  # type: ignore
     def __mapper_args__(cls) -> dict[str, str]:  # noqa: N805
@@ -160,7 +166,7 @@ class ResourceAttributes:
         )
 
 
-def create_resource_cls(base: type[db.Base]) -> type["Resource"]:
+def create_resource_cls(base: type[base.Base]) -> type[Resource]:
     class Resource(MappedAsDataclass, base, ResourceAttributes, kw_only=True):
         def __init_subclass__(cls, **kwargs):
             super().__init_subclass__(**kwargs)
@@ -174,14 +180,14 @@ def create_resource_cls(base: type[db.Base]) -> type["Resource"]:
 
 if TYPE_CHECKING:
 
-    class Resource(MappedAsDataclass, db.Base, ResourceAttributes, kw_only=True):
+    class Resource(MappedAsDataclass, base.Base, ResourceAttributes, kw_only=True):
         """Shared attribute DB model/table"""
 
 else:
-    Resource = create_resource_cls(db.Base)
+    Resource = create_resource_cls(Base)
 
 
-class ResourceAccess(MappedAsDataclass, db.Base, kw_only=True):
+class ResourceAccess(MappedAsDataclass, Base, kw_only=True):
     resource_id: Mapped[UUID] = Resource.primary_foreign_key_to(init=True)
     user_id: Mapped[UUID] = User.primary_foreign_key_to(init=True)
     access: Mapped[AccessLevel]

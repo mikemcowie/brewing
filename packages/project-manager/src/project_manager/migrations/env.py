@@ -1,5 +1,6 @@
 from alembic import context
-from cauldron.db import PostgresqlSettings
+from cauldron.db.database import Database
+from cauldron.db.settings import PostgresqlSettings
 
 
 def run_migrations_online() -> None:
@@ -11,7 +12,7 @@ def run_migrations_online() -> None:
     """
     # late import to avoid circular import
 
-    from cauldron.db import Base, Database  # noqa: PLC0415
+    from cauldron.db.base import Base  # noqa: PLC0415
 
     with Database[PostgresqlSettings]().sync_engine.connect() as connection:
         context.configure(connection=connection, target_metadata=Base.metadata)

@@ -10,7 +10,8 @@ from starlette.staticfiles import StaticFiles
 
 from cauldron import root_router
 from cauldron.configuration import BaseConfiguration
-from cauldron.db import Database, PostgresqlSettings
+from cauldron.db.database import Database
+from cauldron.db.settings import PostgresqlSettings
 from cauldron.exceptions import DomainError
 from cauldron.http import APIRouter, CauldronHTTP, Request
 from cauldron.http.responses import JSONResponse, Response

@@ -1,7 +1,8 @@
 # ruff: noqa:F403
 import pytest
 from alembic.config import Config
-from cauldron.db import Database, PostgresqlSettings
+from cauldron.db.database import Database
+from cauldron.db.settings import PostgresqlSettings
 
 # The actual test cases are imported from this file.
 from pytest_alembic.tests.default import *  # type: ignore

@@ -38,6 +38,9 @@ dev = [
     "types-passlib>=1.7.7.20250602",
 ]
 
+[tool.ruff]
+line-length = 88
+
 [tool.ruff.format]
 docstring-code-format = true
 line-ending = "lf"

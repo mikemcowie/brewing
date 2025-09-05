@@ -20,12 +20,10 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from cauldron.db import (
-    Base,
-    created_field,
+from cauldron.db.base import Base
+from cauldron.db.columns import created_field, updated_field, uuid_primary_key
+from cauldron.db.session import (
     db_session,
-    updated_field,
-    uuid_primary_key,
 )
 from cauldron.exceptions import DomainError, Unauthorized
 from cauldron.http import APIRouter, Depends, status

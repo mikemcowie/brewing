@@ -3,10 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from cauldron import db as db_
 from cauldron import development
 from cauldron.application import Application
-from cauldron.db import Database, PostgresqlSettings
+from cauldron.db import database as database
+from cauldron.db.database import Database
+from cauldron.db.settings import PostgresqlSettings
 from sqlalchemy.pool import NullPool
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ pytest.register_assert_rewrite("tests.api.scenario")
 def postgresql() -> Generator[None, Any]:
     # override the sqlalchemy poolclass as the queuepool works
     # badly in tests
-    db_.ASYNC_ENGINE_KWARGS["poolclass"] = NullPool
+    database.ASYNC_ENGINE_KWARGS["poolclass"] = NullPool
     with development.DevelopmentEnvironment().testcontainer_postgresql():
         yield
 

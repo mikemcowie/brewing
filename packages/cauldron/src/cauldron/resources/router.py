@@ -5,7 +5,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cauldron import db
+from cauldron.db import session
 from cauldron.exceptions import Unauthorized
 from cauldron.http import APIRouter, Depends, Path, status
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
@@ -49,7 +49,7 @@ def model_crud_router[ModelT: Resource](model_type: type[ModelT]):  # noqa: C901
         return getattr(param, path_param_name)
 
     async def repo(
-        db_session: Annotated[AsyncSession, Depends(db.db_session)],
+        db_session: Annotated[AsyncSession, Depends(session.db_session)],
         user: Annotated[User, Depends(user)],
     ):
         return CrudRepository[model_type](db_session, user)
