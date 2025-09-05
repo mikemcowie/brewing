@@ -8,7 +8,7 @@ from secrets import token_bytes
 from typing import TYPE_CHECKING, Annotated, Literal
 from uuid import UUID  # noqa
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, SecretStr
@@ -30,7 +30,6 @@ from cauldron.db import (
     uuid_primary_key,
 )
 from cauldron.exceptions import DomainError, Unauthorized
-from cauldron.settings import Settings
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -101,6 +100,14 @@ class User(MappedAsDataclass, Base, kw_only=True):
         await session.commit()
         return Token(access_token=token)
 
+    @classmethod
+    async def create_user(cls, session: AsyncSession, user: UserRegister) -> UserRead:
+        async with session.begin():
+            db_user = User(**user.model_dump())
+            session.add(db_user)
+            await session.flush()
+            return UserRead.model_validate(db_user, from_attributes=True)
+
 
 class UserSession(MappedAsDataclass, Base, kw_only=True):
     id: Mapped[str] = mapped_column(primary_key=True)
@@ -147,10 +154,6 @@ class UserRegister(BaseModel):
     password: str
 
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
-ALGORITHM = "HS256"
-
-
 class LoginFailure(DomainError):
     status_code = status.HTTP_401_UNAUTHORIZED
     detail = "incorrect username or password"
@@ -161,42 +164,8 @@ class InvalidToken(DomainError):
     detail = "invalid token."
 
 
-class UserRepo:
-    def __init__(
-        self,
-        db_session: AsyncSession,
-        token: str | None,
-        settings: Settings | None = None,
-    ) -> None:
-        self.db_session = db_session
-        self.token = token or None
-        self.settings = settings or Settings()
-        self.credentials_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    async def create_user(self, user: UserRegister) -> UserRead:
-        async with self.db_session.begin():
-            db_user = User(**user.model_dump())
-            self.db_session.add(db_user)
-            await self.db_session.flush()
-            return UserRead.model_validate(db_user, from_attributes=True)
-
-    async def login(self, username: str, password: str) -> Token:
-        return await User.authorize(self.db_session, username, password)
-
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login", auto_error=False)
 router = APIRouter(tags=["users"])
-
-
-async def user_auth(
-    token: Annotated[str | None, Depends(oauth2_scheme)],
-    db_session: Annotated[AsyncSession, Depends(db_session)],
-) -> UserRepo:
-    return UserRepo(token=token, db_session=db_session)
 
 
 async def user(
@@ -226,6 +195,7 @@ async def login(
 
 @router.post("/users/register", status_code=status.HTTP_201_CREATED)
 async def register(
-    user: UserRegister, auth: Annotated[UserRepo, Depends(user_auth)]
+    user: UserRegister,
+    db_session: Annotated[AsyncSession, Depends(db_session)],
 ) -> UserRead:
-    return await auth.create_user(user)
+    return await User.create_user(db_session, user)
