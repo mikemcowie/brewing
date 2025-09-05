@@ -45,7 +45,7 @@ class Database:
 
     def load_models(self):
         # ruff: noqa:PLC0415
-        from project_manager import models
+        from project_manager.users import models
 
         return models
 
