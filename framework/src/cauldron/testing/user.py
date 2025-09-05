@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
+from cauldron_incubator.http import CauldronHTTP, status
 from pydantic import SecretStr
 
-from cauldron.http import CauldronHTTP, status
 from cauldron.testing.scenario import Expectations, TestScenario, User
 
 if TYPE_CHECKING:
