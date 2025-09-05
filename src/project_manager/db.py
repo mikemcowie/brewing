@@ -118,12 +118,14 @@ def uuid_primary_key() -> MappedColumn[UUID]:
 
 
 def created_field() -> MappedColumn[datetime]:
-    return mapped_column(DateTime, default=None, index=True, server_default=func.now())
+    return mapped_column(
+        DateTime(timezone=True), default=None, index=True, server_default=func.now()
+    )
 
 
 def updated_field() -> MappedColumn[datetime]:
     return mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         default=None,
         index=True,
         server_default=func.now(),

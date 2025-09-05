@@ -131,6 +131,7 @@ exclude_also = [
     'class .*\bProtocol\):',
     '@(abc\.)?abstractmethod',
     'assert False',
+    'pytest.fail',
 ]
 
 [tool.mypy]

@@ -9,8 +9,9 @@ from project_manager import db
 from project_manager.endpoints import Endpoints
 from project_manager.exceptions import NotFound
 from project_manager.organizations.models import Organization
+from project_manager.users.router import user
 
-router = APIRouter(tags=["organizations"])
+router = APIRouter(tags=["organizations"], dependencies=[Depends(user)])
 
 
 DBSessionAnnotation = Annotated[AsyncSession, Depends(db.db_session)]
