@@ -12,8 +12,10 @@ from __future__ import annotations
 import string
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import partial
 from http import HTTPMethod
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import structlog
@@ -37,8 +39,18 @@ if TYPE_CHECKING:
     _UNUSED_PATH = "/unused"
 
 
-class _EndpointDecoratorMaker:
-    def __init__(self, path: Sequence[str]):
+@dataclass
+class EndpointParameters:
+    trailing_slash: bool
+    path: Path
+    method: HTTPMethod
+    args: Sequence[Any]
+    kwargs: dict[str, Any]
+
+
+class EndpointDecoratorMaker:
+    def __init__(self, path: Sequence[str], *, trailing_slash: bool):
+        self.trailing_slash = trailing_slash
         self.path = [p for p in path if p]
         # We trick IDEs to be more helpful for the near-complete spec of a Fastapi endpoint decorator
         # Except without the "path" part
@@ -95,30 +107,31 @@ class _EndpointDecoratorMaker:
         """
 
         def decorator(func: Callable[..., Any]):
-            path = "/".join(self.path)
-            if len(path) == 0 or path[0] != "/":
-                path = "/" + path
-            func.__dict__["_cauldron_endpoint_params"] = {
-                "path": path,
-                "method": wrappedmethod.value,
-                "args": args,
-                "kwargs": kwargs,
-            }
+            path = Path("/", *self.path)
+            path = path / "/" if self.trailing_slash else path
+            func.__dict__["_cauldron_endpoint_params"] = EndpointParameters(
+                path=path,
+                trailing_slash=self.trailing_slash,
+                method=wrappedmethod,
+                args=args,
+                kwargs=kwargs,
+            )
             return func
 
         return decorator
 
+    def path_parameter(self, param_name: str) -> EndpointDecoratorMaker:
+        return EndpointDecoratorMaker(
+            [*self.path, APIPathParam(param_name)], trailing_slash=False
+        )
 
-class _Collection(_EndpointDecoratorMaker):
-    def path_parameter(self, param_name: str) -> _Single:
-        return _Single([*self.path, APIPathParam(param_name)])
+    def action(self, param_name: str) -> EndpointDecoratorMaker:
+        return EndpointDecoratorMaker(
+            [*self.path, APIPathComponent(param_name)], trailing_slash=False
+        )
 
 
-class _Single(_EndpointDecoratorMaker):
-    pass
-
-
-collection = _Collection(())
+collection = EndpointDecoratorMaker([], trailing_slash=True)
 
 
 logger = structlog.get_logger()
@@ -189,13 +202,18 @@ class AbstractViewSet(ABC):
         """required method called to configure the router."""
         for attr in dir(self):
             item = getattr(self, attr)
-            params: dict[str, Any] = getattr(item, "_cauldron_endpoint_params", {})
+            params: EndpointParameters | None = getattr(
+                item, "_cauldron_endpoint_params", None
+            )
             if params:
+                path_parts = list(self.get_base_path()) + list(params.path.parts)
+                path = Path("/", "/".join(path_parts))
+                path_str = str(path) + "/" if params.trailing_slash else str(path)
                 logger.debug(f"Creating fastapi endpoint for {self=} {attr=} {item=}")
                 wrapper: Callable[..., Any] = getattr(
-                    self.router, params["method"].lower()
+                    self.router, params.method.value.lower()
                 )
-                wrapper(params["path"], *params["args"], **params["kwargs"])(item)
+                wrapper(path_str, *params.args, **params.kwargs)(item)
 
     @abstractmethod
     def get_base_path(self) -> Sequence[str]:
