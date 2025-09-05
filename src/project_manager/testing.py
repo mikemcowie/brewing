@@ -1,15 +1,20 @@
+from __future__ import annotations
+
 import os
 import random
 import string
 import subprocess
-from collections.abc import Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from functools import cache
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml  # type:ignore[import-untyped]
 from testcontainers.postgres import PostgresContainer  # type:ignore[import-untyped]
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 @cache

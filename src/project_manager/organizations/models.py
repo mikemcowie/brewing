@@ -1,8 +1,12 @@
-from uuid import UUID
+from __future__ import annotations
+
+import uuid
 
 from sqlalchemy.orm import Mapped, mapped_column
 
 from project_manager.resources.models import Resource
+
+UUID = uuid.UUID
 
 
 class Organization(Resource, kw_only=True):

@@ -1,10 +1,9 @@
-from collections.abc import AsyncGenerator, Generator
+from __future__ import annotations
+
 from contextlib import asynccontextmanager, contextmanager
-from datetime import datetime
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
-from uuid import UUID
 
 from alembic import command
 from alembic.config import Config
@@ -33,6 +32,10 @@ SYNC_ENGINE_KWARGS: dict[str, Any] = {}
 
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Generator
+    from datetime import datetime
+    from uuid import UUID
+
     _engine = create_engine
     _async_engine = create_async_engine
 else:
