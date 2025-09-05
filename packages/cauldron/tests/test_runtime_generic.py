@@ -138,3 +138,13 @@ def test_class_attributes_in_different_order_from_params():
 
     with pytest.raises(AttributeError):
         assert HasTwoParamsWithDifferentOrderOfClassAttr[A, B]().b.b  # type: ignore
+
+
+def test_nongeneric_class():
+    with pytest.raises(TypeError) as error:
+
+        @runtime_generic
+        class NonGeneric:  # type: ignore
+            foo = "bar"
+
+    assert "Cannot decorate non-generic class 'NonGeneric'" in error.exconly()

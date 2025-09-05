@@ -44,18 +44,19 @@ def runtime_generic[T](cls: type[T]) -> type[T]:
             raise TypeError(
                 f"expected {len(unbound_class_attributes)} parameter(s), got {len(types)} parameter(s)."
             )
-        if not isinstance(types, tuple):
-            types = (types,)
         return type(
             f"{cls.__name__}[{','.join(t.__name__ for t in types)}]",
             (cls,),
             {
-                k: dict(zip(cls.__parameters__, types, strict=True))[
+                k: dict(zip(cls.__parameters__, types, strict=True))[  # type: ignore
                     v.__parameters__[0]
                 ]
                 for k, v in annotations.items()
             },
         )
+
+    if not hasattr(cls, "__parameters__"):
+        raise TypeError(f"Cannot decorate non-generic class '{cls.__name__}'")
 
     cls.__class_getitem__ = cache(subclass)  # type: ignore
     return cls
