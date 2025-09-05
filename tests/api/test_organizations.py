@@ -67,6 +67,13 @@ class OrganizationTestScenario(UserTestScenario):
         self.validate_expectations(expectations, result)
         return result
 
+    def read_access_one(
+        self, user: User, organization_id: str, user_id: str, expectations: Expectations
+    ) -> Response:
+        result = user.client.get(f"/organizations/{organization_id}/access/{user_id}")
+        self.validate_expectations(expectations, result)
+        return result
+
     def set_access(
         self,
         user: User,
@@ -264,17 +271,63 @@ class TestOrganizationCrud:
         assert access.json()[0]["user_id"] == user_id
         assert access.json()[0]["access"] == "owner"
 
-    def test_user1_assigns_user2_access(self):
+    def user1_assigns_user2_access(self, level: AccessLevel = AccessLevel.owner):
         self.pre_create()
         org = self.create()
         user2_id = self.scenario.retrieve_profile(
             self.scenario.user2, "test-user2-access-read", expectations=Expectations()
         ).json()["id"]
-        result = self.scenario.set_access(
+        self.scenario.set_access(
             self.scenario.user1,
-            access=[
-                ResourceAccessItem(user_id=UUID(user2_id), access=AccessLevel.owner)
-            ],
+            access=[ResourceAccessItem(user_id=UUID(user2_id), access=level)],
             expectations=Expectations(),
             organization_id=str(org.id),
+        )
+        access = self.scenario.read_access(
+            self.scenario.user1,
+            organization_id=str(org.id),
+            expectations=Expectations(status=status.HTTP_200_OK),
+        )
+        assert len(access.json()) == 2
+        assert user2_id in [a["user_id"] for a in access.json()]
+        self.scenario.read_access_one(
+            self.scenario.user1,
+            organization_id=str(org.id),
+            user_id=user2_id,
+            expectations=Expectations(
+                status=status.HTTP_200_OK,
+                json={"user_id": user2_id, "access": level.value},
+            ),
+        )
+        return org
+
+    def test_reader_access(self):
+        org = self.user1_assigns_user2_access(AccessLevel.reader)
+        user2_id = self.scenario.retrieve_profile(
+            self.scenario.user2, "test-user2-access-read", expectations=Expectations()
+        ).json()["id"]
+        self.scenario.read_organization(
+            self.scenario.user2, str(org.id), Expectations(status=status.HTTP_200_OK)
+        )
+        self.scenario.update_organization(
+            self.scenario.user2,
+            str(org.id),
+            self.updated_org.model_dump(mode="json"),
+            Expectations(status=status.HTTP_401_UNAUTHORIZED),
+        )
+        self.scenario.delete_organization(
+            self.scenario.user2,
+            str(org.id),
+            Expectations(status=status.HTTP_401_UNAUTHORIZED),
+        )
+        self.scenario.read_access(
+            self.scenario.user2,
+            str(org.id),
+            Expectations(status=status.HTTP_401_UNAUTHORIZED),
+        )
+        self.scenario.set_access(
+            self.scenario.user2,
+            [ResourceAccessItem(user_id=UUID(user2_id), access=AccessLevel.owner)],
+            str(org.id),
+            Expectations(status=status.HTTP_401_UNAUTHORIZED),
         )

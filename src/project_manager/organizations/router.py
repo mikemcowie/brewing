@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from project_manager import db
 from project_manager.endpoints import Endpoints
+from project_manager.exceptions import Unauthorized
 from project_manager.organizations.repo import (
     CreateOrganization,
     OrganizationRead,
@@ -13,7 +14,7 @@ from project_manager.organizations.repo import (
     OrganizationSummary,
     UpdateOrganization,
 )
-from project_manager.resources.models import ResourceAccessItem
+from project_manager.resources.models import AccessLevel, ResourceAccessItem
 from project_manager.users.models import User
 from project_manager.users.router import user
 
@@ -27,9 +28,41 @@ async def repo(
     return OrganizationRepository(db_session, user)
 
 
+async def access_level(
+    repo: Annotated[OrganizationRepository, Depends(repo)], organization_id: UUID
+) -> AccessLevel:
+    return (
+        await repo.get_access_one(organization_id=organization_id, user_id=repo.user.id)
+    ).access
+
+
+async def access_org_owner(access_level: Annotated[AccessLevel, Depends(access_level)]):
+    if access_level.is_owner():
+        return True
+    raise Unauthorized(detail="access denied")
+
+
+async def access_org_contributor(
+    access_level: Annotated[AccessLevel, Depends(access_level)],
+):
+    if access_level.is_contributor():
+        return True
+    raise Unauthorized(detail="access denied")
+
+
+async def access_org_reader(
+    access_level: Annotated[AccessLevel, Depends(access_level)],
+):
+    if access_level.is_reader():
+        return True
+    raise Unauthorized(detail="access denied")
+
+
 @router.post(
-    Endpoints.ORGANIZATIONS, status_code=status.HTTP_201_CREATED
-)  # response_model=OrganizationRead)
+    Endpoints.ORGANIZATIONS,
+    status_code=status.HTTP_201_CREATED,
+    response_model=OrganizationRead,
+)
 async def create_organization(
     create: CreateOrganization, repo: Annotated[OrganizationRepository, Depends(repo)]
 ) -> OrganizationRead:
@@ -43,7 +76,11 @@ async def list_organization(
     return await repo.list_resources()
 
 
-@router.get(Endpoints.ORGANIZATIONS_ONE, response_model=OrganizationRead)
+@router.get(
+    Endpoints.ORGANIZATIONS_ONE,
+    response_model=OrganizationRead,
+    dependencies=[Depends(access_org_reader)],
+)
 async def read_organization(
     organization_id: UUID, repo: Annotated[OrganizationRepository, Depends(repo)]
 ) -> OrganizationRead:
@@ -52,7 +89,11 @@ async def read_organization(
     )
 
 
-@router.put(Endpoints.ORGANIZATIONS_ONE, response_model=OrganizationRead)
+@router.put(
+    Endpoints.ORGANIZATIONS_ONE,
+    response_model=OrganizationRead,
+    dependencies=[Depends(access_org_contributor)],
+)
 async def update_organization(
     organization_id: UUID,
     update: UpdateOrganization,
@@ -61,7 +102,11 @@ async def update_organization(
     return await repo.update(organization_id, update)
 
 
-@router.delete(Endpoints.ORGANIZATIONS_ONE, status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    Endpoints.ORGANIZATIONS_ONE,
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(access_org_owner)],
+)
 async def delete_organization(
     organization_id: UUID,
     repo: Annotated[OrganizationRepository, Depends(repo)],
@@ -69,7 +114,11 @@ async def delete_organization(
     await repo.delete(organization_id)
 
 
-@router.get(Endpoints.ORGANIZATIONS_ONE_ACCESS, response_model=list[ResourceAccessItem])
+@router.get(
+    Endpoints.ORGANIZATIONS_ONE_ACCESS,
+    response_model=list[ResourceAccessItem],
+    dependencies=[Depends(access_org_contributor)],
+)
 async def get_access(
     organization_id: UUID, repo: Annotated[OrganizationRepository, Depends(repo)]
 ) -> list[ResourceAccessItem]:
@@ -77,7 +126,9 @@ async def get_access(
 
 
 @router.get(
-    Endpoints.ORGANIZATIONS_ONE_ACCESS_ONE, response_model=list[ResourceAccessItem]
+    Endpoints.ORGANIZATIONS_ONE_ACCESS_ONE,
+    response_model=ResourceAccessItem,
+    dependencies=[Depends(access_org_contributor)],
 )
 async def get_access_one(
     organization_id: UUID,
@@ -88,7 +139,9 @@ async def get_access_one(
 
 
 @router.post(
-    Endpoints.ORGANIZATIONS_ONE_ACCESS, response_model=list[ResourceAccessItem]
+    Endpoints.ORGANIZATIONS_ONE_ACCESS,
+    response_model=list[ResourceAccessItem],
+    dependencies=[Depends(access_org_owner)],
 )
 async def set_access(
     organization_id: UUID,

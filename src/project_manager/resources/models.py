@@ -46,6 +46,15 @@ class AccessLevel(StrEnum):
     contributor = auto()
     reader = auto()
 
+    def is_owner(self):
+        return self == self.__class__.owner
+
+    def is_contributor(self):
+        return self.is_owner() or self == self.__class__.contributor
+
+    def is_reader(self):
+        return self.is_contributor() or self == self.__class__.reader
+
 
 class Resource(MappedAsDataclass, db.Base, kw_only=True):
     read_only_fields: ClassVar[tuple[str, ...]] = ("id", "created", "updated", "type")
