@@ -1,9 +1,23 @@
 site_name: Cauldron
-theme: readthedocs
+repo_url: https://github.com/mikemcowie/cauldron
+theme:
+  name: material
+  palette:
+    # Dark mode/ Light Mode switch
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+plugins:
+  - search
 nav:
 - Introduction: README.md
 - CLI: cli.md
-plugins:
-  - gh-admonitions
 markdown_extensions:
   - admonition
