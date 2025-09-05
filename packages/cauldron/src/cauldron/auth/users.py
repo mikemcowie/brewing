@@ -23,16 +23,11 @@ from cauldron.http import APIRouter, Depends, Request, status
 from cauldron.http.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 if TYPE_CHECKING:
-    from pydantic import SecretStr
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
 TOKEN_BYTES = 48
-
-
-def secret_value(value: str | SecretStr) -> str:
-    return value if isinstance(value, str) else value.get_secret_value()
 
 
 class UserRepo:
@@ -124,7 +119,7 @@ class UserService[RepoT: UserRepo, AuthConfigT: AuthConfig]:
 
     async def authorize(self, form: OAuth2PasswordRequestForm):
         return await self._repo.authorize(
-            username=form.username, password=secret_value(form.password)
+            username=form.username, password=form.password
         )
 
     async def register(self, user: UserRegister):
