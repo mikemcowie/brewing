@@ -2,13 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from cauldron import (
-    Application,
-    BaseConfiguration,
-    Resource,
-    build_cli,
-    model_crud_router,
-)
+from cauldron import Application, BaseConfiguration, ModelViewSet, Resource, build_cli
 from sqlalchemy.orm import Mapped, mapped_column
 
 UUID = uuid.UUID
@@ -29,7 +23,7 @@ class Configuration(BaseConfiguration):
     cli_provider = build_cli
 
 
-routers = (model_crud_router(Organization),)
+routers = (ModelViewSet[Organization]().router,)
 application = Application[Configuration](routers=routers)
 
 

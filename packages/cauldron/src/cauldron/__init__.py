@@ -4,4 +4,4 @@ from cauldron.configuration import BaseConfiguration as BaseConfiguration
 from cauldron.http import APIRouter as APIRouter
 from cauldron.http import CauldronHTTP as CauldronHTTP
 from cauldron.resources.models import Resource as Resource
-from cauldron.resources.router import model_crud_router as model_crud_router
+from cauldron.resources.router import ModelViewSet as ModelViewSet
