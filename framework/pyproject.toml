@@ -7,7 +7,9 @@ authors = [
     { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "cauldronlib-cli",
+]
 
 [project.scripts]
 cauldron = "cauldron.cli:cli"
@@ -19,6 +21,7 @@ build-backend = "hatchling.build"
 
 [tool.uv.sources]
 cauldronlib-generic = { workspace = true }
+cauldronlib-cli = { workspace = true }
 
 [tool.ruff.lint]
 # Extra rules for this package
