@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from cauldron.exceptions import Forbidden, NotFound
 from cauldronlib.generic import runtime_generic
 from sqlalchemy import select
 
-from cauldron.exceptions import Forbidden, NotFound
-from cauldron.resources.models import (
+from cauldron_incubator.resources.models import (
     AccessLevel,
     Resource,
     ResourceAccess,
@@ -17,9 +17,10 @@ from cauldron.resources.models import (
 if TYPE_CHECKING:  # Type checker type hints (just that its a model)
     from uuid import UUID
 
-    from cauldron_incubator.auth.models import User
     from pydantic import BaseModel
     from sqlalchemy.ext.asyncio import AsyncSession
+
+    from cauldron_incubator.auth.models import User
 
     ResourceRead = BaseModel
     ResourceSummary = BaseModel
