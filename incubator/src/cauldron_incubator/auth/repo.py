@@ -33,4 +33,4 @@ class UserRepo:
     async def add(self, item: UserSession | User, flush: bool = False):
         self._session.add(item)
         if flush:
-            await self._session.flush()
+            await self.flush()
