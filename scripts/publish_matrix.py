@@ -1,11 +1,14 @@
 import json
 from typing import ClassVar
 
-from cauldron import CLI
+from brewing import CLI
 
 
 class PublishMatrix(CLI):
-    PACKAGES:ClassVar[dict[str,str]] = {"cauldron": "framework", "cauldronlib-cli": "libs/cli"}
+    PACKAGES: ClassVar[dict[str, str]] = {
+        "cauldron": "framework",
+        "cauldronlib-cli": "libs/cli",
+    }
 
     def matrix(self, event_name: str):
         is_test_pypi = event_name == "push"
@@ -23,7 +26,7 @@ class PublishMatrix(CLI):
                 for package, package_path in self.PACKAGES.items()
             ]
         }
-        print(json.dumps(matrix)) # noqa: T201
+        print(json.dumps(matrix))  # noqa: T201
 
 
 if __name__ == "__main__":

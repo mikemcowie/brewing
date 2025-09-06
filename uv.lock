@@ -8,10 +8,10 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "cauldron",
+    "brewing",
+    "brewing-uv-workspace",
     "cauldron-incubator",
     "cauldron-test-dependencies",
-    "cauldron-uv-workspace",
     "cauldronlib-cli",
     "cauldronlib-generic",
     "project-manager",
@@ -178,7 +178,7 @@ wheels = [
 ]
 
 [[package]]
-name = "cauldron"
+name = "brewing"
 version = "0.0.1"
 source = { editable = "framework" }
 dependencies = [
@@ -187,6 +187,51 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "cauldronlib-cli", editable = "libs/cli" }]
+
+[[package]]
+name = "brewing-uv-workspace"
+version = "0.0.1"
+source = { virtual = "." }
+dependencies = [
+    { name = "brewing" },
+    { name = "cauldron-incubator" },
+    { name = "cauldron-test-dependencies" },
+    { name = "cauldronlib-cli" },
+    { name = "cauldronlib-generic" },
+    { name = "project-manager" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "cauldron-test-dependencies" },
+    { name = "pre-commit" },
+]
+docs = [
+    { name = "mkdocs" },
+    { name = "mkdocs-material" },
+    { name = "mkdocstrings", extra = ["python"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "brewing", editable = "framework" },
+    { name = "cauldron-incubator", editable = "incubator" },
+    { name = "cauldron-test-dependencies", editable = "test-dependencies" },
+    { name = "cauldronlib-cli", editable = "libs/cli" },
+    { name = "cauldronlib-generic", editable = "libs/generic" },
+    { name = "project-manager", editable = "samples/project-manager" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "cauldron-test-dependencies", editable = "test-dependencies" },
+    { name = "pre-commit", specifier = ">=4.3.0" },
+]
+docs = [
+    { name = "mkdocs", specifier = ">=1.6.1" },
+    { name = "mkdocs-material", specifier = ">=9.6.18" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.30.0" },
+]
 
 [[package]]
 name = "cauldron-incubator"
@@ -278,51 +323,6 @@ requires-dist = [
     { name = "ruff", specifier = ">=0.12.0" },
     { name = "testcontainers", specifier = ">=4.10.0" },
     { name = "types-passlib", specifier = ">=1.7.7.20250602" },
-]
-
-[[package]]
-name = "cauldron-uv-workspace"
-version = "0.0.1"
-source = { virtual = "." }
-dependencies = [
-    { name = "cauldron" },
-    { name = "cauldron-incubator" },
-    { name = "cauldron-test-dependencies" },
-    { name = "cauldronlib-cli" },
-    { name = "cauldronlib-generic" },
-    { name = "project-manager" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "cauldron-test-dependencies" },
-    { name = "pre-commit" },
-]
-docs = [
-    { name = "mkdocs" },
-    { name = "mkdocs-material" },
-    { name = "mkdocstrings", extra = ["python"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cauldron", editable = "framework" },
-    { name = "cauldron-incubator", editable = "incubator" },
-    { name = "cauldron-test-dependencies", editable = "test-dependencies" },
-    { name = "cauldronlib-cli", editable = "libs/cli" },
-    { name = "cauldronlib-generic", editable = "libs/generic" },
-    { name = "project-manager", editable = "samples/project-manager" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "cauldron-test-dependencies", editable = "test-dependencies" },
-    { name = "pre-commit", specifier = ">=4.3.0" },
-]
-docs = [
-    { name = "mkdocs", specifier = ">=1.6.1" },
-    { name = "mkdocs-material", specifier = ">=9.6.18" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.30.0" },
 ]
 
 [[package]]
@@ -1311,11 +1311,11 @@ name = "project-manager"
 version = "0.0.1"
 source = { editable = "samples/project-manager" }
 dependencies = [
-    { name = "cauldron" },
+    { name = "brewing" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "cauldron", editable = "framework" }]
+requires-dist = [{ name = "brewing", editable = "framework" }]
 
 [[package]]
 name = "prompt-toolkit"

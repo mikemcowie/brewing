@@ -1,5 +1,5 @@
 [project]
-name = "cauldron"
+name = "brewing"
 version = "0.0.1"
 description = "A web framework built on sqlachemy and fastapi."
 readme = "README.md"
