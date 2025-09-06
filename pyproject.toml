@@ -98,7 +98,7 @@ python_files = [
     "*_test.py",
     "feat_*.py",
 ]
-norecursedirs = ".venv framework/src/cauldron/db/migrations"
+norecursedirs = ".venv incubator/src/cauldron_incubator/db/migrations"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]

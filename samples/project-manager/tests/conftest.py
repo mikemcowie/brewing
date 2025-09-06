@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from cauldron import development
-from cauldron.db import database as database
-from cauldron.db.database import Database, Migrations
-from cauldron.db.settings import PostgresqlSettings
+from cauldron_incubator.db import database as database
+from cauldron_incubator.db.database import Database, Migrations
+from cauldron_incubator.db.settings import PostgresqlSettings
 from sqlalchemy.pool import NullPool
 
 if TYPE_CHECKING:

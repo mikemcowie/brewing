@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from alembic import command
 from alembic.config import Config
-from cauldron_incubator.http import Request as _Request
 from cauldronlib.generic import runtime_generic
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-from cauldron.db import migrations
-from cauldron.db.base import metadata
-from cauldron.db.settings import DBSettingsType
+from cauldron_incubator.db import migrations
+from cauldron_incubator.db.base import metadata
+from cauldron_incubator.db.settings import DBSettingsType
+from cauldron_incubator.http import Request as _Request
 
 Request = _Request  # So that ruff won't hide it behind type checking
 
