@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import string
+from typing import Any
 
 from pydantic.alias_generators import to_snake
 from typer import Typer
@@ -90,6 +91,10 @@ class CLI:
             Typer: the typer instance that the class wraps around, as generated or provided at instantiation.
         """
         return self._typer
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Runs the CLI."""
+        return self.typer(*args, **kwargs)
 
     def _setup_typer(self):
         # Setting a callback overrides typer's default behaviour
