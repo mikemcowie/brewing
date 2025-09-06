@@ -1,5 +1,5 @@
-from cauldron.testing.resource import BaseTestResourceCrud
-from cauldron.testing.user import BaseTestUser
+from cauldron_incubator.testing.resource import BaseTestResourceCrud
+from cauldron_incubator.testing.user import BaseTestUser
 from project_manager.app import Organization
 
 

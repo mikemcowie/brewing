@@ -2,7 +2,6 @@ from collections.abc import Sequence
 from enum import Enum
 from typing import Annotated, Any
 
-from cauldron.testing import TestClient
 from cauldron_incubator.http import CauldronHTTP, Depends
 from cauldron_incubator.http.viewset import (
     AbstractViewSet,
@@ -12,6 +11,7 @@ from cauldron_incubator.http.viewset import (
     collection,
     const,
 )
+from cauldron_incubator.testing import TestClient
 from pydantic import BaseModel
 
 

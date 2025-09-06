@@ -7,7 +7,7 @@ Cauldron is a python application framework  built to combine and enhance the bes
 ```python
 from cauldron import Application, BaseConfiguration, build_cli
 from cauldron_incubator.http import ViewSet, collection
-from cauldron.testing import TestClient
+from cauldron_incubator.testing import TestClient
 
 
 class HelloCauldron(ViewSet):
