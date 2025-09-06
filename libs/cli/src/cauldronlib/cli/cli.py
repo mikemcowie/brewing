@@ -32,7 +32,7 @@ class CLI:
 
 
     ```python
-    from cauldron import CLI
+    from brewing import CLI
 
 
     class MyCLI(CLI):
@@ -51,7 +51,7 @@ class CLI:
     ```python
     from typing import Annotated
     from typer import Option
-    from cauldron import CLI
+    from brewing import CLI
 
 
     class MyCLI(CLI):
