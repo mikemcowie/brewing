@@ -240,6 +240,7 @@ name = "cauldron-test-dependencies"
 version = "0.1.0"
 source = { editable = "test-dependencies" }
 dependencies = [
+    { name = "aiosqlite" },
     { name = "coverage" },
     { name = "hatch" },
     { name = "hatchling" },
@@ -260,6 +261,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "coverage", specifier = ">=7.9.1" },
     { name = "hatch", specifier = ">=1.14.1" },
     { name = "hatchling", specifier = ">=1.27.0" },
