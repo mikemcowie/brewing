@@ -125,3 +125,9 @@ runtime-evaluated-base-classes = ["pydantic.BaseModel", "sqlalchemy.orm.Declarat
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
