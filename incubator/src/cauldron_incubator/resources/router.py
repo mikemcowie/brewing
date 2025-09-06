@@ -4,7 +4,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
-from cauldron.exceptions import Unauthorized
 from cauldronlib.generic import runtime_generic
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cauldron_incubator.auth.models import User
 from cauldron_incubator.auth.users import user
 from cauldron_incubator.db import session
+from cauldron_incubator.exceptions import Unauthorized
 from cauldron_incubator.http import Depends, Path, status
 from cauldron_incubator.http.viewset import (
     AbstractViewSet,

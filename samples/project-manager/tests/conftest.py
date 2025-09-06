@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from cauldron import development
+from cauldron_incubator import development
 from cauldron_incubator.db import database as database
 from cauldron_incubator.db.database import Database, Migrations
 from cauldron_incubator.db.settings import PostgresqlSettings
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
     from alembic.config import Config
-    from cauldron.application import Application
+    from cauldron_incubator.application import Application
     from fastapi import FastAPI
     from project_manager.app import Configuration
     from sqlalchemy.engine import Engine

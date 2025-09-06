@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     import typer
+
     from cauldron_incubator.db.database import Migrations
     from cauldron_incubator.http import CauldronHTTP
 

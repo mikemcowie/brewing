@@ -1,6 +1,6 @@
 import pytest
-from cauldron.configuration import BaseConfiguration
-from cauldron.old_cli import build_cli
+from cauldron_incubator.configuration import BaseConfiguration
+from cauldron_incubator.old_cli import build_cli
 
 
 def test_config_cannot_be_instantiated_with_unimplemented_attributes():

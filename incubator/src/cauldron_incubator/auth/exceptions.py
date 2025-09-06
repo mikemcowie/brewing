@@ -1,5 +1,4 @@
-from cauldron.exceptions import DomainError
-
+from cauldron_incubator.exceptions import DomainError
 from cauldron_incubator.http import status
 
 
