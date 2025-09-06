@@ -1,11 +1,11 @@
 [project]
-name = "cauldron-uv-workspace"
+name = "brewing-uv-workspace"
 version = "0.0.1"
 description = "Add your description here"
 readme = "docs/README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "cauldron",
+    "brewing",
     "project-manager",
     "cauldronlib-generic",
     "cauldronlib-cli",
@@ -24,7 +24,7 @@ members = [
 
 [tool.uv.sources]
 project-manager = { workspace = true }
-cauldron = { workspace = true }
+brewing = { workspace = true }
 cauldronlib-generic = { workspace = true }
 cauldronlib-cli = { workspace = true }
 cauldron-test-dependencies = { workspace = true }
