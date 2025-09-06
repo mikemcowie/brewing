@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
-from cauldron_incubator.application import Application
-from cauldron_incubator.configuration import BaseConfiguration
+from brewing_incubator.application import Application
+from brewing_incubator.configuration import BaseConfiguration
 from starlette.routing import Mount
 
 

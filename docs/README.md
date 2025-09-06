@@ -1,21 +1,21 @@
-# Cauldron
+# brewing
 
-Cauldron is a python application framework  built to combine and enhance the best in breed packages in the python ecosystem.
+brewing is a python application framework  built to combine and enhance the best in breed packages in the python ecosystem.
 
 ## The pitch
 
 ```python
-from cauldron_incubator import Application, BaseConfiguration, build_cli
-from cauldron_incubator.http import ViewSet, collection
-from cauldron_incubator.testing import TestClient
+from brewing_incubator import Application, BaseConfiguration, build_cli
+from brewing_incubator.http import ViewSet, collection
+from brewing_incubator.testing import TestClient
 
 
-class HelloCauldron(ViewSet):
+class Hellobrewing(ViewSet):
 
     base_path = ("hello",)
 
     @collection.GET()
-    def greet(self, whom:str="cauldron")->str:
+    def greet(self, whom:str="brewing")->str:
         return f"hello, {whom}!"
 
 
@@ -26,7 +26,7 @@ class Configuration(BaseConfiguration):
     cli_provider = build_cli
 
 
-application = Application[Configuration](viewsets=[HelloCauldron()])
+application = Application[Configuration](viewsets=[Hellobrewing()])
 
 testclient = TestClient(application.app)
 result = testclient.get("/hello/?whom=eric")
@@ -37,8 +37,8 @@ assert "hello, eric!" in result.text
 
 ## Installation
 
-Use your preferred python package manager to install cauldron. The author strongly recommends [uv](https://docs.astral.sh/uv/).
+Use your preferred python package manager to install brewing. The author strongly recommends [uv](https://docs.astral.sh/uv/).
 
 ```
-uv add cauldron
+uv add brewing
 ```

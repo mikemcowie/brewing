@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import ClassVar, Literal
 
 import pytest
-from cauldronlib.generic import runtime_generic
+from brewinglib.generic import runtime_generic
 
 
 class Someclass:

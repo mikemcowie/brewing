@@ -10,10 +10,10 @@ resolution-markers = [
 members = [
     "brewing",
     "brewing-uv-workspace",
-    "cauldron-incubator",
-    "cauldron-test-dependencies",
-    "cauldronlib-cli",
-    "cauldronlib-generic",
+    "brewing-incubator",
+    "brewing-test-dependencies",
+    "brewinglib-cli",
+    "brewinglib-generic",
     "project-manager",
 ]
 
@@ -182,11 +182,11 @@ name = "brewing"
 version = "0.0.1"
 source = { editable = "framework" }
 dependencies = [
-    { name = "cauldronlib-cli" },
+    { name = "brewinglib-cli" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "cauldronlib-cli", editable = "libs/cli" }]
+requires-dist = [{ name = "brewinglib-cli", editable = "libs/cli" }]
 
 [[package]]
 name = "brewing-uv-workspace"
@@ -194,16 +194,16 @@ version = "0.0.1"
 source = { virtual = "." }
 dependencies = [
     { name = "brewing" },
-    { name = "cauldron-incubator" },
-    { name = "cauldron-test-dependencies" },
-    { name = "cauldronlib-cli" },
-    { name = "cauldronlib-generic" },
+    { name = "brewing-incubator" },
+    { name = "brewing-test-dependencies" },
+    { name = "brewinglib-cli" },
+    { name = "brewinglib-generic" },
     { name = "project-manager" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "cauldron-test-dependencies" },
+    { name = "brewing-test-dependencies" },
     { name = "pre-commit" },
 ]
 docs = [
@@ -215,16 +215,16 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "brewing", editable = "framework" },
-    { name = "cauldron-incubator", editable = "incubator" },
-    { name = "cauldron-test-dependencies", editable = "test-dependencies" },
-    { name = "cauldronlib-cli", editable = "libs/cli" },
-    { name = "cauldronlib-generic", editable = "libs/generic" },
+    { name = "brewing-incubator", editable = "incubator" },
+    { name = "brewing-test-dependencies", editable = "test-dependencies" },
+    { name = "brewinglib-cli", editable = "libs/cli" },
+    { name = "brewinglib-generic", editable = "libs/generic" },
     { name = "project-manager", editable = "samples/project-manager" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "cauldron-test-dependencies", editable = "test-dependencies" },
+    { name = "brewing-test-dependencies", editable = "test-dependencies" },
     { name = "pre-commit", specifier = ">=4.3.0" },
 ]
 docs = [
@@ -234,12 +234,12 @@ docs = [
 ]
 
 [[package]]
-name = "cauldron-incubator"
+name = "brewing-incubator"
 version = "0.1.0"
 source = { editable = "incubator" }
 dependencies = [
     { name = "alembic" },
-    { name = "cauldronlib-generic" },
+    { name = "brewinglib-generic" },
     { name = "cryptography" },
     { name = "fastapi", extra = ["standard"] },
     { name = "passlib", extra = ["argon2"] },
@@ -262,7 +262,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.16.2" },
-    { name = "cauldronlib-generic", editable = "libs/generic" },
+    { name = "brewinglib-generic", editable = "libs/generic" },
     { name = "cryptography", specifier = ">=45.0.5" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.13" },
     { name = "passlib", extras = ["argon2"], specifier = ">=1.7.4" },
@@ -281,7 +281,7 @@ requires-dist = [
 dev = [{ name = "aiosqlite", specifier = ">=0.21.0" }]
 
 [[package]]
-name = "cauldron-test-dependencies"
+name = "brewing-test-dependencies"
 version = "0.1.0"
 source = { editable = "test-dependencies" }
 dependencies = [
@@ -326,7 +326,7 @@ requires-dist = [
 ]
 
 [[package]]
-name = "cauldronlib-cli"
+name = "brewinglib-cli"
 version = "0.1.0"
 source = { editable = "libs/cli" }
 dependencies = [
@@ -341,7 +341,7 @@ requires-dist = [
 ]
 
 [[package]]
-name = "cauldronlib-generic"
+name = "brewinglib-generic"
 version = "0.1.0"
 source = { editable = "libs/generic" }
 

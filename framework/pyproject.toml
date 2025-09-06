@@ -8,20 +8,20 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "cauldronlib-cli",
+    "brewinglib-cli",
 ]
 
 [project.scripts]
-cauldron = "cauldron.cli:cli"
-dev = "cauldron.cli:dev"
+brewing = "brewing.cli:cli"
+dev = "brewing.cli:dev"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-cauldronlib-generic = { workspace = true }
-cauldronlib-cli = { workspace = true }
+brewinglib-generic = { workspace = true }
+brewinglib-cli = { workspace = true }
 
 [tool.ruff.lint]
 # Extra rules for this package

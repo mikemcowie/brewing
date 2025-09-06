@@ -7,10 +7,10 @@ requires-python = ">=3.13"
 dependencies = [
     "brewing",
     "project-manager",
-    "cauldronlib-generic",
-    "cauldronlib-cli",
-    "cauldron-test-dependencies",
-    "cauldron-incubator",
+    "brewinglib-generic",
+    "brewinglib-cli",
+    "brewing-test-dependencies",
+    "brewing-incubator",
 ]
 
 [tool.uv.workspace]
@@ -25,14 +25,14 @@ members = [
 [tool.uv.sources]
 project-manager = { workspace = true }
 brewing = { workspace = true }
-cauldronlib-generic = { workspace = true }
-cauldronlib-cli = { workspace = true }
-cauldron-test-dependencies = { workspace = true }
-cauldron-incubator = {workspace=true}
+brewinglib-generic = { workspace = true }
+brewinglib-cli = { workspace = true }
+brewing-test-dependencies = { workspace = true }
+brewing-incubator = {workspace=true}
 
 [dependency-groups]
 dev = [
-    "cauldron-test-dependencies",
+    "brewing-test-dependencies",
     "pre-commit>=4.3.0",
 ]
 docs = [
@@ -99,7 +99,7 @@ python_files = [
     "*_test.py",
     "feat_*.py",
 ]
-norecursedirs = ".venv incubator/src/cauldron_incubator/db/migrations"
+norecursedirs = ".venv incubator/src/brewing_incubator/db/migrations"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]
@@ -121,7 +121,7 @@ exclude_also = [
 ]
 
 [tool.ruff.lint.flake8-type-checking]
-runtime-evaluated-base-classes = ["pydantic.BaseModel", "sqlalchemy.orm.DeclarativeBase", "cauldron.db.base.Base"]
+runtime-evaluated-base-classes = ["pydantic.BaseModel", "sqlalchemy.orm.DeclarativeBase", "brewing.db.base.Base"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

@@ -1,5 +1,5 @@
-site_name: Cauldron
-repo_url: https://github.com/mikemcowie/cauldron
+site_name: brewing
+repo_url: https://github.com/mikemcowie/brewing
 theme:
   name: material
   palette:
@@ -29,8 +29,8 @@ plugins:
             merge_init_into_class: true
 
           preload_modules:
-            - cauldron
-            - cauldronlib.cli
+            - brewing
+            - brewinglib.cli
 nav:
 - Introduction: README.md
 - CLI: cli.md

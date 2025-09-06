@@ -3,17 +3,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from cauldron_incubator import development
-from cauldron_incubator.db import database as database
-from cauldron_incubator.db.database import Database, Migrations
-from cauldron_incubator.db.settings import PostgresqlSettings
+from brewing_incubator import development
+from brewing_incubator.db import database as database
+from brewing_incubator.db.database import Database, Migrations
+from brewing_incubator.db.settings import PostgresqlSettings
 from sqlalchemy.pool import NullPool
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
     from alembic.config import Config
-    from cauldron_incubator.application import Application
+    from brewing_incubator.application import Application
     from fastapi import FastAPI
     from project_manager.app import Configuration
     from sqlalchemy.engine import Engine

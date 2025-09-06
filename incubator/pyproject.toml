@@ -1,7 +1,7 @@
 [project]
-name = "cauldron-incubator"
+name = "brewing-incubator"
 version = "0.1.0"
-description = "Experimental/preview modules for cauldron."
+description = "Experimental/preview modules for brewing."
 readme = "README.md"
 authors = [
     { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }
@@ -17,7 +17,7 @@ dependencies = [
     "pydantic[email]>=2.11.7",
     "pyjwt>=2.10.1",
     "pyyaml>=6.0.2",
-    "cauldronlib-generic",
+    "brewinglib-generic",
     "sqlalchemy>=2.0.41",
     "structlog>=25.4.0",
     "typer>=0.16.0",

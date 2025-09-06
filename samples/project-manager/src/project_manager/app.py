@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import uuid
 
-from cauldron_incubator import (
+from brewing_incubator import (
     Application,
     BaseConfiguration,
     ModelViewSet,
     Resource,
     build_cli,
 )
-from cauldron_incubator.db.database import Migrations
+from brewing_incubator.db.database import Migrations
 from sqlalchemy.orm import Mapped, mapped_column
 
 UUID = uuid.UUID

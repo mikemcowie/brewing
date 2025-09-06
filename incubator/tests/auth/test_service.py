@@ -2,9 +2,9 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from cauldron_incubator.auth.exceptions import InvalidToken
-from cauldron_incubator.auth.users import UserService
-from cauldron_incubator.exceptions import Unauthorized
+from brewing_incubator.auth.exceptions import InvalidToken
+from brewing_incubator.auth.users import UserService
+from brewing_incubator.exceptions import Unauthorized
 from fastapi.requests import Request
 
 

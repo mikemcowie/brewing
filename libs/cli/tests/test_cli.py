@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from cauldronlib.cli import CLI
-from cauldronlib.cli.testing import CauldronCLIRunner
+from brewinglib.cli import CLI
+from brewinglib.cli.testing import BrewingCLIRunner
 
 if TYPE_CHECKING:
     from pytest_subtests import SubTests
@@ -16,7 +16,7 @@ def test_basic_cli_with_one_cmd(subtests: SubTests):
             """Allows you to do something"""
             print("something")
 
-    runner = CauldronCLIRunner(SomeCLI("root"))
+    runner = BrewingCLIRunner(SomeCLI("root"))
     with subtests.test("help"):
         result = runner.invoke(["--help"])
         assert result.exit_code == 0
@@ -39,7 +39,7 @@ def test_basic_cli_with_two_cmd(subtests: SubTests):
             """Also allows you to do something"""
             print("also")
 
-    runner = CauldronCLIRunner(SomeCLI("root"))
+    runner = BrewingCLIRunner(SomeCLI("root"))
     with subtests.test("help"):
         help_result = runner.invoke(["--help"], color=False)
         assert help_result.exit_code == 0
@@ -70,7 +70,7 @@ def test_instance_attribute(subtests: SubTests):
             """Also allows you to do something"""
             print(self.message.upper())
 
-    runner = CauldronCLIRunner(SomeCLI(name="root", message="Something"))
+    runner = BrewingCLIRunner(SomeCLI(name="root", message="Something"))
 
     with subtests.test("quiet"):
         result = runner.invoke(["quiet"])
@@ -88,7 +88,7 @@ def test_basic_parameter(subtests: SubTests):
             """Allows you to do speak"""
             print(a_message)
 
-    runner = CauldronCLIRunner(SomeCLI("root"))
+    runner = BrewingCLIRunner(SomeCLI("root"))
 
     with subtests.test("happy-path"):
         result = runner.invoke(["speak", "hello"])
@@ -107,7 +107,7 @@ def test_basic_option(subtests: SubTests):
             """Allows you to do speak"""
             print(a_message)
 
-    runner = CauldronCLIRunner(SomeCLI("root"))
+    runner = BrewingCLIRunner(SomeCLI("root"))
 
     with subtests.test("wrong-invoke"):
         result = runner.invoke(["speak", "HI"])
@@ -141,7 +141,7 @@ def test_nested_cli(subtests: SubTests):
             print("child write")
 
     cli = Parent("parent", Child("child"))
-    runner = CauldronCLIRunner(cli)
+    runner = BrewingCLIRunner(cli)
 
     with subtests.test("parent-read"):
         result = runner.invoke(["read"])
