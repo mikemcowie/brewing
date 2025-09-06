@@ -62,7 +62,10 @@ jobs:
       - name: Create the dist
         run: uv build "${{ matrix.path }}" --out-dir dist
 
+      - name: Publish distribution (test)
+        run: uv publish --trusted-publishing always --index testpypi
+        if: matrix.environment_name == 'testpypi'
+
       - name: Publish distribution
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: ${{ matrix.repository_url }}
+        run: uv publish --trusted-publishing always
+        if: matrix.environment_name == 'pypi'
