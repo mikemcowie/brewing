@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 import pytest
-from cauldron_incubator.resources.models import (
+from brewing_incubator.resources.models import (
     Resource,
     create_resource_cls,
 )

@@ -6,8 +6,8 @@ from brewing import CLI
 
 class PublishMatrix(CLI):
     PACKAGES: ClassVar[dict[str, str]] = {
-        "cauldron": "framework",
-        "cauldronlib-cli": "libs/cli",
+        "brewing": "framework",
+        "brewinglib-cli": "libs/cli",
     }
 
     def matrix(self, event_name: str):

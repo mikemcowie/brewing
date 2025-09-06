@@ -2,8 +2,8 @@ from collections.abc import Sequence
 from enum import Enum
 from typing import Annotated, Any
 
-from cauldron_incubator.http import CauldronHTTP, Depends
-from cauldron_incubator.http.viewset import (
+from brewing_incubator.http import BrewingHTTP, Depends
+from brewing_incubator.http.viewset import (
     AbstractViewSet,
     APIPathConstant,
     EndpointParameters,
@@ -11,7 +11,7 @@ from cauldron_incubator.http.viewset import (
     collection,
     const,
 )
-from cauldron_incubator.testing import TestClient
+from brewing_incubator.testing import TestClient
 from pydantic import BaseModel
 
 
@@ -47,10 +47,10 @@ def test_routes_created():
         kwargs={"status_code": 200},
     )
     assert (
-        ViewSet.list_things.__dict__[const.CAULDRON_ENDPOINT_PARAMS] == expected_params
+        ViewSet.list_things.__dict__[const.BREWING_ENDPOINT_PARAMS] == expected_params
     )
     vs = ViewSet()
-    assert vs.list_things.__dict__[const.CAULDRON_ENDPOINT_PARAMS] == expected_params
+    assert vs.list_things.__dict__[const.BREWING_ENDPOINT_PARAMS] == expected_params
     assert vs.router.routes
 
 
@@ -65,7 +65,7 @@ def test_http_response():
             return [Thing(name="thing1", is_large=large)]
 
     vs = ViewSet()
-    app = CauldronHTTP()
+    app = BrewingHTTP()
     app.include_viewset(vs)
     client = TestClient(app)
     result = client.get("/test/")
@@ -82,7 +82,7 @@ def test_collection_path():
         async def endpoint(self):
             return "happy"
 
-    app = CauldronHTTP()
+    app = BrewingHTTP()
     app.include_viewset(ViewSet())
     client = TestClient(app)
     result = client.get("/test/")
@@ -101,7 +101,7 @@ def test_depends():
         async def give_message(self, message: Annotated[str, Depends(message)]):
             return message
 
-    app = CauldronHTTP()
+    app = BrewingHTTP()
     app.include_viewset(ViewSet())
     client = TestClient(app)
     result = client.get("/test/")
@@ -157,7 +157,7 @@ def test_depends_manager_independtly_across_viewsets():
     vs1 = VS1()
     vs2 = VS2()
 
-    app = CauldronHTTP()
+    app = BrewingHTTP()
     app.include_viewset(vs1, vs2)
     client = TestClient(app)
     result = client.get("/path1/")
@@ -176,7 +176,7 @@ def test_path_parameter():
         async def give_message(self, message_id: int):
             return message_id
 
-    app = CauldronHTTP()
+    app = BrewingHTTP()
     app.include_viewset(ViewSet())
     client = TestClient(app)
     result = client.get("/test/5")
@@ -201,7 +201,7 @@ def test_action_on_collection():
                 message=f"successfully invoked with {data.model_dump_json()}"
             )
 
-    app = CauldronHTTP()
+    app = BrewingHTTP()
     app.include_viewset(ViewSet())
     client = TestClient(app)
     result = client.post("/test/invoke", json={"foo": "bar", "data": {}})

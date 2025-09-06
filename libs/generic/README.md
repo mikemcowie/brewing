@@ -7,7 +7,7 @@ with generic parameters mapped to matching unbound class attributes.
 
 # Example
 ```python
-from cauldronlib.generic import runtime_generic
+from brewinglib.generic import runtime_generic
 
 @runtime_generic
 class SomeGenericClass[A, B]:

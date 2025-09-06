@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from uuid import UUID, uuid4
 
 import pytest
-from cauldron_incubator.auth.repo import UserRepo
+from brewing_incubator.auth.repo import UserRepo
 from sqlalchemy import ForeignKey, MetaData, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import (

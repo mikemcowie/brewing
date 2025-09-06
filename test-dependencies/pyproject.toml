@@ -1,7 +1,7 @@
 [project]
-name = "cauldron-test-dependencies"
+name = "brewing-test-dependencies"
 version = "0.1.0"
-description = "Cauldron's test dependencies"
+description = "brewing's test dependencies"
 readme = "README.md"
 authors = [
     { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }

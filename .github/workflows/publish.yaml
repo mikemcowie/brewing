@@ -51,7 +51,7 @@ jobs:
 
     steps:
       - name: prints matrix
-        run: echo '{{ toJSON(matrix) }}'
+        run: echo '${{ toJSON(matrix) }}'
 
       - name: Checkout
         uses: actions/checkout@v5

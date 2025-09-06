@@ -1,5 +1,5 @@
-"""Cauldron: An applicaton development framework and toolkit."""
+"""brewing: An applicaton development framework and toolkit."""
 
-from cauldronlib.cli import CLI
+from brewinglib.cli import CLI
 
 __all__ = ["CLI"]

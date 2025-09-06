@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from cauldron_incubator.db.database import Migrations
+from brewing_incubator.db.database import Migrations
 
 
 def test_migrations_path_loading():
