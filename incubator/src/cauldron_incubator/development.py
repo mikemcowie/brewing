@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import yaml  # type:ignore[import-untyped]
 from testcontainers.postgres import PostgresContainer  # type:ignore[import-untyped]
 
-from cauldron.logging import get_logger
+from cauldron_incubator.logging import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Generator

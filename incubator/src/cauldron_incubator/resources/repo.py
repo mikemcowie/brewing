@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from cauldron.exceptions import Forbidden, NotFound
 from cauldronlib.generic import runtime_generic
 from sqlalchemy import select
 
+from cauldron_incubator.exceptions import Forbidden, NotFound
 from cauldron_incubator.resources.models import (
     AccessLevel,
     Resource,

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from cauldron_incubator.http import APIRouter, CauldronHTTP, Request
 from pydantic import BaseModel
+
+from cauldron_incubator.http import APIRouter, CauldronHTTP, Request
 
 router = APIRouter(tags=["root"])
 
