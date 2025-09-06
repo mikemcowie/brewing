@@ -18,7 +18,7 @@ and instantiate an instance of that class. Cauldron CLI will automatically build
 
 
 ```python
-from cauldron.cli import CLI
+from cauldron import CLI
 
 
 class MyCLI(CLI):
@@ -39,7 +39,7 @@ To explicitely declare a parameter to be an option, use typing.Annotated with ty
 ```python
 from typing import Annotated
 from typer import Option
-from cauldron.cli import CLI
+from cauldron import CLI
 
 
 class MyCLI(CLI):
