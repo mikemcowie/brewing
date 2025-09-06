@@ -122,16 +122,6 @@ class UserViewSet(ViewSet):
     dependencies = ()
     base_path = ("users",)
 
-    async def service(self, db_session: Annotated[AsyncSession, Depends(db_session)]):
-        return UserService[UserRepo, AuthConfig](session=db_session)
-
-    async def user(
-        self,
-        request: Request,
-        service: Annotated[UserService[UserRepo, AuthConfig], Depends(service)],
-    ) -> User:
-        return await service.user_from_request(request)
-
     users_endpoint = Endpoint(trailing_slash=True)
     profile_endpoint = users_endpoint.action("profile")
     login_endpoint = users_endpoint.action("login")
