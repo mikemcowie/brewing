@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import uuid
 
-from cauldron import Application, BaseConfiguration, ModelViewSet, Resource, build_cli
+from cauldron_incubator import (
+    Application,
+    BaseConfiguration,
+    ModelViewSet,
+    Resource,
+    build_cli,
+)
 from cauldron_incubator.db.database import Migrations
 from sqlalchemy.orm import Mapped, mapped_column
 
