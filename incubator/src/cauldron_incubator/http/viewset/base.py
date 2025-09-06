@@ -89,7 +89,7 @@ class AbstractViewSet(ABC):
     def get_path_param_name(self) -> str:
         "Provide the name of the path parameter"
 
-    def get_path_params_class(self):
+    def get_path_params_class(self):  # pragma: no cover
         return make_dataclass(
             "InstancePathParams",
             [(self.get_path_param_name(), Annotated[UUID, Path()])],
