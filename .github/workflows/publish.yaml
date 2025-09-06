@@ -1,0 +1,68 @@
+name: Publish
+on:
+  release:
+  push:
+    tags:
+    - test-release
+    branches:
+    - 3-publish-to-test-pypi # TODO - remove
+
+jobs:
+
+  #test:
+  #  name: test
+  #  uses: ./.github/workflows/ci.yaml
+  #  permissions:
+  #    pages: write
+  #    id-token: write
+  decisions:
+    name: decisions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+
+      - name: build matrix
+        run: |
+          echo MATRIX=$(uv run scripts/publish_matrix.py matrix ${{ github.event_name }}) |  tee -a "$GITHUB_OUTPUT"
+        id: matrix
+    outputs:
+      MATRIX: ${{ steps.matrix.outputs.MATRIX }}
+
+  publish:
+    name: Publish
+    needs:
+    #- test # TODO - add back
+    - decisions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.decisions.outputs.MATRIX) }}
+
+    environment:
+      name: ${{ matrix.environment_name }}
+      url: ${{ matrix.environment_url }}
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: prints matrix
+        run: echo '{{ toJSON(matrix) }}'
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+
+      - name: Create the dist
+        run: uv build "${{ matrix.path }}" --out-dir dist
+
+      - name: Publish distribution
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: ${{ matrix.repository_url }}
