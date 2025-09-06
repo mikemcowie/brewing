@@ -36,3 +36,15 @@ build-backend = "hatchling.build"
 
 [tool.uv.sources]
 cauldronlib-generic = { workspace = true }
+
+[tool.ruff.lint]
+# Extra rules for this package
+# on top of the repo rules
+extend-select = [
+    "D"
+]
+extend-ignore = [
+    # Choices that need to be made in pydocstyle
+    "D203",
+    "D212",
+]

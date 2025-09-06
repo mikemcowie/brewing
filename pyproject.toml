@@ -121,3 +121,6 @@ exclude_also = [
 
 [tool.ruff.lint.flake8-type-checking]
 runtime-evaluated-base-classes = ["pydantic.BaseModel", "sqlalchemy.orm.DeclarativeBase", "cauldron.db.base.Base"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
