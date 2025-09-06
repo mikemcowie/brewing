@@ -16,6 +16,21 @@ theme:
         name: Switch to light mode
 plugins:
   - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_source: false
+            members: true
+            show_if_no_docstring: false
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+
+          preload_modules:
+            - cauldron
+            - cauldronlib.cli
 nav:
 - Introduction: README.md
 - CLI: cli.md
