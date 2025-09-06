@@ -18,6 +18,18 @@ members = [
 ]
 
 [[package]]
+name = "aiosqlite"
+version = "0.21.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/13/7d/8bca2bf9a247c2c5dfeec1d7a5f40db6518f88d314b8bca9da29670d2671/aiosqlite-0.21.0.tar.gz", hash = "sha256:131bb8056daa3bc875608c631c678cda73922a2d4ba8aec373b19f18c17e7aa3", size = 13454, upload-time = "2025-02-03T07:30:16.235Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f5/10/6c25ed6de94c49f88a91fa5018cb4c0f3625f31d5be9f771ebe5cc7cd506/aiosqlite-0.21.0-py3-none-any.whl", hash = "sha256:2549cf4057f95f53dcba16f2b64e8e2791d7e1adedb13197dd8ed77bb226d7d0", size = 15792, upload-time = "2025-02-03T07:30:13.6Z" },
+]
+
+[[package]]
 name = "alembic"
 version = "1.16.5"
 source = { registry = "https://pypi.org/simple" }
@@ -197,6 +209,11 @@ dependencies = [
     { name = "uvicorn" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "aiosqlite" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.16.2" },
@@ -215,6 +232,9 @@ requires-dist = [
     { name = "uvicorn", specifier = ">=0.34.3" },
 ]
 
+[package.metadata.requires-dev]
+dev = [{ name = "aiosqlite", specifier = ">=0.21.0" }]
+
 [[package]]
 name = "cauldron-test-dependencies"
 version = "0.1.0"
@@ -228,6 +248,7 @@ dependencies = [
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-alembic" },
+    { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-html" },
     { name = "pytest-markdown-docs" },
@@ -247,6 +268,7 @@ requires-dist = [
     { name = "pyright", specifier = ">=1.1.403" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-alembic", specifier = ">=0.12.1" },
+    { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "pytest-html", specifier = ">=4.1.1" },
     { name = "pytest-markdown-docs", specifier = ">=0.9.0" },
@@ -1501,6 +1523,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f9/37/ad095d92242fe5c6b4b793191240375c01f6508960f31179de7f0e22cb96/pytest_alembic-0.12.1.tar.gz", hash = "sha256:4e2b477d93464d0cfe80487fdf63922bfd22f29153ca980c1bccf1dbf833cf12", size = 30635, upload-time = "2025-05-27T14:15:29.85Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/f4/ded73992f972360adf84781b7e58729a3778e4358d482e1fe375c83948b4/pytest_alembic-0.12.1-py3-none-any.whl", hash = "sha256:d0d6be79f1c597278fbeda08c5558e7b8770af099521b0aa164e0df4aed945da", size = 36571, upload-time = "2025-05-27T14:15:28.817Z" },
+]
+
+[[package]]
+name = "pytest-asyncio"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4e/51/f8794af39eeb870e87a8c8068642fc07bce0c854d6865d7dd0f2a9d338c2/pytest_asyncio-1.1.0.tar.gz", hash = "sha256:796aa822981e01b68c12e4827b8697108f7205020f24b5793b3c41555dab68ea", size = 46652, upload-time = "2025-07-16T04:29:26.393Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c7/9d/bf86eddabf8c6c9cb1ea9a869d6873b46f105a5d292d3a6f7071f5b07935/pytest_asyncio-1.1.0-py3-none-any.whl", hash = "sha256:5fe2d69607b0bd75c656d1211f969cadba035030156745ee09e7d71740e58ecf", size = 15157, upload-time = "2025-07-16T04:29:24.929Z" },
 ]
 
 [[package]]
