@@ -58,7 +58,7 @@ class Application[ConfigT: BaseConfiguration]:
         MountedApp(
             path="/htmlcov",
             app=StaticFiles(
-                directory=Path(__file__).parents[2] / "htmlcov",
+                directory=Path(__file__).parents[3] / "htmlcov",
                 html=True,
                 check_dir=False,
             ),
@@ -67,7 +67,7 @@ class Application[ConfigT: BaseConfiguration]:
         MountedApp(
             path="/testreport",
             app=StaticFiles(
-                directory=Path(__file__).parents[2] / "testreport",
+                directory=Path(__file__).parents[3] / "testreport",
                 html=True,
                 check_dir=False,
             ),
