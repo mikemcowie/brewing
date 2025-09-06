@@ -8,9 +8,6 @@ from functools import cached_property
 from secrets import token_bytes
 from typing import TYPE_CHECKING, Annotated
 
-from cauldron.db.session import (
-    db_session,
-)
 from cauldron.exceptions import Unauthorized
 from cauldronlib.generic import runtime_generic
 from passlib.context import CryptContext
@@ -25,6 +22,9 @@ from cauldron_incubator.auth.models import (
     UserSession,
 )
 from cauldron_incubator.auth.repo import UserRepo
+from cauldron_incubator.db.session import (
+    db_session,
+)
 from cauldron_incubator.http import Depends, Request, status
 from cauldron_incubator.http.security import (
     OAuth2PasswordBearer,

@@ -1,8 +1,9 @@
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from cauldron_incubator.http import Request
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from cauldron_incubator.http import Request
 
 
 async def db_session(request: Request) -> AsyncGenerator[AsyncSession, Any]:

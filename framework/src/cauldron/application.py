@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from cauldron_incubator.auth.users import router as users_router
+from cauldron_incubator.db.database import Database
+from cauldron_incubator.db.settings import PostgresqlSettings
 from cauldron_incubator.http import APIRouter, CauldronHTTP, Request
 from cauldron_incubator.http.responses import JSONResponse, Response
 from cauldronlib.generic import runtime_generic
@@ -13,8 +15,6 @@ from starlette.staticfiles import StaticFiles
 
 from cauldron import root_router
 from cauldron.configuration import BaseConfiguration
-from cauldron.db.database import Database
-from cauldron.db.settings import PostgresqlSettings
 from cauldron.exceptions import DomainError
 from cauldron.logging import setup_logging
 

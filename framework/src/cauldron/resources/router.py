@@ -6,6 +6,7 @@ from uuid import UUID
 
 from cauldron_incubator.auth.models import User
 from cauldron_incubator.auth.users import user
+from cauldron_incubator.db import session
 from cauldron_incubator.http import Depends, Path, status
 from cauldron_incubator.http.viewset import (
     AbstractViewSet,
@@ -19,7 +20,6 @@ from cauldronlib.generic import runtime_generic
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from cauldron.db import session
 from cauldron.exceptions import Unauthorized
 from cauldron.resources.models import AccessLevel, Resource, ResourceAccessItem
 from cauldron.resources.repo import (

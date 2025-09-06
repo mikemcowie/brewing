@@ -8,6 +8,8 @@ from functools import cache
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from cauldron_incubator.auth.models import User
+from cauldron_incubator.db import base, columns
+from cauldron_incubator.db.base import Base
 from pydantic import BaseModel, ConfigDict, Field, create_model
 from sqlalchemy import ForeignKey, event
 from sqlalchemy.orm import (
@@ -19,9 +21,6 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-
-from cauldron.db import base, columns
-from cauldron.db.base import Base
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
