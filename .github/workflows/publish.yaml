@@ -27,7 +27,7 @@ jobs:
 
       - name: build matrix
         run: |
-          echo MATRIX=$(uv run scripts/publish_matrix.py matrix ${{ github.event_name }}) |  tee -a "$GITHUB_OUTPUT"
+          echo MATRIX="$(uv run scripts/publish_matrix.py matrix '${{ github.event_name }}')" |  tee -a "$GITHUB_OUTPUT"
         id: matrix
     outputs:
       MATRIX: ${{ steps.matrix.outputs.MATRIX }}
