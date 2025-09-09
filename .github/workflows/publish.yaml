@@ -1,20 +1,17 @@
 name: Publish
 on:
-  release:
   push:
-    tags:
-    - test-release
     branches:
-    - 3-publish-to-test-pypi # TODO - remove
+      - main
 
 jobs:
 
-  #test:
-  #  name: test
-  #  uses: ./.github/workflows/ci.yaml
-  #  permissions:
-  #    pages: write
-  #    id-token: write
+  test:
+    name: test
+    uses: ./.github/workflows/ci.yaml
+    permissions:
+      pages: write
+      id-token: write
   decisions:
     name: decisions
     runs-on: ubuntu-latest
@@ -27,7 +24,7 @@ jobs:
 
       - name: build matrix
         run: |
-          echo MATRIX="$(uv run scripts/publish_matrix.py matrix '${{ github.event_name }}')" |  tee -a "$GITHUB_OUTPUT"
+          echo MATRIX="$(uv run scripts/publish_matrix.py matrix)" |  tee -a "$GITHUB_OUTPUT"
         id: matrix
     outputs:
       MATRIX: ${{ steps.matrix.outputs.MATRIX }}
@@ -35,7 +32,7 @@ jobs:
   publish:
     name: Publish
     needs:
-    #- test # TODO - add back
+    - test
     - decisions
     runs-on: ubuntu-latest
     strategy:
