@@ -179,7 +179,7 @@ wheels = [
 
 [[package]]
 name = "brewing"
-version = "0.0.1"
+version = "0.0.1.dev0"
 source = { editable = "framework" }
 dependencies = [
     { name = "brewinglib-cli" },
@@ -190,7 +190,7 @@ requires-dist = [{ name = "brewinglib-cli", editable = "libs/cli" }]
 
 [[package]]
 name = "brewing-incubator"
-version = "0.1.0"
+version = "0.0.1.dev0"
 source = { editable = "incubator" }
 dependencies = [
     { name = "alembic" },
@@ -337,7 +337,7 @@ docs = [
 
 [[package]]
 name = "brewinglib-cli"
-version = "0.1.0"
+version = "0.0.1.dev0"
 source = { editable = "libs/cli" }
 dependencies = [
     { name = "pydantic" },
@@ -352,7 +352,7 @@ requires-dist = [
 
 [[package]]
 name = "brewinglib-generic"
-version = "0.1.0"
+version = "0.0.1.dev0"
 source = { editable = "libs/generic" }
 
 [[package]]
@@ -1318,7 +1318,7 @@ wheels = [
 
 [[package]]
 name = "project-manager"
-version = "0.0.1"
+version = "0.0.1.dev0"
 source = { editable = "samples/project-manager" }
 dependencies = [
     { name = "brewing" },

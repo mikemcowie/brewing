@@ -10,10 +10,9 @@ class PublishMatrix(CLI):
         "brewinglib-cli": "libs/cli",
     }
 
-    def matrix(self, event_name: str):
-        is_test_pypi = event_name == "push"
-        environment = "testpypi" if is_test_pypi else "pypi"
-        base_url = "testpypi.org" if is_test_pypi else "pypi.org"
+    def matrix(self):
+        environment = "testpypi"
+        base_url = "testpypi.org"
         matrix = {
             "include": [
                 {
