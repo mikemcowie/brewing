@@ -1,5 +1,7 @@
 # brewing
 
+[![CI](https://github.com/mikemcowie/brewing/actions/workflows/ci.yaml/badge.svg)](https://github.com/mikemcowie/brewing/actions/workflows/ci.yaml)
+
 brewing is a python application framework  built to combine and enhance the best in breed packages in the python ecosystem.
 
 ## The pitch
