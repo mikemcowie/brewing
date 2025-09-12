@@ -60,7 +60,15 @@ class ProjectManager(CLI):
                     "package-ecosystem": "uv",
                     "directory": "/",
                     "schedule": {"interval": "weekly"},
-                }
+                },
+                *[
+                    {
+                        "package-ecosystem": "pip",
+                        "directory": str(path.parent.relative_to(self._repo_path)),
+                        "schedule": {"interval": "weekly"},
+                    }
+                    for path in self.all_pyproject
+                ],
             ],
         }
         (self._repo_path / ".github" / "dependabot.yml").write_text(
