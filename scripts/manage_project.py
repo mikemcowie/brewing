@@ -7,6 +7,7 @@ from typing import Annotated, Any
 
 import structlog
 import tomlkit
+import yaml
 from brewing import CLI
 from pygit2.repository import Repository
 from tomlkit.container import Container
@@ -46,8 +47,25 @@ class ProjectManager(CLI):
         logger.info(f"writing {version=} to {path=}")
         path.write_text(tomlkit.dumps(data))
 
-    def sync(self, version: Annotated[str, Option(default=..., envvar="SET_VERSION")]):
+    def sync_pyproject(
+        self, version: Annotated[str, Option(default=..., envvar="SET_VERSION")]
+    ):
         [self._configure_pyproject(file, version) for file in self.all_pyproject]
+
+    def sync_dependabot(self):
+        dependabot_config: dict[str, Any] = {
+            "version": 2,
+            "updates": [
+                {
+                    "package-ecosystem": "uv",
+                    "directory": "/",
+                    "schedule": {"interval": "weekly"},
+                }
+            ],
+        }
+        (self._repo_path / ".github" / "dependabot.yml").write_text(
+            yaml.safe_dump(dependabot_config)
+        )
 
 
 if __name__ == "__main__":

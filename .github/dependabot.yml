@@ -1,0 +1,6 @@
+updates:
+- directory: /
+  package-ecosystem: uv
+  schedule:
+    interval: weekly
+version: 2
