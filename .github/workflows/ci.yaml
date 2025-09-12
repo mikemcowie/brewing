@@ -7,6 +7,24 @@ on:
   workflow_call:
 
 jobs:
+
+  decisions:
+    name: decisions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+
+      - name: build matrix
+        run: |
+          echo MATRIX="$(uv run scripts/publish_matrix.py matrix)" |  tee -a "$GITHUB_OUTPUT"
+        id: matrix
+    outputs:
+      MATRIX: ${{ steps.matrix.outputs.MATRIX }}
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -51,3 +69,42 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
+
+  publish:
+    name: Publish
+    needs:
+    - test
+    - decisions
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.decisions.outputs.MATRIX) }}
+
+    environment:
+      name: ${{ matrix.environment_name }}
+      url: ${{ matrix.environment_url }}
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: prints matrix
+        run: echo '${{ toJSON(matrix) }}'
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+
+      - name: Create the dist
+        run: uv build "${{ matrix.path }}" --out-dir dist
+
+      - name: Publish distribution (test)
+        run: uv publish --trusted-publishing always --index testpypi
+        if: matrix.environment_name == 'testpypi'
+
+      - name: Publish distribution
+        run: uv publish --trusted-publishing always
+        if: matrix.environment_name == 'pypi'
