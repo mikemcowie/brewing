@@ -1,6 +1,6 @@
 [project]
 name = "project-manager"
-version = "0.0.1.dev2"
+version = "0.0.1+dev0"
 description = "Add your description here"
 readme = "README.md"
 authors = [

@@ -179,7 +179,7 @@ wheels = [
 
 [[package]]
 name = "brewing"
-version = "0.0.1.dev2"
+version = "0.0.1+dev0"
 source = { editable = "framework" }
 dependencies = [
     { name = "brewinglib-cli" },
@@ -190,7 +190,7 @@ requires-dist = [{ name = "brewinglib-cli", editable = "libs/cli" }]
 
 [[package]]
 name = "brewing-incubator"
-version = "0.0.1.dev2"
+version = "0.0.1+dev0"
 source = { editable = "incubator" }
 dependencies = [
     { name = "alembic" },
@@ -237,7 +237,7 @@ dev = [{ name = "aiosqlite", specifier = ">=0.21.0" }]
 
 [[package]]
 name = "brewing-test-dependencies"
-version = "0.1.0"
+version = "0.0.1+dev0"
 source = { editable = "test-dependencies" }
 dependencies = [
     { name = "aiosqlite" },
@@ -257,6 +257,7 @@ dependencies = [
     { name = "pytest-subtests" },
     { name = "pyyaml" },
     { name = "ruff" },
+    { name = "semver" },
     { name = "testcontainers" },
     { name = "types-passlib" },
 ]
@@ -285,6 +286,7 @@ requires-dist = [
     { name = "pytest-subtests", specifier = ">=0.14.2" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "ruff", specifier = ">=0.12.0" },
+    { name = "semver", specifier = ">=3.0.4" },
     { name = "testcontainers", specifier = ">=4.10.0" },
     { name = "types-passlib", specifier = ">=1.7.7.20250602" },
 ]
@@ -294,7 +296,7 @@ dev = [{ name = "tomlkit", specifier = ">=0.13.3" }]
 
 [[package]]
 name = "brewing-uv-workspace"
-version = "0.0.1"
+version = "0.0.1+dev0"
 source = { virtual = "." }
 dependencies = [
     { name = "brewing" },
@@ -339,7 +341,7 @@ docs = [
 
 [[package]]
 name = "brewinglib-cli"
-version = "0.0.1.dev2"
+version = "0.0.1+dev0"
 source = { editable = "libs/cli" }
 dependencies = [
     { name = "pydantic" },
@@ -354,7 +356,7 @@ requires-dist = [
 
 [[package]]
 name = "brewinglib-generic"
-version = "0.0.1.dev2"
+version = "0.0.1+dev0"
 source = { editable = "libs/generic" }
 
 [[package]]
@@ -1320,7 +1322,7 @@ wheels = [
 
 [[package]]
 name = "project-manager"
-version = "0.0.1.dev2"
+version = "0.0.1+dev0"
 source = { editable = "samples/project-manager" }
 dependencies = [
     { name = "brewing" },
@@ -1828,6 +1830,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/53/a4/f48c9d79cb507ed1373477dbceaba7401fd8a23af63b837fa61f1dcd3691/SecretStorage-3.3.3.tar.gz", hash = "sha256:2403533ef369eca6d2ba81718576c5e0f564d5cca1b58f73a8b23e7d4eeebd77", size = 19739, upload-time = "2022-08-13T16:22:46.976Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/24/b4293291fa1dd830f353d2cb163295742fa87f179fcc8a20a306a81978b7/SecretStorage-3.3.3-py3-none-any.whl", hash = "sha256:f356e6628222568e3af06f2eba8df495efa13b3b63081dafd4f7d9a7b7bc9f99", size = 15221, upload-time = "2022-08-13T16:22:44.457Z" },
+]
+
+[[package]]
+name = "semver"
+version = "3.0.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/d1/d3159231aec234a59dd7d601e9dd9fe96f3afff15efd33c1070019b26132/semver-3.0.4.tar.gz", hash = "sha256:afc7d8c584a5ed0a11033af086e8af226a9c0b206f313e0301f8dd7b6b589602", size = 269730, upload-time = "2025-01-24T13:19:27.617Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/24/4d91e05817e92e3a61c8a21e08fd0f390f5301f1c448b137c57c4bc6e543/semver-3.0.4-py3-none-any.whl", hash = "sha256:9c824d87ba7f7ab4a1890799cec8596f15c1241cb473404ea1cb0c55e4b04746", size = 17912, upload-time = "2025-01-24T13:19:24.949Z" },
 ]
 
 [[package]]
