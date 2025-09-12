@@ -3,4 +3,32 @@ updates:
   package-ecosystem: uv
   schedule:
     interval: weekly
+- directory: .
+  package-ecosystem: pip
+  schedule:
+    interval: weekly
+- directory: test-dependencies
+  package-ecosystem: pip
+  schedule:
+    interval: weekly
+- directory: framework
+  package-ecosystem: pip
+  schedule:
+    interval: weekly
+- directory: incubator
+  package-ecosystem: pip
+  schedule:
+    interval: weekly
+- directory: samples/project-manager
+  package-ecosystem: pip
+  schedule:
+    interval: weekly
+- directory: libs/generic
+  package-ecosystem: pip
+  schedule:
+    interval: weekly
+- directory: libs/cli
+  package-ecosystem: pip
+  schedule:
+    interval: weekly
 version: 2
