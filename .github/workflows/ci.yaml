@@ -82,8 +82,8 @@ jobs:
     if: github.event_name == 'push' && github.ref_name == '4-publish-prereleases-to-pypi-on-every-merge' # TODO - revert to main
 
     environment:
-      name: test-pypi
-      url: https://testpypi.org/p/brewing
+      name: pypi
+      url: https://pypi.org/p/brewing
 
     permissions:
       id-token: write
