@@ -69,6 +69,8 @@ jobs:
 
       - name: Make a release
         run: uv run scripts/manage_project.py release
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   publish:
     name: Publish
@@ -93,3 +95,5 @@ jobs:
 
       - name: Publish distribution
         run: uv run scripts/manage_project.py publish
+        env:
+          GH_TOKEN: ${{ github.token }}
