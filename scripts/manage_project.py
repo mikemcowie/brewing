@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import MutableMapping
+from enum import StrEnum, auto
 from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any
@@ -15,9 +16,16 @@ import yaml
 from brewing import CLI
 from pygit2.repository import Repository
 from tomlkit.container import Container
-from typer import Option, Typer
+from typer import Argument, Typer
 
 logger = structlog.get_logger()
+
+
+class _VersionBumpType(StrEnum):
+    patch = auto()
+    minor = auto()
+    major = auto()
+    prerelease = auto()
 
 
 class ProjectManager(CLI):
@@ -86,13 +94,25 @@ class ProjectManager(CLI):
         logger.info(f"writing {version=} to {path=}")
         path.write_text(tomlkit.dumps(data))  # type: ignore
 
-    def sync_pyproject(
-        self, version: Annotated[str, Option(default=..., envvar="SET_VERSION")]
-    ):
-        [
-            self._configure_pyproject(file, semver.Version.parse(version))
-            for file in self.all_pyproject
-        ]
+    def bump_version(self, bump_type: Annotated[_VersionBumpType, Argument()]):
+        version = self._read_version()
+        match bump_type:
+            case _VersionBumpType.patch:
+                version = version.bump_patch()
+            case _VersionBumpType.minor:
+                version = version.bump_minor()
+            case _VersionBumpType.major:
+                version = version.bump_major()
+            case _VersionBumpType.prerelease:
+                version = version.bump_prerelease()
+                [
+                    self._configure_pyproject(file, version)
+                    for file in self.all_pyproject
+                ]
+
+    def sync_pyproject(self):
+        version = self._read_version()
+        [self._configure_pyproject(file, version) for file in self.all_pyproject]
 
     def sync_dependabot(self):
         dependabot_config: dict[str, Any] = {
