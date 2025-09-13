@@ -47,5 +47,6 @@ class MyCLI(CLI):
 """
 
 from .cli import CLI as CLI
+from .cli import ConflictingCommandError as ConflictingCommandError
 
-__all__ = ["CLI"]
+__all__ = ["CLI", "ConflictingCommandError"]

@@ -1,6 +1,6 @@
 [project]
 name = "brewinglib-cli"
-version = "0.0.1"
+version = "0.0.1-rc.1"
 description = "brewinglib's CLI system, a wrapper around Tiangolo's typer."
 readme = "README.md"
 authors = [

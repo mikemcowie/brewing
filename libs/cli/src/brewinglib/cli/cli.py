@@ -11,6 +11,10 @@ def to_dash_case(value: str):
     return to_snake(value).replace("_", "-")
 
 
+class ConflictingCommandError(ValueError):
+    pass
+
+
 class CLI:
     """A class-based command-line generator based on typer."""
 
@@ -21,20 +25,23 @@ class CLI:
         name: str,
         /,
         *children: CLI,
-        typer: Typer | None = None,
+        extends: Typer | CLI | None = None,
         wraps: Any = _self,
     ):
         """_summary_
 
         Args:
             name (str): The name of the CLI - this will be used in nested situations
-            typer (Typer | None, optional): If provided, a pre-exisitng Typer instance to extend.
+            typer (Typer  | CLI | None, optional): If provided, a typer instance or another CLI to add commands to.
             wraps (Any): Object to obtain CLI commands from. If not provided, self will be used.
         """
         self._name = name
-        self._typer = typer or Typer(
-            name=name, no_args_is_help=True, add_help_option=True
-        )
+        if isinstance(extends, Typer):
+            self._typer = extends
+        elif isinstance(extends, CLI):
+            self._typer = extends.typer
+        else:
+            self._typer = Typer(name=name, no_args_is_help=True, add_help_option=True)
         self._children = children
         self._wraps = self if wraps is self._self else wraps
         self._setup_typer()
@@ -49,6 +56,10 @@ class CLI:
         return self._name
 
     @property
+    def command_names(self):
+        return tuple(command.name for command in self.typer.registered_commands)
+
+    @property
     def typer(self) -> Typer:
         """Read only name attribute.
 
@@ -60,6 +71,9 @@ class CLI:
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Runs the CLI."""
         return self.typer(*args, **kwargs)
+
+    def __getattr__(self, name: str):
+        return getattr(self.typer, name)
 
     def _setup_typer(self):
         # Setting a callback overrides typer's default behaviour
@@ -74,6 +88,11 @@ class CLI:
                 and callable(obj)
                 and getattr(obj, "__self__", None) is self._wraps
             ):
-                self.typer.command(to_dash_case(obj.__name__))(obj)
+                command_name = to_dash_case(obj.__name__)
+                if command_name in self.command_names:
+                    raise ConflictingCommandError(
+                        f"cannot add CLI command with conflicting {command_name=}."
+                    )
+                self.typer.command(command_name)(obj)
         for child in self._children:
             self.typer.add_typer(child.typer, name=child.name)
