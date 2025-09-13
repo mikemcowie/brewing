@@ -31,10 +31,12 @@ class _VersionBumpType(StrEnum):
 
 
 class ProjectManager(CLI):
-    def __init__(self, name: str, /, *children: CLI, typer: Typer | None = None):
+    def __init__(
+        self, name: str, /, *children: CLI, extends: Typer | CLI | None = None
+    ):
         self._repo = Repository(__file__)
         self._repo_path = Path(self._repo.path).parent
-        super().__init__(name, *children, typer=typer)
+        super().__init__(name, *children, extends=extends)
 
     @cached_property
     def all_pyproject(self):

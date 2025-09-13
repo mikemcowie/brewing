@@ -36,7 +36,7 @@ class DatabaseCLI[MigrationsT: MigrationsProtocol](CLI):
         typer: typer.Typer | None = None,
     ):
         self._migrations = migrations
-        super().__init__(name, *children, typer=typer)
+        super().__init__(name, *children, extends=typer)
 
     def _db_upgrade(self, revision: str) -> None:
         logger.info("upgrading database", revision=revision)
@@ -101,7 +101,7 @@ class AppCLI(CLI):
         typer: typer.Typer | None = None,
     ):
         self._api_factory = api_factory
-        super().__init__(name, *children, typer=typer)
+        super().__init__(name, *children, extends=typer)
 
     def api(self, workers: Annotated[int, typer.Option(envvar="API_WORKERS")]) -> None:
         """Run api"""
@@ -122,7 +122,7 @@ class DevAppCLI(CLI):
         typer: typer.Typer | None = None,
     ):
         self._api_factory = api_factory
-        super().__init__(name, *children, typer=typer)
+        super().__init__(name, *children, extends=typer)
 
     def api(self) -> None:
         """Run development api with hot reload."""

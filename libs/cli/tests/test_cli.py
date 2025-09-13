@@ -1,9 +1,11 @@
 # ruff: noqa: T201
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from brewinglib.cli import CLI
+import pytest
+import typer
+from brewinglib.cli import CLI, ConflictingCommandError
 from brewinglib.cli.testing import BrewingCLIRunner
 
 if TYPE_CHECKING:
@@ -185,3 +187,93 @@ def test_cli_wraps_another_object(subtests: SubTests):
         result = runner.invoke(["quiet"])
         assert result.stdout.strip() == "something"
         assert result.exit_code == 0
+
+
+def test_cli_extends_another(subtests: SubTests):
+    class CLI1(CLI):
+        def __init__(self, name: str, message: str):
+            self.message = message
+            super().__init__(name)
+
+        def quiet(self):
+            """Allows you to do something"""
+            print(self.message.lower())
+
+    class CLI2(CLI):
+        def __init__(self, name: str, message: str, **kwargs: Any):
+            self.message = message
+            super().__init__(name, **kwargs)
+
+        def loud(self):
+            """Also allows you to do something"""
+            print(self.message.upper())
+
+    cli1 = CLI1(name="root", message="Something")
+    cli2 = CLI2(name="root", message="Something", extends=cli1)
+    runner = BrewingCLIRunner(cli2)
+
+    with subtests.test("quiet"):
+        result = runner.invoke(["quiet"])
+        assert result.stdout.strip() == "something"
+        assert result.exit_code == 0
+    with subtests.test("loud"):
+        result = runner.invoke(["loud"])
+        assert result.stdout.strip() == "SOMETHING"
+        assert result.exit_code == 0
+
+
+def test_cli_a_typer(subtests: SubTests):
+    app = typer.Typer()
+
+    @app.command()
+    def quiet():
+        print("something")
+
+    class CLI1(CLI):
+        def __init__(self, name: str, message: str, **kwargs: Any):
+            self.message = message
+            super().__init__(name, **kwargs)
+
+        def loud(self):
+            """Also allows you to do something"""
+            print(self.message.upper())
+
+    cli2 = CLI1(name="root", message="Something", extends=app)
+    runner = BrewingCLIRunner(cli2)
+
+    with subtests.test("quiet"):
+        result = runner.invoke(["quiet"])
+        assert result.stdout.strip() == "something"
+        assert result.exit_code == 0
+    with subtests.test("loud"):
+        result = runner.invoke(["loud"])
+        assert result.stdout.strip() == "SOMETHING"
+        assert result.exit_code == 0
+
+
+def test_cannot_extend_with_conflicting_names(subtests: SubTests):
+    class CLI1(CLI):
+        def __init__(self, name: str, message: str):
+            self.message = message
+            super().__init__(name)
+
+        def quiet(self):
+            """Allows you to do something"""
+            print(self.message.lower())
+
+    class CLI2(CLI):
+        def __init__(self, name: str, message: str, **kwargs: Any):
+            self.message = message
+            super().__init__(name, **kwargs)
+
+        def quiet(self):
+            """Also allows you to do something"""
+            print(self.message.upper())
+
+    cli1 = CLI1(name="root", message="Something")
+    with pytest.raises(ConflictingCommandError) as error:
+        CLI2(name="root", message="Something", extends=cli1)
+    assert (
+        "cannot add CLI command with conflicting command_name='quiet'."
+        in error.exconly()
+    )
