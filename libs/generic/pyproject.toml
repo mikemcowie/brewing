@@ -1,6 +1,6 @@
 [project]
 name = "brewinglib-generic"
-version = "0.0.1+dev3"
+version = "0.0.1-pre0"
 description = "Convert a class with generic type parameters to be generic at runtime."
 readme = "README.md"
 authors = [
