@@ -166,3 +166,22 @@ def test_nested_cli(subtests: SubTests):
         result = runner.invoke(["child", "write"])
         assert result.exit_code == 0
         assert result.stdout.strip() == "child write"
+
+
+def test_cli_wraps_another_object(subtests: SubTests):
+    class Something:
+        def __init__(self, message: str):
+            self.message = message
+
+        def quiet(self):
+            """Allows you to do something"""
+            print(self.message.lower())
+
+    something = Something(message="Something")
+    cli = CLI("something", wraps=something)
+    runner = BrewingCLIRunner(cli)
+
+    with subtests.test("quiet"):
+        result = runner.invoke(["quiet"])
+        assert result.stdout.strip() == "something"
+        assert result.exit_code == 0

@@ -14,18 +14,29 @@ def to_dash_case(value: str):
 class CLI:
     """A class-based command-line generator based on typer."""
 
-    def __init__(self, name: str, /, *children: CLI, typer: Typer | None = None):
+    _self = object()  # sentinal value to serve as default for wraps
+
+    def __init__(
+        self,
+        name: str,
+        /,
+        *children: CLI,
+        typer: Typer | None = None,
+        wraps: Any = _self,
+    ):
         """_summary_
 
         Args:
             name (str): The name of the CLI - this will be used in nested situations
             typer (Typer | None, optional): If provided, a pre-exisitng Typer instance to extend.
+            wraps (Any): Object to obtain CLI commands from. If not provided, self will be used.
         """
         self._name = name
         self._typer = typer or Typer(
             name=name, no_args_is_help=True, add_help_option=True
         )
         self._children = children
+        self._wraps = self if wraps is self._self else wraps
         self._setup_typer()
 
     @property
@@ -56,12 +67,12 @@ class CLI:
         # It means the CLI behaves the same with one or several CLI options
         # which this author thinks is more predictable and explicit.
         self._typer.command("hidden", hidden=True)(lambda: None)
-        for attr in dir(self):
-            obj = getattr(self, attr)
+        for attr in dir(self._wraps):
+            obj = getattr(self._wraps, attr)
             if (
                 attr[0] in string.ascii_letters
                 and callable(obj)
-                and getattr(obj, "__self__", None) is self
+                and getattr(obj, "__self__", None) is self._wraps
             ):
                 self.typer.command(to_dash_case(obj.__name__))(obj)
         for child in self._children:
