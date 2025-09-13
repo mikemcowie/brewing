@@ -1,11 +1,12 @@
-# runtime-generic
+1-line decorator to allow a class to be subclassed via generic syntax.
 
-Decorator that makes some class's generic be able to be instantiated.
+Specifically limited to the pattern where:
 
-Given a class of type T, decorating with this will allow creation of a subclass
-with generic parameters mapped to matching unbound class attributes.
+1. a class variable is declared, unbound, as type[T], where T is a generic class parameter.
+2. An arbitary amount of such type parameters can be handled.
 
 # Example
+
 ```python
 from brewinglib.generic import runtime_generic
 

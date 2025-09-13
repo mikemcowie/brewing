@@ -21,8 +21,8 @@ plugins:
         python:
           options:
             show_root_heading: true
+            filters: public
             show_source: false
-            members: true
             show_if_no_docstring: false
             docstring_options:
               ignore_init_summary: true
@@ -33,6 +33,7 @@ plugins:
             - brewinglib.cli
 nav:
 - Introduction: README.md
-- CLI: cli.md
+- brewinglib.cli: cli.md
+- brewinglib.generic: generic.md
 markdown_extensions:
   - admonition

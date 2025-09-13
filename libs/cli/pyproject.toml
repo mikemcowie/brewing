@@ -12,6 +12,12 @@ dependencies = [
     "typer>=0.16.1",
 ]
 
+[project.urls]
+Homepage = "https://mikemcowie.github.io/brewing/"
+Documentation = "https://mikemcowie.github.io/brewing/"
+Repository = "https://github.com/mikemcowie/brewing"
+Issues = "https://github.com/mikemcowie/brewing"
+Releases = "https://github.com/mikemcowie/brewing/releases"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

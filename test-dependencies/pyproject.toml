@@ -30,6 +30,12 @@ dependencies = [
     "types-passlib>=1.7.7.20250602",
 ]
 
+[project.urls]
+Homepage = "https://mikemcowie.github.io/brewing/"
+Documentation = "https://mikemcowie.github.io/brewing/"
+Repository = "https://github.com/mikemcowie/brewing"
+Issues = "https://github.com/mikemcowie/brewing"
+Releases = "https://github.com/mikemcowie/brewing/releases"
 [dependency-groups]
 dev = [
     "tomlkit>=0.13.3",

@@ -1,5 +1,6 @@
 """Manages certain fields in every pyproject.toml file in the repo"""
 
+# pyright: reportIndexIssue=false
 import shutil
 import subprocess
 import sys
@@ -73,8 +74,17 @@ class ProjectManager(CLI):
 
     def _set_project_table(self, data: Container, version: semver.Version):
         if data["project"].get("dynamic"):  # type: ignore
-            del data["project"]["dynamic"]  # type: ignore
-        data["project"]["version"] = str(version)  # type: ignore
+            del data["project"]["dynamic"]
+        data["project"]["version"] = str(version)
+        urls = data["project"].get("urls")  # type: ignore
+        if not urls:
+            data["project"]["urls"] = tomlkit.table()
+            urls = data["project"]["urls"]  # type: ignore
+        urls["Homepage"] = "https://mikemcowie.github.io/brewing/"
+        urls["Documentation"] = "https://mikemcowie.github.io/brewing/"
+        urls["Repository"] = "https://github.com/mikemcowie/brewing"
+        urls["Issues"] = "https://github.com/mikemcowie/brewing"
+        urls["Releases"] = "https://github.com/mikemcowie/brewing/releases"
 
     def _read_version(self) -> semver.Version:
         project_file = self._repo_path / "pyproject.toml"
