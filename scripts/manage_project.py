@@ -2,6 +2,7 @@
 
 import shutil
 import subprocess
+import sys
 from collections.abc import MutableMapping
 from functools import cached_property
 from pathlib import Path
@@ -32,6 +33,13 @@ class ProjectManager(CLI):
             *self._repo_path.glob("**/pyproject.toml"),
         )
 
+    def _clean_dist_dir(self) -> Path:
+        dist_dir = self._repo_path / "dist"
+        if dist_dir.exists():
+            shutil.rmtree(dist_dir)
+        dist_dir.mkdir()
+        return dist_dir
+
     def _run(self, *cmd: str) -> str:
         """Run command in subprocess; return stdout as a string."""
         logger.info(f"running {cmd=}")
@@ -41,7 +49,7 @@ class ProjectManager(CLI):
             ).stdout
         except subprocess.CalledProcessError as error:
             logger.error(str(error.stdout + str(error.stderr)))  # noqa: TRY400
-            raise
+            sys.exit(1)
 
     def _published_packages(self) -> list[Path]:
         return [
@@ -111,10 +119,7 @@ class ProjectManager(CLI):
 
     def release(self):
         version = self._read_version()
-        dist_dir = self._repo_path / "dist"
-        if dist_dir.exists():
-            shutil.rmtree(dist_dir)
-        dist_dir.mkdir()
+        dist_dir = self._clean_dist_dir()
         for project in self._published_packages():
             self._run("uv", "build", str(project), "--out-dir", str(dist_dir))
         release_cmd = [
@@ -143,6 +148,20 @@ class ProjectManager(CLI):
 
         self._run(*release_cmd)
         self._run(*upload_cmd)
+
+    def publish(self):
+        version = self._read_version()
+        dist_dir = self._clean_dist_dir()
+        self._run("gh", "release", "download", str(version), "--dir", str(dist_dir))
+        self._run(
+            "uv",
+            "publish",
+            f"{dist_dir!s}/*",
+            "--trusted-publishing",
+            "always",
+            "--publish-url",
+            "https://test.pypi.org/legacy/",
+        )
 
 
 if __name__ == "__main__":
