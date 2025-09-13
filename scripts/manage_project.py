@@ -1,6 +1,7 @@
 """Manages certain fields in every pyproject.toml file in the repo"""
 
-import os
+import shutil
+import subprocess
 from collections.abc import MutableMapping
 from functools import cached_property
 from pathlib import Path
@@ -30,6 +31,25 @@ class ProjectManager(CLI):
             self._repo_path / "pyproject.toml",
             *self._repo_path.glob("**/pyproject.toml"),
         )
+
+    def _run(self, *cmd: str) -> str:
+        """Run command in subprocess; return stdout as a string."""
+        logger.info(f"running {cmd=}")
+        try:
+            return subprocess.run(
+                cmd, capture_output=True, encoding="utf8", check=True
+            ).stdout
+        except subprocess.CalledProcessError as error:
+            logger.error(str(error.stdout + str(error.stderr)))  # noqa: TRY400
+            raise
+
+    def _published_packages(self) -> list[Path]:
+        return [
+            path.parent
+            for path in self.all_pyproject
+            if path.parent == self._repo_path / "framework"
+            or path.parent.parent == self._repo_path / "libs"
+        ]
 
     def _set_build_system(self, data: MutableMapping[str, Any]):
         data["build-system"]["requires"] = ["hatchling"]
@@ -91,7 +111,13 @@ class ProjectManager(CLI):
 
     def release(self):
         version = self._read_version()
-        cmd = [
+        dist_dir = self._repo_path / "dist"
+        if dist_dir.exists():
+            shutil.rmtree(dist_dir)
+        dist_dir.mkdir()
+        for project in self._published_packages():
+            self._run("uv", "build", str(project), "--out-dir", str(dist_dir))
+        release_cmd = [
             "gh",
             "release",
             "create",
@@ -100,9 +126,23 @@ class ProjectManager(CLI):
             "--title",
             str(self._read_version()),
         ]
+
+        upload_cmd = [
+            "gh",
+            "release",
+            "upload",
+            str(version),
+            *(
+                str(asset)
+                for asset in dist_dir.iterdir()
+                if asset.suffix in (".whl", ".gz")
+            ),
+        ]
         if version.prerelease or version.build:
-            cmd.append("--prerelease")
-        os.execlp(cmd[0], *cmd[0:])
+            release_cmd.append("--prerelease")
+
+        self._run(*release_cmd)
+        self._run(*upload_cmd)
 
 
 if __name__ == "__main__":
