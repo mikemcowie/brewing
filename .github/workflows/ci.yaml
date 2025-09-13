@@ -60,6 +60,8 @@ jobs:
     if: github.event_name == 'push' && github.ref_name == '4-publish-prereleases-to-pypi-on-every-merge' # TODO - revert to main
     needs:
     - test
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -85,6 +87,7 @@ jobs:
 
     permissions:
       id-token: write
+      contents: read
 
     steps:
       - name: Checkout
