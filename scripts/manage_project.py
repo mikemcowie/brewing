@@ -27,6 +27,7 @@ class _VersionBumpType(StrEnum):
     minor = auto()
     major = auto()
     prerelease = auto()
+    finalize = auto()
 
 
 class ProjectManager(CLI):
@@ -115,10 +116,9 @@ class ProjectManager(CLI):
                 version = version.bump_major()
             case _VersionBumpType.prerelease:
                 version = version.bump_prerelease()
-                [
-                    self._configure_pyproject(file, version)
-                    for file in self.all_pyproject
-                ]
+            case _VersionBumpType.finalize:
+                version = version.finalize_version()
+        [self._configure_pyproject(file, version) for file in self.all_pyproject]
 
     def sync_pyproject(self):
         version = self._read_version()
