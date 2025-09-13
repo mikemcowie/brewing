@@ -56,8 +56,7 @@ class ProjectManager(CLI):
             path.parent
             for path in self.all_pyproject
             if path.parent == self._repo_path / "framework"
-            or path.parent == self._repo_path / "libs" / "cli"
-            # or path.parent.parent == self._repo_path / "libs"
+            or path.parent.parent == self._repo_path / "libs"
         ]
 
     def _set_build_system(self, data: MutableMapping[str, Any]):
