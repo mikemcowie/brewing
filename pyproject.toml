@@ -1,6 +1,6 @@
 [project]
 name = "brewing-uv-workspace"
-version = "0.0.2"
+version = "0.0.2-rc.1"
 description = "Add your description here"
 readme = "docs/README.md"
 requires-python = ">=3.13"
@@ -11,6 +11,7 @@ dependencies = [
     "brewinglib-cli",
     "brewing-test-dependencies",
     "brewing-incubator",
+    "brewinglib-db",
 ]
 
 [project.urls]
@@ -35,6 +36,7 @@ brewinglib-generic = { workspace = true }
 brewinglib-cli = { workspace = true }
 brewing-test-dependencies = { workspace = true }
 brewing-incubator = {workspace=true}
+brewinglib-db = { workspace = true }
 
 [dependency-groups]
 dev = [

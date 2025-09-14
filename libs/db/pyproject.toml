@@ -1,15 +1,35 @@
 [project]
-name = "brewinglib-cli"
+name = "brewinglib-db"
 version = "0.0.2-rc.1"
-description = "brewinglib's CLI system, a wrapper around Tiangolo's typer."
+description = "Add your description here"
 readme = "README.md"
 authors = [
     { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "pydantic>=2.11.7",
-    "typer>=0.16.1",
+    "sqlalchemy>=2.0.43",
+]
+
+[project.optional-dependencies]
+testing = [
+    "testcontainers>=4.12.0",
+]
+postgresql = []
+mysql = [
+    "aiomysql>=0.2.0",
+]
+mariadb = [
+    "brewinglib-db[mysql]"
+]
+sqlite = [
+    "aiosqlite>=0.21.0",
+]
+posgresql = [
+    "psycopg>=3.2.9",
+]
+all = [
+    "brewinglib-db[mysql,mariadb,postgresql,sqlite]"
 ]
 
 [project.urls]
@@ -18,6 +38,7 @@ Documentation = "https://mikemcowie.github.io/brewing/"
 Repository = "https://github.com/mikemcowie/brewing"
 Issues = "https://github.com/mikemcowie/brewing"
 Releases = "https://github.com/mikemcowie/brewing/releases"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

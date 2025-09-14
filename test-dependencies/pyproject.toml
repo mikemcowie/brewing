@@ -1,6 +1,6 @@
 [project]
 name = "brewing-test-dependencies"
-version = "0.0.2"
+version = "0.0.2-rc.1"
 description = "brewing's test dependencies"
 readme = "README.md"
 authors = [
@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.21.0",
+    "brewinglib-db[all]",
     "coverage>=7.9.1",
     "hatch>=1.14.1",
     "hatchling>=1.27.0",
@@ -40,3 +41,6 @@ Releases = "https://github.com/mikemcowie/brewing/releases"
 dev = [
     "tomlkit>=0.13.3",
 ]
+
+[tool.uv.sources]
+brewinglib-db = { workspace = true }
