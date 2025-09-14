@@ -146,17 +146,11 @@ class MariaDBSettings(MySQLSettings):
             return None
 
 
+# fmt: off
 _DATABASE_TYPE_TO_DIALECT = {
-    DatabaseType.sqlite: Dialect(
-        DatabaseType.sqlite, "aiosqlite", "aiosqlite", SQLiteSettings
-    ),
-    DatabaseType.postgresql: Dialect(
-        DatabaseType.postgresql, "psycopg", "psycopg", PostgresqlSettings
-    ),
-    DatabaseType.mysql: Dialect(
-        DatabaseType.mysql, "aiomysql", "aiomysql", MySQLSettings
-    ),
-    DatabaseType.mariadb: Dialect(
-        DatabaseType.mariadb, "aiomysql", "aiomysql", MariaDBSettings
-    ),
+DatabaseType.sqlite:     Dialect( DatabaseType.sqlite,     "aiosqlite", "aiosqlite", SQLiteSettings     ),
+DatabaseType.postgresql: Dialect( DatabaseType.postgresql, "psycopg",   "psycopg",   PostgresqlSettings ),
+DatabaseType.mysql:      Dialect( DatabaseType.mysql,      "aiomysql",  "aiomysql",  MySQLSettings      ),
+DatabaseType.mariadb:    Dialect( DatabaseType.mariadb,    "aiomysql",  "aiomysql",  MariaDBSettings    ),
 }
+# fmt: on
