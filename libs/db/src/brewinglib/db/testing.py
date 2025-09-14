@@ -39,7 +39,7 @@ def postgresql():
         env(
             {
                 "PGHOST": "127.0.0.1",
-                "PGPORT": str(pg.port),
+                "PGPORT": str(pg.get_exposed_port(pg.port)),
                 "PGDATABASE": pg.dbname,
                 "PGUSER": pg.username,
                 "PGPASSWORD": pg.password,
@@ -64,7 +64,7 @@ def mysql(image: str = "mysql:latest"):
                 "MYSQL_HOST": "127.0.0.1",
                 "MYSQL_USER": mysql.username,
                 "MYSQL_PWD": mysql.password,
-                "MYSQL_TCP_PORT": str(mysql.port),
+                "MYSQL_TCP_PORT": str(mysql.get_exposed_port(mysql.port)),
                 "MYSQL_DATABASE": mysql.dbname,
             }
         ),

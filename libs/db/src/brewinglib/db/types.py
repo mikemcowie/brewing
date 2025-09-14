@@ -11,6 +11,13 @@ from sqlalchemy.engine import URL
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from sqlalchemy.ext.asyncio import AsyncEngine
+
+
+class DatabaseProtocol(Protocol):
+    @property
+    def engine(self) -> AsyncEngine: ...
+
 
 class DatabaseType(StrEnum):
     sqlite = auto()
