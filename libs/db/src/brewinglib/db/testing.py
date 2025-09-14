@@ -5,7 +5,7 @@ from collections.abc import Callable, Generator, MutableMapping
 from contextlib import AbstractContextManager, contextmanager
 from functools import partial
 
-from brewinglib.db.types import DatabaseType
+from brewinglib.db.settings import DatabaseType
 from testcontainers.mysql import MySqlContainer
 from testcontainers.postgres import PostgresContainer
 

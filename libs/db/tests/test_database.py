@@ -1,6 +1,7 @@
 import pytest
 from brewinglib.db import Database
-from brewinglib.db.types import DatabaseProtocol, DatabaseType
+from brewinglib.db.settings import DatabaseType
+from brewinglib.db.types import DatabaseProtocol
 from sqlalchemy import text
 
 
