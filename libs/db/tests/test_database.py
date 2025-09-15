@@ -14,7 +14,7 @@ def test_engine_cached(db_type: DatabaseType, running_db: None):
 
 
 @pytest.mark.asyncio
-async def test_connect_with_engine(database: DatabaseProtocol):
-    async with database.engine.connect() as conn:
+async def test_connect_with_engine(database_sample_1: DatabaseProtocol):
+    async with database_sample_1.engine.connect() as conn:
         result = await conn.execute(text("SELECT 1"))
     assert len(list(result)) == 1
