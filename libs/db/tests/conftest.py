@@ -15,5 +15,5 @@ def running_db(db_type: settings.DatabaseType):
 
 
 @pytest.fixture
-def database(db_type: settings.DatabaseType, running_db: None):
+def database_sample_1(db_type: settings.DatabaseType, running_db: None):
     return Database[db_type.dialect().connection_config_type]()

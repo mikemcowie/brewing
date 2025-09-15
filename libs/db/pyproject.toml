@@ -10,6 +10,7 @@ requires-python = ">=3.13"
 dependencies = [
     "brewinglib-generic",
     "frozendict>=2.4.6",
+    "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",
     "sqlalchemy>=2.0.43",
 ]
