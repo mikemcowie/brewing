@@ -378,6 +378,7 @@ source = { editable = "libs/db" }
 dependencies = [
     { name = "brewinglib-generic" },
     { name = "frozendict" },
+    { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "sqlalchemy" },
 ]
@@ -412,6 +413,7 @@ requires-dist = [
     { name = "brewinglib-generic", editable = "libs/generic" },
     { name = "frozendict", specifier = ">=2.4.6" },
     { name = "psycopg", marker = "extra == 'posgresql'", specifier = ">=3.2.9" },
+    { name = "pydantic", specifier = ">=2.11.7" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
     { name = "sqlalchemy", specifier = ">=2.0.43" },
     { name = "testcontainers", marker = "extra == 'testing'", specifier = ">=4.12.0" },
