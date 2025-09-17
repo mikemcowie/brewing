@@ -93,14 +93,25 @@ def test_basic_parameter(subtests: SubTests):
     runner = BrewingCLIRunner(SomeCLI("root"))
 
     with subtests.test("happy-path"):
-        result = runner.invoke(["speak", "hello"])
+        result = runner.invoke(["speak", "--a-message", "hello"])
+        assert result.exit_code == 0, result.stderr
         assert result.stdout.strip() == "hello"
-        assert result.exit_code == 0
 
     with subtests.test("missing"):
         result = runner.invoke(["speak"])
         assert result.exit_code == 2
-        assert "Missing argument 'A_MESSAGE" in result.stderr
+        assert "Missing option '--a-message" in result.stderr, result.stderr
+
+
+def test_positional_parameter(subtests: SubTests):
+    class SomeCLI(CLI):
+        def speak(self, a_message: str, /):
+            """Allows you to do speak"""
+            print(a_message)
+
+    with pytest.raises(TypeError) as error:
+        SomeCLI("root")
+    assert "Cannot support positional-only arguments." in error.exconly()
 
 
 def test_basic_option(subtests: SubTests):

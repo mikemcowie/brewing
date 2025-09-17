@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import inspect
 import string
-from typing import Any
+from collections.abc import Callable
+from typing import Annotated, Any, get_type_hints
 
 from pydantic.alias_generators import to_snake
-from typer import Typer
+from typer import Option, Typer
+from typer.models import ArgumentInfo, OptionInfo
 
 
 def to_dash_case(value: str):
@@ -13,6 +16,37 @@ def to_dash_case(value: str):
 
 class ConflictingCommandError(ValueError):
     pass
+
+
+type Revisable = Callable[..., Any]
+
+
+def revise_annotation(func: Revisable, param: inspect.Parameter) -> Any:
+    """Return a revised annotation for parameter of function"""
+    type_hint = get_type_hints(func, include_extras=True).get(
+        param.name
+    )  # Needed for the values of annotations
+    if type_hint is None:
+        return None
+    metadata = getattr(type_hint, "__metadata__", ())
+    if metadata and [
+        item for item in metadata if isinstance(item, OptionInfo | ArgumentInfo)
+    ]:
+        # The item is already annotated with typer annotions, return it unchanged
+        return param.annotation
+
+    if param.kind in (param.POSITIONAL_ONLY, param.VAR_POSITIONAL):
+        raise TypeError("Cannot support positional-only arguments.")
+    else:
+        typer_param_type = Option
+    return Annotated[param.annotation, *((*metadata, typer_param_type()))]
+
+
+def revise_annotations(func: Revisable):
+    func.__annotations__ = {
+        name: revise_annotation(func, param)
+        for name, param in inspect.signature(func, eval_str=True).parameters.items()
+    }
 
 
 class CLI:
@@ -88,6 +122,7 @@ class CLI:
                 and callable(obj)
                 and getattr(obj, "__self__", None) is self._wraps
             ):
+                revise_annotations(obj.__func__)  # type: ignore
                 command_name = to_dash_case(obj.__name__)
                 if command_name in self.command_names:
                     raise ConflictingCommandError(
