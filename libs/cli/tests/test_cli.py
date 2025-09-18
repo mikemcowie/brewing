@@ -1,12 +1,13 @@
 # ruff: noqa: T201
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 import pytest
 import typer
 from brewinglib.cli import CLI, ConflictingCommandError
 from brewinglib.cli.testing import BrewingCLIRunner
+from typer import Argument
 
 if TYPE_CHECKING:
     from pytest_subtests import SubTests
@@ -84,7 +85,7 @@ def test_instance_attribute(subtests: SubTests):
         assert result.exit_code == 0
 
 
-def test_basic_parameter(subtests: SubTests):
+def test_basic_option(subtests: SubTests):
     class SomeCLI(CLI):
         def speak(self, a_message: str):
             """Allows you to do speak"""
@@ -103,18 +104,37 @@ def test_basic_parameter(subtests: SubTests):
         assert "Missing option '--a-message" in result.stderr, result.stderr
 
 
+def test_basic_argument(subtests: SubTests):
+    class SomeCLI(CLI):
+        def speak(self, a_message: Annotated[str, Argument()]):
+            """Allows you to do speak"""
+            print(a_message)
+
+    runner = BrewingCLIRunner(SomeCLI("root"))
+
+    with subtests.test("happy-path"):
+        result = runner.invoke(["speak", "hello"])
+        assert result.exit_code == 0, result.stderr
+        assert result.stdout.strip() == "hello"
+
+    with subtests.test("missing"):
+        result = runner.invoke(["speak"])
+        assert result.exit_code == 2
+        assert "Missing argument 'A_MESSAGE" in result.stderr, result.stderr
+
+
 def test_positional_parameter(subtests: SubTests):
     class SomeCLI(CLI):
         def speak(self, a_message: str, /):
             """Allows you to do speak"""
-            print(a_message)
+            print(a_message)  # pragma: no cover
 
     with pytest.raises(TypeError) as error:
         SomeCLI("root")
     assert "Cannot support positional-only arguments." in error.exconly()
 
 
-def test_basic_option(subtests: SubTests):
+def test_with_default(subtests: SubTests):
     class SomeCLI(CLI):
         def speak(self, a_message: str = "hello"):
             """Allows you to do speak"""
@@ -262,7 +282,7 @@ def test_cli_a_typer(subtests: SubTests):
         assert result.exit_code == 0
 
 
-def test_cannot_extend_with_conflicting_names(subtests: SubTests):
+def test_cannot_extend_with_conflicting_names():
     class CLI1(CLI):
         def __init__(self, name: str, message: str):
             self.message = message
@@ -270,7 +290,7 @@ def test_cannot_extend_with_conflicting_names(subtests: SubTests):
 
         def quiet(self):
             """Allows you to do something"""
-            print(self.message.lower())
+            print(self.message.lower())  # pragma: no cover
 
     class CLI2(CLI):
         def __init__(self, name: str, message: str, **kwargs: Any):
@@ -279,7 +299,7 @@ def test_cannot_extend_with_conflicting_names(subtests: SubTests):
 
         def quiet(self):
             """Also allows you to do something"""
-            print(self.message.upper())
+            print(self.message.upper())  # pragma: no cover
 
     cli1 = CLI1(name="root", message="Something")
     with pytest.raises(ConflictingCommandError) as error:
