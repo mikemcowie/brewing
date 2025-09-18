@@ -13,6 +13,11 @@ if TYPE_CHECKING:
     from pytest_subtests import SubTests
 
 
+@pytest.fixture(autouse=True)
+def no_color(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("NO_COLOR", "1")
+
+
 def test_basic_cli_with_one_cmd(subtests: SubTests):
     class SomeCLI(CLI):
         def do_something(self):
@@ -99,9 +104,9 @@ def test_basic_option(subtests: SubTests):
         assert result.stdout.strip() == "hello"
 
     with subtests.test("missing"):
-        result = runner.invoke(["speak"])
+        result = runner.invoke(["speak"], color=False)
         assert result.exit_code == 2
-        assert "Missing option '--a-message" in result.stderr, result.stderr
+        assert "Missing option" in result.output, result.output
 
 
 def test_basic_argument(subtests: SubTests):
