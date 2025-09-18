@@ -102,10 +102,6 @@ class CLI:
         """
         return self._typer
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        """Runs the CLI."""
-        return self.typer(*args, **kwargs)
-
     def __getattr__(self, name: str):
         return getattr(self.typer, name)
 
