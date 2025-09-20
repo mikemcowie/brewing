@@ -52,7 +52,7 @@ async def alembic_engine(config: MigrationsConfig):
 
 def load_module_from_file(path: Path) -> ModuleType:
     spec = importlib.util.spec_from_file_location(path.name, str(path.resolve()))
-    if not spec or not spec.loader:
+    if not spec or not spec.loader:  # pragma: no cover
         raise ImportError(f"Could not load module from {path=!s}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
