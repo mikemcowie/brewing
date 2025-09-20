@@ -1,13 +1,20 @@
 """Support for database migrations based on alembic."""
 
+from __future__ import annotations
+
+import contextlib
+from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from alembic import command
 from alembic.config import Config as AlembicConfig
-from sqlalchemy import MetaData
-from sqlalchemy.ext.asyncio import AsyncEngine
+
+if TYPE_CHECKING:
+    from sqlalchemy import MetaData
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 type MigrationsDir = Path
 type RevisionsDir = Path
@@ -41,6 +48,20 @@ class MigrationsConfig:
         return config
 
 
+_current_config: ContextVar[MigrationsConfig] = ContextVar("current_config")
+
+
+@contextlib.contextmanager
+def set_config(config: MigrationsConfig):
+    token = _current_config.set(config)
+    yield
+    _current_config.reset(token)
+
+
+def current_config():
+    return _current_config.get()
+
+
 class Migrations:
     """Controls migrations."""
 
@@ -48,9 +69,10 @@ class Migrations:
         self._config = config
 
     def generate_revision(self, message: str, autogenerate: bool):
-        command.revision(
-            self._config.alembic,
-            rev_id=f"{len(list(self._config.revisions_dir.glob('*.py'))):05d}",
-            message=message,
-            autogenerate=autogenerate,
-        )
+        with set_config(self._config):
+            command.revision(
+                self._config.alembic,
+                rev_id=f"{len(list(self._config.revisions_dir.glob('*.py'))):05d}",
+                message=message,
+                autogenerate=autogenerate,
+            )
