@@ -1,5 +1,6 @@
 import pytest
 from brewinglib.db import Database, settings, testing
+from testing_samples import db_sample1
 
 
 @pytest.fixture(scope="session", params=settings.DatabaseType)
@@ -16,4 +17,4 @@ def running_db(db_type: settings.DatabaseType):
 
 @pytest.fixture
 def database_sample_1(db_type: settings.DatabaseType, running_db: None):
-    return Database[db_type.dialect().connection_config_type]()
+    return Database[db_type.dialect().connection_config_type](db_sample1.Base.metadata)
