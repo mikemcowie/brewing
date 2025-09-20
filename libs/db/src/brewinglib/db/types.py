@@ -3,12 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
-    from contextlib import AbstractAsyncContextManager
-
     from sqlalchemy import MetaData
     from sqlalchemy.engine import URL
-    from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 class DatabaseProtocol(Protocol):
@@ -27,7 +24,3 @@ class DatabaseConnectionConfiguration(Protocol):
 
     def __init__(self): ...
     def url(self) -> URL: ...
-
-    async def session(
-        self,
-    ) -> AbstractAsyncContextManager[AsyncGenerator[AsyncSession]]: ...
