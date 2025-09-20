@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
+import tempfile
 from collections.abc import Callable, Generator, MutableMapping
 from contextlib import AbstractContextManager, contextmanager
 from functools import partial
+from pathlib import Path
 
 from brewinglib.db.settings import DatabaseType
 from testcontainers.mysql import MySqlContainer
@@ -51,7 +53,10 @@ def postgresql():
 
 @contextmanager
 def sqlite():
-    with env({"SQLITE_DATABASE": ":memory:"}):
+    with (
+        tempfile.TemporaryDirectory() as db_dir,
+        env({"SQLITE_DATABASE": str(Path(db_dir) / "db.sqlite")}),
+    ):
         yield
 
 

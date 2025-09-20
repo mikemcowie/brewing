@@ -44,6 +44,7 @@ class MigrationsConfig:
             )
         config.set_main_option("script_location", str(self.migrations_dir))
         config.set_main_option("version_locations", str(self.revisions_dir))
+        config.set_main_option("path_separator", ";")
         config.set_main_option("file_template", "rev_%%(rev)s_%%(slug)s")
         return config
 
@@ -76,3 +77,11 @@ class Migrations:
                 message=message,
                 autogenerate=autogenerate,
             )
+
+    def upgrade(self, revision: str = "head"):
+        with set_config(self._config):
+            command.upgrade(self._config.alembic, revision=revision)
+
+    def downgrade(self, revision: str):
+        with set_config(self._config):
+            command.downgrade(self._config.alembic, revision=revision)
