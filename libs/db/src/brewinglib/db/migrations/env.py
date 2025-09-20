@@ -1,23 +1,38 @@
+import asyncio
+
 from alembic import context
+from brewinglib.db.migrate import MigrationsConfig, current_config
+from sqlalchemy.engine import Connection
+
+target_metadata = None
 
 
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
+def do_run_migrations(connection: Connection, config: MigrationsConfig) -> None:
+    context.configure(connection=connection, target_metadata=config.metadata)
 
-    In this scenario we need to create an Engine
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+async def run_async_migrations() -> None:
+    """In this scenario we need to create an Engine
     and associate a connection with the context.
 
     """
-    # late import to avoid circular import
+    config = current_config()
+    async with config.engine.connect() as connection:
+        await connection.run_sync(do_run_migrations, config)
 
-    with Database[PostgresqlSettings]().sync_engine.connect() as connection:
-        context.configure(connection=connection, target_metadata=Base.metadata)
-
-        with context.begin_transaction():
-            context.run_migrations()
+    await config.engine.dispose()
 
 
-if context.is_offline_mode():  # pragma: no cover
-    raise NotImplementedError()
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode."""
+
+    asyncio.run(run_async_migrations())
+
+
+if context.is_offline_mode():
+    raise NotImplementedError("offline mirations not supported.")
 else:
     run_migrations_online()
