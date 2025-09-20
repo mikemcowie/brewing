@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from brewinglib.db import Database
 from brewinglib.db.settings import DatabaseType
@@ -18,3 +20,14 @@ async def test_connect_with_engine(database_sample_1: DatabaseProtocol):
     async with database_sample_1.engine.connect() as conn:
         result = await conn.execute(text("SELECT 1"))
     assert len(list(result)) == 1
+
+
+def test_default_migrations_revisions_directory(
+    db_type: DatabaseType, running_db: None
+):
+    dialect = db_type.dialect()
+    db = Database[dialect.connection_config_type](MetaData())
+    assert (
+        db.migrations.config.revisions_dir
+        == (Path(__file__).parent / "revisions").resolve()
+    )

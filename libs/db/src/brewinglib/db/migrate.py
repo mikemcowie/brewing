@@ -7,16 +7,14 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, overload
 
 from alembic import command
 from alembic.config import Config as AlembicConfig
-from brewinglib.cli import CLI
 
 if TYPE_CHECKING:
     from sqlalchemy import MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
-    from typer import Typer
 
 type MigrationsDir = Path
 type RevisionsDir = Path
@@ -29,7 +27,7 @@ class MigrationsConfigError(RuntimeError):
 @dataclass(frozen=True, kw_only=True)
 class MigrationsConfig:
     engine: AsyncEngine
-    metadata: MetaData
+    metadata: MetaData | tuple[MetaData, ...]
     migrations_dir: MigrationsDir = Path(__file__).parent / "migrations"
     revisions_dir: RevisionsDir
 
@@ -94,20 +92,18 @@ def current_config[DefaultT](
         return default
 
 
-class Migrations(CLI):
+class Migrations:
     """Controls migrations."""
 
     def __init__(
         self,
         config: MigrationsConfig,
-        name: str = "db",
-        /,
-        *children: CLI,
-        extends: Typer | CLI | None = None,
-        wraps: Any = ...,
     ):
         self._config = config
-        super().__init__(name, *children, extends=extends, wraps=wraps)
+
+    @property
+    def config(self):
+        return self._config
 
     def generate_revision(self, message: str, autogenerate: bool):
         """Generate a new migration."""
