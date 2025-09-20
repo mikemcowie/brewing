@@ -1,26 +1,53 @@
 import importlib.util
 import inspect
+from collections.abc import Generator
 from pathlib import Path
 from textwrap import dedent
 from types import ModuleType
 
 import pytest
-from brewinglib.db.migrate import Migrations, MigrationsConfig
+import pytest_alembic.tests.default
+import pytest_alembic.tests.experimental
+import pytest_asyncio
+from brewinglib.db.migrate import Migrations, MigrationsConfig, set_config
 from brewinglib.db.types import DatabaseProtocol
 
 
 @pytest.fixture
-def config(database_sample_1: DatabaseProtocol, tmp_path: Path) -> MigrationsConfig:
-    return MigrationsConfig(
+def config(
+    database_sample_1: DatabaseProtocol, tmp_path: Path
+) -> Generator[MigrationsConfig]:
+    config = MigrationsConfig(
         engine=database_sample_1.engine,
         metadata=database_sample_1.metadata,
         revisions_dir=tmp_path / "revisions",
     )
+    with set_config(config):
+        yield config
 
 
 @pytest.fixture
 def migrations(config: MigrationsConfig):
     return Migrations(config)
+
+
+@pytest.fixture
+def alembic_config(config: MigrationsConfig, migrations: Migrations):
+    # Fixture required by pytest-alembic
+    config.revisions_dir.mkdir()
+    migrations.generate_revision("gen 1", autogenerate=True)
+    migrations.upgrade()
+    yield config.alembic
+    migrations.downgrade("base")
+
+
+@pytest_asyncio.fixture
+async def alembic_engine(config: MigrationsConfig):
+    # Fixture required by pytest-alembic
+    try:
+        yield config.engine
+    finally:
+        await config.engine.dispose()
 
 
 def load_module_from_file(path: Path) -> ModuleType:
@@ -32,105 +59,118 @@ def load_module_from_file(path: Path) -> ModuleType:
     return module
 
 
-def test_generate_migration_without_autogenerate(
-    config: MigrationsConfig, migrations: Migrations
-):
-    config.revisions_dir.mkdir()
-    # If we call generate
-    migrations.generate_revision("gen 1", autogenerate=False)
-    # then there will be a file generated in the revisions dir
-    revisions_files = list(config.revisions_dir.glob("*.py"))
-    assert len(revisions_files) == 1
-    assert revisions_files[0].name == "rev_00000_gen_1.py"
-    # And inspect its module contents are as expected.
-    module = load_module_from_file(revisions_files[0])
-    assert callable(module.upgrade)
-    assert (
-        inspect.getsource(module.upgrade).strip()
-        == dedent(
+class TestMigrations:
+    @staticmethod
+    def test_generate_migration_without_autogenerate(
+        config: MigrationsConfig, migrations: Migrations
+    ):
+        config.revisions_dir.mkdir()
+        # If we call generate
+        migrations.generate_revision("gen 1", autogenerate=False)
+        # then there will be a file generated in the revisions dir
+        revisions_files = list(config.revisions_dir.glob("*.py"))
+        assert len(revisions_files) == 1
+        assert revisions_files[0].name == "rev_00000_gen_1.py"
+        # And inspect its module contents are as expected.
+        module = load_module_from_file(revisions_files[0])
+        assert callable(module.upgrade)
+        assert (
+            inspect.getsource(module.upgrade).strip()
+            == dedent(
+                '''
+            def upgrade() -> None:
+                """Upgrade schema."""
+                pass
             '''
-        def upgrade() -> None:
-            """Upgrade schema."""
-            pass
-        '''
-        ).strip()
-    )
-    assert callable(module.downgrade)
-    assert (
-        inspect.getsource(module.downgrade).strip()
-        == dedent(
+            ).strip()
+        )
+        assert callable(module.downgrade)
+        assert (
+            inspect.getsource(module.downgrade).strip()
+            == dedent(
+                '''
+            def downgrade() -> None:
+                """Downgrade schema."""
+                pass
             '''
-        def downgrade() -> None:
-            """Downgrade schema."""
-            pass
-        '''
-        ).strip()
-    )
+            ).strip()
+        )
 
+    @staticmethod
+    def test_generate_migration_with_autogenerate(
+        database_sample_1: DatabaseProtocol, tmp_path: Path
+    ):
+        # Given migrations instance
+        config = MigrationsConfig(
+            engine=database_sample_1.engine,
+            metadata=database_sample_1.metadata,
+            revisions_dir=tmp_path / "revisions",
+        )
+        migrations = Migrations(config)
+        config.revisions_dir.mkdir()
+        # If we call generate
+        migrations.generate_revision("gen 1", autogenerate=True)
+        # then there will be a file generated in the revisions dir
+        revisions_files = list(config.revisions_dir.glob("*.py"))
+        assert len(revisions_files) == 1
+        assert revisions_files[0].name == "rev_00000_gen_1.py"
+        # And inspect its module contents are as expected.
+        module = load_module_from_file(revisions_files[0])
+        assert callable(module.upgrade)
+        assert (
+            inspect.getsource(module.upgrade).strip()
+            == dedent(
+                '''
+            def upgrade() -> None:
+                """Upgrade schema."""
+                # ### commands auto generated by Alembic - please adjust! ###
+                op.create_table('item',
+                sa.Column('item_id', sa.Integer(), nullable=False),
+                sa.Column('description', sa.String(length=30), nullable=False),
+                sa.Column('price', sa.Float(), nullable=False),
+                sa.PrimaryKeyConstraint('item_id')
+                )
+                op.create_table('order',
+                sa.Column('order_id', sa.Integer(), nullable=False),
+                sa.Column('customer_name', sa.String(length=30), nullable=False),
+                sa.Column('order_date', sa.DateTime(timezone=True), nullable=False),
+                sa.PrimaryKeyConstraint('order_id')
+                )
+                op.create_table('orderitem',
+                sa.Column('order_id', sa.Integer(), nullable=False),
+                sa.Column('item_id', sa.Integer(), nullable=False),
+                sa.Column('price', sa.Float(), nullable=False),
+                sa.ForeignKeyConstraint(['item_id'], ['item.item_id'], ),
+                sa.ForeignKeyConstraint(['order_id'], ['order.order_id'], ),
+                sa.PrimaryKeyConstraint('order_id', 'item_id')
+                )
+                # ### end Alembic commands ###
+            '''
+            ).strip()
+        )
+        assert callable(module.downgrade)
+        assert (
+            inspect.getsource(module.downgrade).strip()
+            == dedent(
+                '''
+            def downgrade() -> None:
+                """Downgrade schema."""
+                # ### commands auto generated by Alembic - please adjust! ###
+                op.drop_table('orderitem')
+                op.drop_table('order')
+                op.drop_table('item')
+                # ### end Alembic commands ###
+            '''
+            ).strip()
+        )
 
-def test_generate_migration_with_autogenerate(
-    database_sample_1: DatabaseProtocol, tmp_path: Path
-):
-    # Given migrations instance
-    config = MigrationsConfig(
-        engine=database_sample_1.engine,
-        metadata=database_sample_1.metadata,
-        revisions_dir=tmp_path / "revisions",
+    test_model_definitions_match_ddl = staticmethod(
+        pytest_alembic.tests.default.test_model_definitions_match_ddl
     )
-    migrations = Migrations(config)
-    config.revisions_dir.mkdir()
-    # If we call generate
-    migrations.generate_revision("gen 1", autogenerate=True)
-    # then there will be a file generated in the revisions dir
-    revisions_files = list(config.revisions_dir.glob("*.py"))
-    assert len(revisions_files) == 1
-    assert revisions_files[0].name == "rev_00000_gen_1.py"
-    # And inspect its module contents are as expected.
-    module = load_module_from_file(revisions_files[0])
-    assert callable(module.upgrade)
-    assert (
-        inspect.getsource(module.upgrade).strip()
-        == dedent(
-            '''
-        def upgrade() -> None:
-            """Upgrade schema."""
-            # ### commands auto generated by Alembic - please adjust! ###
-            op.create_table('item',
-            sa.Column('item_id', sa.Integer(), nullable=False),
-            sa.Column('description', sa.String(length=30), nullable=False),
-            sa.Column('price', sa.Float(), nullable=False),
-            sa.PrimaryKeyConstraint('item_id')
-            )
-            op.create_table('order',
-            sa.Column('order_id', sa.Integer(), nullable=False),
-            sa.Column('customer_name', sa.String(length=30), nullable=False)
-            sa.Column('order_date', sa.DateTime(timezone=True), nullable=False)
-            sa.PrimaryKeyConstraint('order_id')
-            )
-            op.create_table('orderitem',
-            sa.Column('order_id', sa.Integer(), nullable=False),
-            sa.Column('item_id', sa.Integer(), nullable=False),
-            sa.Column('price', sa.Float(), nullable=False),
-            sa.ForeignKeyConstraint(['item_id'], ['item.item_id'], ),
-            sa.ForeignKeyConstraint(['order_id'], ['order.order_id'], ),
-            sa.PrimaryKeyConstraint('order_id', 'item_id')
-            )
-            # ### end Alembic commands ###
-        '''
-        ).strip()
+    test_single_head_revision = staticmethod(
+        pytest_alembic.tests.default.test_single_head_revision
     )
-    assert callable(module.downgrade)
-    assert (
-        inspect.getsource(module.downgrade).strip()
-        == dedent(
-            '''
-        def downgrade() -> None:
-            """Downgrade schema."""
-            # ### commands auto generated by Alembic - please adjust! ###
-            op.drop_table('orderitem')
-            op.drop_table('order')
-            op.drop_table('item')
-            # ### end Alembic commands ###
-        '''
-        ).strip()
+    test_up_down_consistency = staticmethod(
+        pytest_alembic.tests.default.test_up_down_consistency
     )
+    test_upgrade = staticmethod(pytest_alembic.tests.default.test_upgrade)
