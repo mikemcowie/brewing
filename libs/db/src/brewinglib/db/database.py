@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
 from functools import cache
 from typing import TYPE_CHECKING
@@ -16,11 +16,12 @@ if not TYPE_CHECKING:
 class Database[ConfigT: DatabaseConnectionConfiguration]:
     config_type: type[ConfigT]
 
-    def __init__(self, /, metadata: MetaData | None = None):
-        self._metadata = metadata or MetaData()
+    def __init__(self, metadata: MetaData | Iterable[MetaData]):
+        metadata = (metadata,) if isinstance(metadata, MetaData) else tuple(metadata)
+        self._metadata = metadata
 
     @property
-    def metadata(self) -> MetaData:
+    def metadata(self) -> tuple[MetaData, ...]:
         return self._metadata
 
     @property

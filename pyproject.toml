@@ -12,6 +12,7 @@ dependencies = [
     "brewing-test-dependencies",
     "brewing-incubator",
     "brewinglib-db",
+    "testing-samples",
 ]
 
 [project.urls]
@@ -37,6 +38,7 @@ brewinglib-cli = { workspace = true }
 brewing-test-dependencies = { workspace = true }
 brewing-incubator = {workspace=true}
 brewinglib-db = { workspace = true }
+testing-samples = {workspace = true}
 
 [dependency-groups]
 dev = [
