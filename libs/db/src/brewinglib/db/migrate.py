@@ -7,14 +7,16 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, overload
 
 from alembic import command
 from alembic.config import Config as AlembicConfig
+from brewinglib.cli import CLI
 
 if TYPE_CHECKING:
     from sqlalchemy import MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
+    from typer import Typer
 
 type MigrationsDir = Path
 type RevisionsDir = Path
@@ -49,6 +51,13 @@ class MigrationsConfig:
         return config
 
 
+### Begin configuration machery for alembic context
+# This is basically working around the challenge of being hard to otherwise
+# call the machinery in env.py with parameters.
+# instead we use a contextvar, and `set_config` contextmanager to set the value
+# before alembic gets invoked, removing it after.
+
+# configvar itself is private, as the 2 functions below it are the interface to it.
 _current_config: ContextVar[MigrationsConfig] = ContextVar("current_config")
 
 
@@ -59,17 +68,49 @@ def set_config(config: MigrationsConfig):
     _current_config.reset(token)
 
 
-def current_config():
-    return _current_config.get()
+_NO_DEFAULT = object()
 
 
-class Migrations:
+@overload
+def current_config() -> MigrationsConfig: ...
+@overload
+def current_config[DefaultT](default: DefaultT) -> DefaultT | MigrationsConfig: ...
+
+
+def current_config[DefaultT](
+    default: DefaultT = _NO_DEFAULT,
+) -> DefaultT | MigrationsConfig:
+    """Load the current migrations config.
+
+    A default value can be passed, which if set, will be returned if
+    LookupError is raised. Otherwise, raised LookupError if the config is not
+    currently set.
+    """
+    try:
+        return _current_config.get()
+    except LookupError:
+        if default is _NO_DEFAULT:
+            raise
+        return default
+
+
+class Migrations(CLI):
     """Controls migrations."""
 
-    def __init__(self, config: MigrationsConfig):
+    def __init__(
+        self,
+        config: MigrationsConfig,
+        name: str = "db",
+        /,
+        *children: CLI,
+        extends: Typer | CLI | None = None,
+        wraps: Any = ...,
+    ):
         self._config = config
+        super().__init__(name, *children, extends=extends, wraps=wraps)
 
     def generate_revision(self, message: str, autogenerate: bool):
+        """Generate a new migration."""
         with set_config(self._config):
             command.revision(
                 self._config.alembic,
@@ -79,9 +120,26 @@ class Migrations:
             )
 
     def upgrade(self, revision: str = "head"):
+        """Upgrade the database"""
         with set_config(self._config):
             command.upgrade(self._config.alembic, revision=revision)
 
     def downgrade(self, revision: str):
+        """Downgrade the database"""
         with set_config(self._config):
             command.downgrade(self._config.alembic, revision=revision)
+
+    def stamp(self, revision: str):
+        """Write to the versions table as if the database is set to the given revision."""
+        with set_config(self._config):
+            command.stamp(self._config.alembic, revision=revision)
+
+    def current(self, verbose: bool = False):
+        """Display the current revision."""
+        with set_config(self._config):
+            command.current(self._config.alembic, verbose=verbose)
+
+    def check(self):
+        """Validate that the database is updated to the latest revision."""
+        with set_config(self._config):
+            command.check(self._config.alembic)

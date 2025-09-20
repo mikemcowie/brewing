@@ -32,7 +32,8 @@ def run_migrations_online() -> None:
     asyncio.run(run_async_migrations())
 
 
-if context.is_offline_mode():
-    raise NotImplementedError("offline mirations not supported.")
-else:
-    run_migrations_online()
+if current_config(default=None):
+    if context.is_offline_mode():
+        raise NotImplementedError("offline mirations not supported.")
+    else:
+        run_migrations_online()
