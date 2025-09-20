@@ -379,6 +379,7 @@ name = "brewinglib-db"
 version = "0.0.3rc1"
 source = { editable = "libs/db" }
 dependencies = [
+    { name = "brewinglib-cli" },
     { name = "brewinglib-generic" },
     { name = "frozendict" },
     { name = "pydantic" },
@@ -411,6 +412,7 @@ testing = [
 requires-dist = [
     { name = "aiomysql", marker = "extra == 'mysql'", specifier = ">=0.2.0" },
     { name = "aiosqlite", marker = "extra == 'sqlite'", specifier = ">=0.21.0" },
+    { name = "brewinglib-cli", editable = "libs/cli" },
     { name = "brewinglib-db", extras = ["mysql"], marker = "extra == 'mariadb'", editable = "libs/db" },
     { name = "brewinglib-db", extras = ["mysql", "mariadb", "postgresql", "sqlite"], marker = "extra == 'all'", editable = "libs/db" },
     { name = "brewinglib-generic", editable = "libs/generic" },

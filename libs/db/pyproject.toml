@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "brewinglib-cli",
     "brewinglib-generic",
     "frozendict>=2.4.6",
     "pydantic>=2.11.7",
@@ -52,3 +53,4 @@ packages = ["src/brewinglib"]
 
 [tool.uv.sources]
 brewinglib-generic = { workspace = true }
+brewinglib-cli = { workspace = true }
