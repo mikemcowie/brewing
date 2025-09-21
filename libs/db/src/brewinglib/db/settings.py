@@ -64,6 +64,7 @@ class SQLiteSettings(OurBaseSettings):
         def __init__(self):
             return None
 
+    database_type: ClassVar = DatabaseType.sqlite
     SQLITE_DATABASE: str
 
     def url(self):
@@ -86,6 +87,7 @@ class PostgresqlSettings(OurBaseSettings):
 
     model_config = SettingsConfigDict(frozen=True)
 
+    database_type: ClassVar = DatabaseType.postgresql
     PGHOST: str
     PGPORT: int
     PGUSER: str
@@ -111,6 +113,7 @@ class MySQLSettings(OurBaseSettings):
         def __init__(self):
             return None
 
+    database_type: ClassVar = DatabaseType.mysql
     MYSQL_USER: str
     MYSQL_PWD: str
     MYSQL_HOST: str
@@ -131,6 +134,7 @@ class MySQLSettings(OurBaseSettings):
 
 class MariaDBSettings(MySQLSettings):
     dialect: ClassVar = DatabaseType.mariadb
+    database_type: ClassVar = DatabaseType.mariadb
     if TYPE_CHECKING:
 
         def __init__(self):

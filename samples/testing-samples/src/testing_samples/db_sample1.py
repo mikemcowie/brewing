@@ -19,7 +19,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from brewinglib.db import Database
 from sqlalchemy import DateTime, ForeignKey, String, select
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -30,7 +29,9 @@ from sqlalchemy.orm import (
 )
 
 if TYPE_CHECKING:
-    from brewinglib.db.types import DatabaseConnectionConfiguration
+    from brewinglib.db.types import DatabaseProtocol
+
+    pass
 
 
 class Base(DeclarativeBase):
@@ -42,15 +43,14 @@ class Order(MappedAsDataclass, Base, kw_only=True, init=False):
 
     order_id: Mapped[int] = mapped_column(primary_key=True)
     customer_name: Mapped[str] = mapped_column(String(30))
-    order_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default_factory=lambda: datetime.now(UTC)
-    )
+    order_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     order_items: Mapped[list[OrderItem]] = relationship(
         cascade="all, delete-orphan", backref="order"
     )
 
     def __init__(self, customer_name: str) -> None:
         self.customer_name = customer_name
+        self.order_date = datetime.now(UTC)
 
 
 class Item(MappedAsDataclass, Base, kw_only=True, init=False):
@@ -82,10 +82,7 @@ class OrderItem(MappedAsDataclass, Base, kw_only=True, init=False):
     item: Mapped[Item] = relationship(lazy="joined")
 
 
-async def run_sample(configuration_type: type[DatabaseConnectionConfiguration]):
-    db = Database[configuration_type](metadata=Base.metadata)
-    Base.metadata.create_all(db.engine.sync_engine)
-
+async def run_sample(db: DatabaseProtocol):
     async with db.session() as session:
         # create catalog
         tshirt, mug, hat, crowbar = (

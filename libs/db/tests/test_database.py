@@ -1,10 +1,11 @@
 from pathlib import Path
 
 import pytest
-from brewinglib.db import Database
+from brewinglib.db import Database, testing
 from brewinglib.db.settings import DatabaseType
 from brewinglib.db.types import DatabaseProtocol
 from sqlalchemy import MetaData, text
+from testing_samples import db_sample1
 
 
 def test_engine_cached(db_type: DatabaseType, running_db: None):
@@ -31,3 +32,9 @@ def test_default_migrations_revisions_directory(
         db.migrations.config.revisions_dir
         == (Path(__file__).parent / "revisions").resolve()
     )
+
+
+@pytest.mark.asyncio
+async def test_sample1(database_sample_1: DatabaseProtocol):
+    async with testing.upgraded(database_sample_1):
+        await db_sample1.run_sample(database_sample_1)

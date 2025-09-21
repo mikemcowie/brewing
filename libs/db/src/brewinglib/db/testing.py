@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import tempfile
 from collections.abc import Callable, Generator, MutableMapping
-from contextlib import AbstractContextManager, contextmanager
+from contextlib import AbstractContextManager, asynccontextmanager, contextmanager
 from functools import partial
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from brewinglib.db.settings import DatabaseType
 from testcontainers.mysql import MySqlContainer
 from testcontainers.postgres import PostgresContainer
+
+if TYPE_CHECKING:
+    from brewinglib.db.types import DatabaseProtocol
 
 
 @contextmanager
@@ -92,6 +97,21 @@ _TEST_DATABASE_IMPLEMENTATIONS: dict[DatabaseType, TestingDatabase] = {
 def testing(db_type: DatabaseType):
     with _TEST_DATABASE_IMPLEMENTATIONS[db_type]():
         yield
+
+
+@asynccontextmanager
+async def upgraded(db: DatabaseProtocol):
+    async with db.engine.begin() as conn:
+        for metadata in db.metadata:
+            await conn.run_sync(metadata.create_all)
+            asyncio.get_running_loop().run_in_executor(
+                None, db.migrations.stamp, "head"
+            )
+
+    yield
+    async with db.engine.begin() as conn:
+        for metadata in db.metadata:
+            await conn.run_sync(metadata.drop_all)
 
 
 # make sure pytest doesn't try this
