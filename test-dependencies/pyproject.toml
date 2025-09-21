@@ -1,6 +1,6 @@
 [project]
 name = "brewing-test-dependencies"
-version = "0.0.3-rc.1"
+version = "0.0.3-rc.2"
 description = "brewing's test dependencies"
 readme = "README.md"
 authors = [
@@ -29,6 +29,7 @@ dependencies = [
     "semver>=3.0.4",
     "testcontainers>=4.10.0",
     "types-passlib>=1.7.7.20250602",
+    "types-sqlalchemy-utils>=1.1.0",
 ]
 
 [project.urls]

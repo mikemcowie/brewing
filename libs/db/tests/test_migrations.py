@@ -4,22 +4,26 @@ from collections.abc import Generator
 from pathlib import Path
 from textwrap import dedent
 from types import ModuleType
+from typing import Any
 
 import pytest
 import pytest_alembic.tests.default
 import pytest_alembic.tests.experimental
 import pytest_asyncio
+from brewinglib.db import Database
 from brewinglib.db.migrate import Migrations, MigrationsConfig, set_config
-from brewinglib.db.types import DatabaseProtocol
+from brewinglib.db.settings import DatabaseType
+from testing_samples import db_sample1
 
 
 @pytest.fixture
 def config(
-    database_sample_1: DatabaseProtocol, tmp_path: Path
+    db_type: DatabaseType, running_db: Database[Any], tmp_path: Path
 ) -> Generator[MigrationsConfig]:
     config = MigrationsConfig(
-        engine=database_sample_1.engine,
-        metadata=database_sample_1.metadata,
+        database=Database[db_type.dialect().connection_config_type](
+            db_sample1.Base.metadata
+        ),
         revisions_dir=tmp_path / "revisions",
     )
     with set_config(config):
@@ -98,15 +102,9 @@ class TestMigrations:
 
     @staticmethod
     def test_generate_migration_with_autogenerate(
-        database_sample_1: DatabaseProtocol, tmp_path: Path
+        config: MigrationsConfig, migrations: Migrations
     ):
         # Given migrations instance
-        config = MigrationsConfig(
-            engine=database_sample_1.engine,
-            metadata=database_sample_1.metadata,
-            revisions_dir=tmp_path / "revisions",
-        )
-        migrations = Migrations(config)
         config.revisions_dir.mkdir()
         # If we call generate
         migrations.generate_revision("gen 1", autogenerate=True)

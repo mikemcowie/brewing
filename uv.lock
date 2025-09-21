@@ -193,7 +193,7 @@ wheels = [
 
 [[package]]
 name = "brewing"
-version = "0.0.3rc1"
+version = "0.0.3rc2"
 source = { editable = "framework" }
 dependencies = [
     { name = "brewinglib-cli" },
@@ -204,7 +204,7 @@ requires-dist = [{ name = "brewinglib-cli", editable = "libs/cli" }]
 
 [[package]]
 name = "brewing-incubator"
-version = "0.0.3rc1"
+version = "0.0.3rc2"
 source = { editable = "incubator" }
 dependencies = [
     { name = "alembic" },
@@ -251,7 +251,7 @@ dev = [{ name = "aiosqlite", specifier = ">=0.21.0" }]
 
 [[package]]
 name = "brewing-test-dependencies"
-version = "0.0.3rc1"
+version = "0.0.3rc2"
 source = { editable = "test-dependencies" }
 dependencies = [
     { name = "aiosqlite" },
@@ -275,6 +275,7 @@ dependencies = [
     { name = "semver" },
     { name = "testcontainers" },
     { name = "types-passlib" },
+    { name = "types-sqlalchemy-utils" },
 ]
 
 [package.dev-dependencies]
@@ -305,6 +306,7 @@ requires-dist = [
     { name = "semver", specifier = ">=3.0.4" },
     { name = "testcontainers", specifier = ">=4.10.0" },
     { name = "types-passlib", specifier = ">=1.7.7.20250602" },
+    { name = "types-sqlalchemy-utils", specifier = ">=1.1.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -312,7 +314,7 @@ dev = [{ name = "tomlkit", specifier = ">=0.13.3" }]
 
 [[package]]
 name = "brewing-uv-workspace"
-version = "0.0.3rc1"
+version = "0.0.3rc2"
 source = { virtual = "." }
 dependencies = [
     { name = "brewing" },
@@ -361,7 +363,7 @@ docs = [
 
 [[package]]
 name = "brewinglib-cli"
-version = "0.0.3rc1"
+version = "0.0.3rc2"
 source = { editable = "libs/cli" }
 dependencies = [
     { name = "pydantic" },
@@ -376,7 +378,7 @@ requires-dist = [
 
 [[package]]
 name = "brewinglib-db"
-version = "0.0.3rc1"
+version = "0.0.3rc2"
 source = { editable = "libs/db" }
 dependencies = [
     { name = "brewinglib-cli" },
@@ -427,7 +429,7 @@ provides-extras = ["testing", "postgresql", "mysql", "mariadb", "sqlite", "posgr
 
 [[package]]
 name = "brewinglib-generic"
-version = "0.0.3rc1"
+version = "0.0.3rc2"
 source = { editable = "libs/generic" }
 
 [[package]]
@@ -1404,7 +1406,7 @@ wheels = [
 
 [[package]]
 name = "project-manager"
-version = "0.0.3rc1"
+version = "0.0.3rc2"
 source = { editable = "samples/project-manager" }
 dependencies = [
     { name = "brewing" },
@@ -2046,7 +2048,7 @@ wheels = [
 
 [[package]]
 name = "testing-samples"
-version = "0.0.3rc1"
+version = "0.0.3rc2"
 source = { editable = "samples/testing-samples" }
 dependencies = [
     { name = "sqlalchemy" },
@@ -2113,6 +2115,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/fa/3e/501a5832130e5f93450b1e02090e2ee27a37135d11378a47debf960e3131/types_passlib-1.7.7.20250602.tar.gz", hash = "sha256:cf2350e78d36b6b09e4db44284d96651b57285f499cfabf111b616065abab7b3", size = 25406, upload-time = "2025-06-02T03:14:56.033Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/fc/530236c21f1a0be84c42b23c91c250ef96404c475b739ac4479430ebd7d4/types_passlib-1.7.7.20250602-py3-none-any.whl", hash = "sha256:ed73a91be9a22484ebd62cc0d127675ded542b892b99776db92dab760bbfe274", size = 40410, upload-time = "2025-06-02T03:14:54.834Z" },
+]
+
+[[package]]
+name = "types-sqlalchemy-utils"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a5/5d/747310a5b105facc74c5b466e3e234f187df6bd5168dba6e28884f9be4d8/types_sqlalchemy_utils-1.1.0.tar.gz", hash = "sha256:af9d92992687c9e7c920b9a1b814fd10915b9b3a7b1f731b7fd2fff8ce2f3bfb", size = 22676, upload-time = "2024-05-13T08:33:01.853Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4d/82/ff6cd783b288130577cb516d1f65d8efb650bcd7723d0e7774f632b3df16/types_sqlalchemy_utils-1.1.0-py3-none-any.whl", hash = "sha256:60b28fe3453f67fc90bb0a106063025cffc1efa6eedb59a7ea5b043644c3d16a", size = 38415, upload-time = "2024-05-13T08:32:59.746Z" },
 ]
 
 [[package]]

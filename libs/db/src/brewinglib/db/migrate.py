@@ -13,8 +13,7 @@ from alembic import command
 from alembic.config import Config as AlembicConfig
 
 if TYPE_CHECKING:
-    from sqlalchemy import MetaData
-    from sqlalchemy.ext.asyncio import AsyncEngine
+    from brewinglib.db.types import DatabaseProtocol
 
 type MigrationsDir = Path
 type RevisionsDir = Path
@@ -26,10 +25,17 @@ class MigrationsConfigError(RuntimeError):
 
 @dataclass(frozen=True, kw_only=True)
 class MigrationsConfig:
-    engine: AsyncEngine
-    metadata: MetaData | tuple[MetaData, ...]
+    database: DatabaseProtocol
     migrations_dir: MigrationsDir = Path(__file__).parent / "migrations"
     revisions_dir: RevisionsDir
+
+    @property
+    def engine(self):
+        return self.database.engine
+
+    @property
+    def metadata(self):
+        return self.database.metadata
 
     @cached_property
     def alembic(self) -> AlembicConfig:
@@ -107,7 +113,13 @@ class Migrations:
 
     def generate_revision(self, message: str, autogenerate: bool):
         """Generate a new migration."""
-        with set_config(self._config):
+        # late import as libraries involved may not be installed.
+        from brewinglib.db import testing  # noqa: PLC0415
+
+        with (
+            testing.testing(self.config.database.database_type),
+            set_config(self._config),
+        ):
             command.revision(
                 self._config.alembic,
                 rev_id=f"{len(list(self._config.revisions_dir.glob('*.py'))):05d}",
