@@ -1,6 +1,6 @@
 [project]
 name = "brewinglib-db"
-version = "0.0.3-rc.2"
+version = "0.0.4"
 description = "Add your description here"
 readme = "README.md"
 authors = [
