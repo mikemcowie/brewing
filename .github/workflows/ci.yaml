@@ -21,7 +21,7 @@ jobs:
         run: uv run pre-commit run --all-files
 
       - name: run pytest
-        run: uv run pytest -v
+        run: uv run pytest -n 8 -v
 
       - name: ensure docs build
         run: make docs-build
