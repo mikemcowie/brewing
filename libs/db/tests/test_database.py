@@ -8,7 +8,7 @@ from sqlalchemy import MetaData, text
 from testing_samples import db_sample1
 
 
-def test_engine_cached(db_type: DatabaseType, running_db: None):
+def test_engine_cached(db_type: DatabaseType, running_db_session: None):
     dialect = db_type.dialect()
     db1 = Database[dialect.connection_config_type](MetaData())
     db2 = Database[dialect.connection_config_type](MetaData())
@@ -24,7 +24,7 @@ async def test_connect_with_engine(database_sample_1: DatabaseProtocol):
 
 
 def test_default_migrations_revisions_directory(
-    db_type: DatabaseType, running_db: None
+    db_type: DatabaseType, running_db_session: None
 ):
     dialect = db_type.dialect()
     db = Database[dialect.connection_config_type](MetaData())

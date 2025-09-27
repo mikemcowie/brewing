@@ -15,6 +15,7 @@ members = [
     "brewinglib-cli",
     "brewinglib-db",
     "brewinglib-generic",
+    "exploration",
     "project-manager",
     "testing-samples",
 ]
@@ -260,7 +261,7 @@ dependencies = [
     { name = "hatch" },
     { name = "hatchling" },
     { name = "ipython" },
-    { name = "polyfactory" },
+    { name = "polyfactory", extra = ["sqlalchemy"] },
     { name = "pygit2" },
     { name = "pyright" },
     { name = "pytest" },
@@ -292,7 +293,7 @@ requires-dist = [
     { name = "hatch", specifier = ">=1.14.1" },
     { name = "hatchling", specifier = ">=1.27.0" },
     { name = "ipython", specifier = ">=9.3.0" },
-    { name = "polyfactory", specifier = ">=2.21.0" },
+    { name = "polyfactory", extras = ["sqlalchemy"], specifier = ">=2.21.0" },
     { name = "pygit2", specifier = ">=1.18.2" },
     { name = "pyright", specifier = ">=1.1.403" },
     { name = "pytest", specifier = ">=8.4.1" },
@@ -685,6 +686,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/cc/28/c14e053b6762b1044
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/ea/53f2148663b321f21b5a606bd5f191517cf40b7072c0497d3c92c4a13b1e/executing-2.2.1-py2.py3-none-any.whl", hash = "sha256:760643d3452b4d777d295bb167ccc74c64a81df23fb5e08eff250c425a4b2017", size = 28317, upload-time = "2025-09-01T09:48:08.5Z" },
 ]
+
+[[package]]
+name = "exploration"
+version = "0.1.0"
+source = { virtual = "samples/exploration" }
 
 [[package]]
 name = "faker"
@@ -1397,6 +1403,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/4e/a6/950d13856d995705df33b92451559fd317207a9c43629ab1771135a0c966/polyfactory-2.22.2.tar.gz", hash = "sha256:a3297aa0b004f2b26341e903795565ae88507c4d86e68b132c2622969028587a", size = 254462, upload-time = "2025-08-15T06:23:21.28Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e7/fe/d52c90e07c458f38b26f9972a25cb011b2744813f76fcd6121dde64744fa/polyfactory-2.22.2-py3-none-any.whl", hash = "sha256:9bea58ac9a80375b4153cd60820f75e558b863e567e058794d28c6a52b84118a", size = 63715, upload-time = "2025-08-15T06:23:19.664Z" },
+]
+
+[package.optional-dependencies]
+sqlalchemy = [
+    { name = "sqlalchemy" },
 ]
 
 [[package]]

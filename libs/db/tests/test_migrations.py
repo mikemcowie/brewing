@@ -18,7 +18,7 @@ from testing_samples import db_sample1
 
 @pytest.fixture
 def config(
-    db_type: DatabaseType, running_db: Database[Any], tmp_path: Path
+    db_type: DatabaseType, running_db_session: Database[Any], tmp_path: Path
 ) -> Generator[MigrationsConfig]:
     config = MigrationsConfig(
         database=Database[db_type.dialect().connection_config_type](

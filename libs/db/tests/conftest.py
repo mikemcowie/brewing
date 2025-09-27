@@ -16,12 +16,6 @@ def running_db_session(db_type: settings.DatabaseType):
         yield
 
 
-@pytest.fixture
-def running_db(db_type: settings.DatabaseType):
-    with testing.testing(db_type):
-        yield
-
-
 @pytest_asyncio.fixture
-async def database_sample_1(db_type: settings.DatabaseType, running_db: None):
+async def database_sample_1(db_type: settings.DatabaseType, running_db_session: None):
     return Database[db_type.dialect().connection_config_type](db_sample1.Base.metadata)
