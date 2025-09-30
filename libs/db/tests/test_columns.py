@@ -1,62 +1,25 @@
 import time
-import uuid
-from datetime import datetime
 from typing import Any
 
 import pytest
 import pytest_asyncio
 import sqlalchemy as sa
-from brewinglib.db import Database, columns, settings, testing, types
-from pydantic.alias_generators import to_snake
+from brewinglib.db import Database, columns, mixins, new_base, settings, testing, types
 from sqlalchemy.orm import (
-    DeclarativeBase,
     Mapped,
-    MappedAsDataclass,
-    declared_attr,
     mapped_column,
 )
-
-
-class AuditMixin(MappedAsDataclass):
-    @declared_attr
-    def created_at(self) -> Mapped[datetime]:
-        return columns.created_at_column()
-
-    @declared_attr
-    def updated_at(self) -> Mapped[datetime]:
-        return columns.updated_at_column()
-
-
-def new_base():
-    """Returns a new base class with a new metadata."""
-
-    class OurBase(MappedAsDataclass, DeclarativeBase, kw_only=True):
-        metadata = sa.MetaData()
-
-        @declared_attr  # type: ignore
-        def __tablename__(cls) -> str:  # noqa: N805
-            return to_snake(cls.__name__)
-
-    return OurBase
-
 
 Base = new_base()
 
 
-class UUIDPrimaryKey(MappedAsDataclass, kw_only=True):
-    id: Mapped[uuid.UUID] = columns.uuid_primary_key()
-
-
-class IncrementingIntPK(MappedAsDataclass):
-    __abstract__ = True
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
-
-
-class SomeThing(AuditMixin, UUIDPrimaryKey, Base, kw_only=True):
+class SomeThing(mixins.AuditMixin, mixins.UUIDPrimaryKey, Base, kw_only=True):
     json_col: Mapped[dict[str, Any]] = mapped_column(columns.json_column_type)
 
 
-class HasIncrementingPrimaryKey(AuditMixin, IncrementingIntPK, Base, kw_only=True):
+class HasIncrementingPrimaryKey(
+    mixins.AuditMixin, mixins.IncrementingIntPK, Base, kw_only=True
+):
     pass
 
 
