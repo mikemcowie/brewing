@@ -40,32 +40,29 @@ def new_base():
     return OurBase
 
 
-BaseForAllDialects = new_base()
+Base = new_base()
 
 
-class UUIDBase(BaseForAllDialects, kw_only=True):
-    __abstract__ = True
+class UUIDPrimaryKey(MappedAsDataclass, kw_only=True):
     id: Mapped[uuid.UUID] = columns.uuid_primary_key()
 
 
-class IncrementingInt(AuditMixin, BaseForAllDialects):
+class IncrementingIntPK(MappedAsDataclass):
     __abstract__ = True
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
 
 
-class SomeThing(AuditMixin, UUIDBase, kw_only=True):
+class SomeThing(AuditMixin, UUIDPrimaryKey, Base, kw_only=True):
     json_col: Mapped[dict[str, Any]] = mapped_column(columns.json_column_type)
 
 
-class HasIncrementingPrimaryKey(IncrementingInt, kw_only=True):
+class HasIncrementingPrimaryKey(AuditMixin, IncrementingIntPK, Base, kw_only=True):
     pass
 
 
 @pytest_asyncio.fixture
 async def db(db_type: settings.DatabaseType, running_db_session: None):
-    return Database[db_type.dialect().connection_config_type](
-        BaseForAllDialects.metadata
-    )
+    return Database[db_type.dialect().connection_config_type](Base.metadata)
 
 
 @pytest.mark.asyncio
