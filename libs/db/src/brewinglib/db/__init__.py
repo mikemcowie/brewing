@@ -1,6 +1,17 @@
 """Database helper package."""
 
+from . import columns, mixins, settings
 from .base import new_base as new_base
 from .database import Database as Database
+from .migrate import Migrations, MigrationsConfig
 
-__all__ = ["Database", "new_base"]
+__all__ = [
+    "Database",
+    "Migrations",
+    "MigrationsConfig",
+    "base",
+    "columns",
+    "mixins",
+    "new_base",
+    "settings",
+]
