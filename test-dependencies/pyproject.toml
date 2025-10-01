@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.21.0",
-    "brewinglib-db[all]",
+    "brewing[all]",
     "coverage>=7.9.1",
     "hatch>=1.14.1",
     "hatchling>=1.27.0",

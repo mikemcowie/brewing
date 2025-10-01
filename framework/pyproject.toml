@@ -8,7 +8,31 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "brewinglib-cli",
+    "frozendict>=2.4.6",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "sqlalchemy>=2.0.43",
+]
+
+[project.optional-dependencies]
+testing = [
+    "testcontainers>=4.12.0",
+]
+postgresql = []
+mysql = [
+    "aiomysql>=0.2.0",
+]
+mariadb = [
+    "brewinglib-db[mysql]"
+]
+sqlite = [
+    "aiosqlite>=0.21.0",
+]
+posgresql = [
+    "psycopg>=3.2.9",
+]
+all = [
+    "brewing[mysql,mariadb,postgresql,sqlite]"
 ]
 
 [project.scripts]
@@ -39,4 +63,10 @@ extend-ignore = [
     # Choices that need to be made in pydocstyle
     "D203",
     "D212",
+    # docstring on __init__ is not needed
+    "D107"
+]
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**.py" = [
+    "D"
 ]

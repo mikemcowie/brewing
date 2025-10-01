@@ -1,4 +1,5 @@
-"""Declarative base factory for brewinglib.db .
+"""
+Declarative base factory for brewinglib.db .
 
 We provide a new_base factory, which ensures a new base with a fresh metadata
 is available. It's not important to use it - any old declarative base class will do;
@@ -11,7 +12,7 @@ from sqlalchemy import orm
 
 
 def new_base():
-    """Returns a new base class with a new metadata."""
+    """Return a new base class with a new metadata."""
 
     class OurBase(orm.MappedAsDataclass, orm.DeclarativeBase, kw_only=True):
         metadata = sa.MetaData()

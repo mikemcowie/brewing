@@ -1,3 +1,5 @@
+"""Database: core database functionality."""
+
 import asyncio
 import functools
 import inspect
@@ -8,15 +10,15 @@ from pathlib import Path
 from typing import Any
 
 from brewinglib.cli import CLI
-from brewinglib.db.migrate import Migrations
-from brewinglib.db.types import DatabaseConnectionConfiguration
+from brewing.db.migrate import Migrations
+from brewing.db.types import DatabaseConnectionConfiguration
 from brewinglib.generic import runtime_generic
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 
 @cache
-def provide_engine_for_event_loop(
+def _provide_cached_engine(
     event_loop: asyncio.EventLoop | None,  # noqa: ARG001
     *args: Any,
     **kwargs: Any,
@@ -33,6 +35,8 @@ def _find_calling_file(stack: list[inspect.FrameInfo]):
 
 @runtime_generic
 class Database[ConfigT: DatabaseConnectionConfiguration]:
+    """Object encapsulating fundamental context of a service's sql database."""
+
     config_type: type[ConfigT]
 
     def __init__(
@@ -51,14 +55,17 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
 
     @cached_property
     def cli(self) -> CLI:
+        """Typer CLI for the database."""
         return CLI("db", wraps=self.migrations)
 
     @property
     def metadata(self) -> tuple[MetaData, ...]:
+        """Tuple of sqlalchemy metadata."""
         return self._metadata
 
     @property
     def migrations(self) -> Migrations:
+        """Database migrations provider."""
         if not self._migrations:
             self._migrations = Migrations(
                 database=self,
@@ -68,23 +75,36 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
 
     @property
     def config(self) -> ConfigT:
+        """Database configuration object."""
         if not self._config:
             self._config = self.config_type()
         return self._config
 
     @property
     def database_type(self):
+        """The database type."""
         return self.config.database_type
 
     @property
     def engine(self):
+        """Sqlalchemy async engine."""
         try:
             event_loop = asyncio.get_running_loop()
         except RuntimeError:
             event_loop = None
-        return provide_engine_for_event_loop(event_loop, url=self.config_type().url())
+        return _provide_cached_engine(event_loop, url=self.config_type().url())
 
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession]:
+        """
+        Provide an async orm session for the database.
+
+        Returns:
+            AsyncGenerator[AsyncSession]: _description_
+
+        Yields:
+            Iterator[AsyncGenerator[AsyncSession]]: _description_
+
+        """
         async with AsyncSession(bind=self.engine, expire_on_commit=False) as session:
             yield session
