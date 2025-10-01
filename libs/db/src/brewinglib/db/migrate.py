@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 from dataclasses import dataclass
-from functools import cached_property, partial
+from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from alembic import command, context
 from alembic.config import Config as AlembicConfig
@@ -18,6 +17,8 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Connection
 
 MIGRATIONS_CONTEXT_DIRECTORY = Path(__file__).parent / "_migrationcontext"
+_NO_DEFAULT = object()
+
 type RevisionsDir = Path
 
 
@@ -28,7 +29,6 @@ type RevisionsDir = Path
 # before alembic gets invoked, removing it after.
 
 # configvar itself is private, as the 2 functions below it are the interface to it.
-_current_config: ContextVar[MigrationsConfig] = ContextVar("current_config")
 
 
 class MigrationsConfigError(RuntimeError):
@@ -66,35 +66,10 @@ class MigrationsConfig:
         return config
 
 
-@contextlib.contextmanager
-def set_config(config: MigrationsConfig):
-    token = _current_config.set(config)
-    yield
-    _current_config.reset(token)
-
-
-_NO_DEFAULT = object()
-
-
-def current_config[DefaultT](
-    default: DefaultT = _NO_DEFAULT,
-) -> DefaultT | MigrationsConfig:
-    """Load the current migrations config.
-
-    A default value can be passed, which if set, will be returned if
-    LookupError is raised. Otherwise, raised LookupError if the config is not
-    currently set.
-    """
-    try:
-        return _current_config.get()
-    except LookupError:
-        if default is _NO_DEFAULT:
-            raise
-        return default
-
-
 class Migrations:
     """Controls migrations."""
+
+    active_instance: ClassVar[ContextVar[Migrations]] = ContextVar("current_config")
 
     def __init__(
         self,
@@ -102,11 +77,19 @@ class Migrations:
     ):
         self._config = config
         self._runner = MigrationRunner(config)
-        self.set_config = partial(set_config, self._config)
+        self._token: Token[Migrations] | None = None
 
     @property
     def config(self):
         return self._config
+
+    def __enter__(self):
+        self._token = self.active_instance.set(self)
+
+    def __exit__(self, *_: Any, **__: Any):
+        if self._token:
+            self.active_instance.reset(self._token)
+            self._token = None
 
     def generate_revision(self, message: str, autogenerate: bool):
         """Generate a new migration."""
@@ -115,7 +98,7 @@ class Migrations:
 
         with (
             testing.testing(self.config.database.database_type),
-            set_config(self._config),
+            self,
         ):
             command.revision(
                 self._config.alembic,
@@ -126,27 +109,27 @@ class Migrations:
 
     def upgrade(self, revision: str = "head"):
         """Upgrade the database"""
-        with set_config(self._config):
+        with self:
             command.upgrade(self._config.alembic, revision=revision)
 
     def downgrade(self, revision: str):
         """Downgrade the database"""
-        with set_config(self._config):
+        with self:
             command.downgrade(self._config.alembic, revision=revision)
 
     def stamp(self, revision: str):
         """Write to the versions table as if the database is set to the given revision."""
-        with set_config(self._config):
+        with self:
             command.stamp(self._config.alembic, revision=revision)
 
     def current(self, verbose: bool = False):
         """Display the current revision."""
-        with set_config(self._config):
+        with self:
             command.current(self._config.alembic, verbose=verbose)
 
     def check(self):
         """Validate that the database is updated to the latest revision."""
-        with set_config(self._config):
+        with self:
             command.check(self._config.alembic)
 
 
@@ -186,10 +169,10 @@ class MigrationRunner:
 
 
 def run():
-    if config := current_config(default=None):
+    if migrations := Migrations.active_instance.get():
         if context.is_offline_mode():
-            config.runner.run_migrations_offline()
+            migrations.config.runner.run_migrations_offline()
         else:
-            config.runner.run_migrations_online()
+            migrations.config.runner.run_migrations_online()
     else:
         raise RuntimeError("no current runner configured.")
