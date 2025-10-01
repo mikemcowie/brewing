@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 from contextvars import ContextVar
 from dataclasses import dataclass
-from functools import cached_property
+from functools import cached_property, partial
 from pathlib import Path
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING
 
-from alembic import command
+from alembic import command, context
 from alembic.config import Config as AlembicConfig
 
 if TYPE_CHECKING:
     from brewinglib.db.types import DatabaseProtocol
+    from sqlalchemy.engine import Connection
 
 type MigrationsDir = Path
 type RevisionsDir = Path
@@ -58,32 +60,26 @@ class MigrationsConfig:
 ### Begin configuration machery for alembic context
 # This is basically working around the challenge of being hard to otherwise
 # call the machinery in env.py with parameters.
-# instead we use a contextvar, and `set_config` contextmanager to set the value
+# instead we use a contextvar, and `set_runner` contextmanager to set the value
 # before alembic gets invoked, removing it after.
 
 # configvar itself is private, as the 2 functions below it are the interface to it.
-_current_config: ContextVar[MigrationsConfig] = ContextVar("current_config")
+_current_runner: ContextVar[MigrationRunner] = ContextVar("current_config")
 
 
 @contextlib.contextmanager
-def set_config(config: MigrationsConfig):
-    token = _current_config.set(config)
+def set_runner(runner: MigrationRunner):
+    token = _current_runner.set(runner)
     yield
-    _current_config.reset(token)
+    _current_runner.reset(token)
 
 
 _NO_DEFAULT = object()
 
 
-@overload
-def current_config() -> MigrationsConfig: ...
-@overload
-def current_config[DefaultT](default: DefaultT) -> DefaultT | MigrationsConfig: ...
-
-
-def current_config[DefaultT](
+def current_runner[DefaultT](
     default: DefaultT = _NO_DEFAULT,
-) -> DefaultT | MigrationsConfig:
+) -> DefaultT | MigrationRunner:
     """Load the current migrations config.
 
     A default value can be passed, which if set, will be returned if
@@ -91,7 +87,7 @@ def current_config[DefaultT](
     currently set.
     """
     try:
-        return _current_config.get()
+        return _current_runner.get()
     except LookupError:
         if default is _NO_DEFAULT:
             raise
@@ -106,6 +102,8 @@ class Migrations:
         config: MigrationsConfig,
     ):
         self._config = config
+        self._runner = MigrationRunner(config)
+        self.set_runner = partial(set_runner, self._runner)
 
     @property
     def config(self):
@@ -118,7 +116,7 @@ class Migrations:
 
         with (
             testing.testing(self.config.database.database_type),
-            set_config(self._config),
+            set_runner(self._runner),
         ):
             command.revision(
                 self._config.alembic,
@@ -129,25 +127,70 @@ class Migrations:
 
     def upgrade(self, revision: str = "head"):
         """Upgrade the database"""
-        with set_config(self._config):
+        with set_runner(self._runner):
             command.upgrade(self._config.alembic, revision=revision)
 
     def downgrade(self, revision: str):
         """Downgrade the database"""
-        with set_config(self._config):
+        with set_runner(self._runner):
             command.downgrade(self._config.alembic, revision=revision)
 
     def stamp(self, revision: str):
         """Write to the versions table as if the database is set to the given revision."""
-        with set_config(self._config):
+        with set_runner(self._runner):
             command.stamp(self._config.alembic, revision=revision)
 
     def current(self, verbose: bool = False):
         """Display the current revision."""
-        with set_config(self._config):
+        with set_runner(self._runner):
             command.current(self._config.alembic, verbose=verbose)
 
     def check(self):
         """Validate that the database is updated to the latest revision."""
-        with set_config(self._config):
+        with set_runner(self._runner):
             command.check(self._config.alembic)
+
+
+class MigrationRunner:
+    """Our implementation of the logic normally in env.py.
+
+    This can be customized in the same way env.py can normally be customized,
+    but maintaining the machinery and CLI here.
+    """
+
+    def __init__(self, config: MigrationsConfig, /):
+        self._config = config
+
+    def do_run_migrations(self, connection: Connection) -> None:
+        context.configure(connection=connection, target_metadata=self._config.metadata)
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+    async def run_async_migrations(self) -> None:
+        """In this scenario we need to create an Engine
+        and associate a connection with the context.
+
+        """
+        async with self._config.engine.connect() as connection:
+            await connection.run_sync(self.do_run_migrations)
+
+        await self._config.engine.dispose()
+
+    def run_migrations_online(self) -> None:
+        """Run migrations in 'online' mode."""
+
+        asyncio.run(self.run_async_migrations())
+
+    def run_migrations_offline(self) -> None:
+        raise NotImplementedError("offline mirations not supported.")
+
+
+def run():
+    if runner := current_runner(default=None):
+        if context.is_offline_mode():
+            runner.run_migrations_offline()
+        else:
+            runner.run_migrations_online()
+    else:
+        raise RuntimeError("no current runner configured.")
