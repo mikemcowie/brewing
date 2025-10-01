@@ -1,6 +1,5 @@
 import importlib.util
 import inspect
-from collections.abc import Generator
 from pathlib import Path
 from textwrap import dedent
 from types import ModuleType
@@ -14,7 +13,6 @@ from brewinglib.db import Database
 from brewinglib.db.migrate import (
     Migrations,
     MigrationsConfig,
-    set_config,
 )
 from brewinglib.db.settings import DatabaseType
 from testing_samples import db_sample1
@@ -23,20 +21,20 @@ from testing_samples import db_sample1
 @pytest.fixture
 def config(
     db_type: DatabaseType, running_db: Database[Any], tmp_path: Path
-) -> Generator[MigrationsConfig]:
-    config = MigrationsConfig(
+) -> MigrationsConfig:
+    return MigrationsConfig(
         database=Database[db_type.dialect().connection_config_type](
             db_sample1.Base.metadata
         ),
         revisions_dir=tmp_path / "revisions",
     )
-    with set_config(config):
-        yield config
 
 
 @pytest.fixture
 def migrations(config: MigrationsConfig):
-    return Migrations(config)
+    migrations = Migrations(config)
+    with migrations:
+        yield migrations
 
 
 @pytest.fixture
