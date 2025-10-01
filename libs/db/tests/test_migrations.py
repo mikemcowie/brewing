@@ -12,10 +12,9 @@ import pytest_alembic.tests.experimental
 import pytest_asyncio
 from brewinglib.db import Database
 from brewinglib.db.migrate import (
-    MigrationRunner,
     Migrations,
     MigrationsConfig,
-    set_runner,
+    set_config,
 )
 from brewinglib.db.settings import DatabaseType
 from testing_samples import db_sample1
@@ -31,7 +30,7 @@ def config(
         ),
         revisions_dir=tmp_path / "revisions",
     )
-    with set_runner(MigrationRunner(config)):
+    with set_config(config):
         yield config
 
 
