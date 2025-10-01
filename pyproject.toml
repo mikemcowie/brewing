@@ -109,7 +109,7 @@ python_files = [
     "*_test.py",
     "feat_*.py",
 ]
-norecursedirs = ".venv incubator/src/brewing_incubator/db/migrations"
+norecursedirs = ".venv incubator/src/brewing_incubator/db/migrations libs/db/src"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]

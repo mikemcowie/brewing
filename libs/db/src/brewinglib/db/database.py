@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from brewinglib.cli import CLI
-from brewinglib.db.migrate import Migrations, MigrationsConfig
+from brewinglib.db.migrate import Migrations
 from brewinglib.db.types import DatabaseConnectionConfiguration
 from brewinglib.generic import runtime_generic
 from sqlalchemy import MetaData
@@ -61,10 +61,8 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
     def migrations(self) -> Migrations:
         if not self._migrations:
             self._migrations = Migrations(
-                MigrationsConfig(
-                    database=self,
-                    revisions_dir=self._revisions_directory,
-                )
+                database=self,
+                revisions_dir=self._revisions_directory,
             )
         return self._migrations
 

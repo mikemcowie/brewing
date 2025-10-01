@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import asyncio
 from contextvars import ContextVar, Token
-from dataclasses import dataclass
-from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -17,53 +15,10 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Connection
 
 MIGRATIONS_CONTEXT_DIRECTORY = Path(__file__).parent / "_migrationcontext"
-_NO_DEFAULT = object()
-
-type RevisionsDir = Path
-
-
-### Begin configuration machery for alembic context
-# This is basically working around the challenge of being hard to otherwise
-# call the machinery in env.py with parameters.
-# instead we use a contextvar, and `set_runner` contextmanager to set the value
-# before alembic gets invoked, removing it after.
-
-# configvar itself is private, as the 2 functions below it are the interface to it.
 
 
 class MigrationsConfigError(RuntimeError):
     """raised for invalid migrations config states."""
-
-
-@dataclass(frozen=True, kw_only=True)
-class MigrationsConfig:
-    database: DatabaseProtocol
-    revisions_dir: RevisionsDir
-
-    @cached_property
-    def runner(self):
-        return MigrationRunner(self)
-
-    @property
-    def engine(self):
-        return self.database.engine
-
-    @property
-    def metadata(self):
-        return self.database.metadata
-
-    @cached_property
-    def alembic(self) -> AlembicConfig:
-        config = AlembicConfig()
-        if not self.revisions_dir.is_dir():
-            raise MigrationsConfigError(
-                f"path {self.revisions_dir!s} is not a valid directory."
-            )
-        config.set_main_option("script_location", str(MIGRATIONS_CONTEXT_DIRECTORY))
-        config.set_main_option("version_locations", str(self.revisions_dir))
-        config.set_main_option("path_separator", ";")
-        config.set_main_option("file_template", "rev_%%(rev)s_%%(slug)s")
-        return config
 
 
 class Migrations:
@@ -73,15 +28,40 @@ class Migrations:
 
     def __init__(
         self,
-        config: MigrationsConfig,
+        database: DatabaseProtocol,
+        revisions_dir: Path,
     ):
-        self._config = config
-        self._runner = MigrationRunner(config)
+        self._database = database
+        self._revisions_dir = revisions_dir
+        self._runner = MigrationRunner(self)
         self._token: Token[Migrations] | None = None
+        self._alembic = AlembicConfig()
+        self._alembic.set_main_option(
+            "script_location", str(MIGRATIONS_CONTEXT_DIRECTORY)
+        )
+        self._alembic.set_main_option("version_locations", str(revisions_dir))
+        self._alembic.set_main_option("path_separator", ";")
+        self._alembic.set_main_option("file_template", "rev_%%(rev)s_%%(slug)s")
 
     @property
-    def config(self):
-        return self._config
+    def metadata(self):
+        return self._database.metadata
+
+    @property
+    def engine(self):
+        return self._database.engine
+
+    @property
+    def runner(self):
+        return self._runner
+
+    @property
+    def revisions_dir(self):
+        return self._revisions_dir
+
+    @property
+    def alembic(self):
+        return self._alembic
 
     def __enter__(self):
         self._token = self.active_instance.set(self)
@@ -97,12 +77,12 @@ class Migrations:
         from brewinglib.db import testing  # noqa: PLC0415
 
         with (
-            testing.testing(self.config.database.database_type),
+            testing.testing(self._database.database_type),
             self,
         ):
             command.revision(
-                self._config.alembic,
-                rev_id=f"{len(list(self._config.revisions_dir.glob('*.py'))):05d}",
+                self._alembic,
+                rev_id=f"{len(list(self._revisions_dir.glob('*.py'))):05d}",
                 message=message,
                 autogenerate=autogenerate,
             )
@@ -110,27 +90,27 @@ class Migrations:
     def upgrade(self, revision: str = "head"):
         """Upgrade the database"""
         with self:
-            command.upgrade(self._config.alembic, revision=revision)
+            command.upgrade(self._alembic, revision=revision)
 
     def downgrade(self, revision: str):
         """Downgrade the database"""
         with self:
-            command.downgrade(self._config.alembic, revision=revision)
+            command.downgrade(self._alembic, revision=revision)
 
     def stamp(self, revision: str):
         """Write to the versions table as if the database is set to the given revision."""
         with self:
-            command.stamp(self._config.alembic, revision=revision)
+            command.stamp(self._alembic, revision=revision)
 
     def current(self, verbose: bool = False):
         """Display the current revision."""
         with self:
-            command.current(self._config.alembic, verbose=verbose)
+            command.current(self._alembic, verbose=verbose)
 
     def check(self):
         """Validate that the database is updated to the latest revision."""
         with self:
-            command.check(self._config.alembic)
+            command.check(self._alembic)
 
 
 class MigrationRunner:
@@ -140,39 +120,42 @@ class MigrationRunner:
     but maintaining the machinery and CLI here.
     """
 
-    def __init__(self, config: MigrationsConfig, /):
-        self._config = config
+    def __init__(self, migrations: Migrations, /):
+        self.migrations = migrations
 
-    def do_run_migrations(self, connection: Connection) -> None:
-        context.configure(connection=connection, target_metadata=self._config.metadata)
+    def run(self, connection: Connection) -> None:
+        context.configure(
+            connection=connection, target_metadata=self.migrations.metadata
+        )
 
         with context.begin_transaction():
             context.run_migrations()
 
-    async def run_async_migrations(self) -> None:
+    async def arun(self) -> None:
         """In this scenario we need to create an Engine
         and associate a connection with the context.
 
         """
-        async with self._config.engine.connect() as connection:
-            await connection.run_sync(self.do_run_migrations)
+        async with self.migrations.engine.connect() as connection:
+            await connection.run_sync(self.run)
 
-        await self._config.engine.dispose()
+        await self.migrations.engine.dispose()
 
-    def run_migrations_online(self) -> None:
+    def online(self) -> None:
         """Run migrations in 'online' mode."""
 
-        asyncio.run(self.run_async_migrations())
+        asyncio.run(self.arun())
 
-    def run_migrations_offline(self) -> None:
+    def offline(self) -> None:
+        """Run migrations in 'offline' mode."""
         raise NotImplementedError("offline mirations not supported.")
 
 
 def run():
     if migrations := Migrations.active_instance.get():
         if context.is_offline_mode():
-            migrations.config.runner.run_migrations_offline()
+            migrations.runner.offline()
         else:
-            migrations.config.runner.run_migrations_online()
+            migrations.runner.online()
     else:
         raise RuntimeError("no current runner configured.")

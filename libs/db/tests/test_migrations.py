@@ -12,48 +12,40 @@ import pytest_asyncio
 from brewinglib.db import Database
 from brewinglib.db.migrate import (
     Migrations,
-    MigrationsConfig,
 )
 from brewinglib.db.settings import DatabaseType
 from testing_samples import db_sample1
 
 
 @pytest.fixture
-def config(
-    db_type: DatabaseType, running_db: Database[Any], tmp_path: Path
-) -> MigrationsConfig:
-    return MigrationsConfig(
+def migrations(db_type: DatabaseType, running_db: Database[Any], tmp_path: Path):
+    migrations = Migrations(
         database=Database[db_type.dialect().connection_config_type](
             db_sample1.Base.metadata
         ),
         revisions_dir=tmp_path / "revisions",
     )
-
-
-@pytest.fixture
-def migrations(config: MigrationsConfig):
-    migrations = Migrations(config)
     with migrations:
         yield migrations
 
 
 @pytest.fixture
-def alembic_config(config: MigrationsConfig, migrations: Migrations):
+def alembic_config(migrations: Migrations):
     # Fixture required by pytest-alembic
-    config.revisions_dir.mkdir()
+    migrations.revisions_dir.mkdir()
     migrations.generate_revision("gen 1", autogenerate=True)
     migrations.upgrade()
-    yield config.alembic
+    yield migrations.alembic
     migrations.downgrade("base")
 
 
 @pytest_asyncio.fixture
-async def alembic_engine(config: MigrationsConfig):
+async def alembic_engine(migrations: Migrations):
     # Fixture required by pytest-alembic
     try:
-        yield config.engine
+        yield migrations.engine
     finally:
-        await config.engine.dispose()
+        await migrations.engine.dispose()
 
 
 def load_module_from_file(path: Path) -> ModuleType:
@@ -67,14 +59,12 @@ def load_module_from_file(path: Path) -> ModuleType:
 
 class TestMigrations:
     @staticmethod
-    def test_generate_migration_without_autogenerate(
-        config: MigrationsConfig, migrations: Migrations
-    ):
-        config.revisions_dir.mkdir()
+    def test_generate_migration_without_autogenerate(migrations: Migrations):
+        migrations.revisions_dir.mkdir()
         # If we call generate
         migrations.generate_revision("gen 1", autogenerate=False)
         # then there will be a file generated in the revisions dir
-        revisions_files = list(config.revisions_dir.glob("*.py"))
+        revisions_files = list(migrations.revisions_dir.glob("*.py"))
         assert len(revisions_files) == 1
         assert revisions_files[0].name == "rev_00000_gen_1.py"
         # And inspect its module contents are as expected.
@@ -103,15 +93,13 @@ class TestMigrations:
         )
 
     @staticmethod
-    def test_generate_migration_with_autogenerate(
-        config: MigrationsConfig, migrations: Migrations
-    ):
+    def test_generate_migration_with_autogenerate(migrations: Migrations):
         # Given migrations instance
-        config.revisions_dir.mkdir()
+        migrations.revisions_dir.mkdir()
         # If we call generate
         migrations.generate_revision("gen 1", autogenerate=True)
         # then there will be a file generated in the revisions dir
-        revisions_files = list(config.revisions_dir.glob("*.py"))
+        revisions_files = list(migrations.revisions_dir.glob("*.py"))
         assert len(revisions_files) == 1
         assert revisions_files[0].name == "rev_00000_gen_1.py"
         # And inspect its module contents are as expected.

@@ -29,8 +29,7 @@ def test_default_migrations_revisions_directory(
     dialect = db_type.dialect()
     db = Database[dialect.connection_config_type](MetaData())
     assert (
-        db.migrations.config.revisions_dir
-        == (Path(__file__).parent / "revisions").resolve()
+        db.migrations.revisions_dir == (Path(__file__).parent / "revisions").resolve()
     )
 
 
