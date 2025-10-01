@@ -1,3 +1,5 @@
+"""Database testing utilities."""
+
 from __future__ import annotations
 
 import asyncio
@@ -9,12 +11,12 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from brewinglib.db.settings import DatabaseType
+from brewing.db.settings import DatabaseType
 from testcontainers.mysql import MySqlContainer
 from testcontainers.postgres import PostgresContainer
 
 if TYPE_CHECKING:
-    from brewinglib.db.types import DatabaseProtocol
+    from brewing.db.types import DatabaseProtocol
 
 
 @contextmanager
@@ -40,7 +42,7 @@ type TestingDatabase = Callable[[], AbstractContextManager[None]]
 
 
 @contextmanager
-def postgresql():
+def _postgresql():
     with (
         PostgresContainer() as pg,
         env(
@@ -57,7 +59,7 @@ def postgresql():
 
 
 @contextmanager
-def sqlite():
+def _sqlite():
     with (
         tempfile.TemporaryDirectory() as db_dir,
         env({"SQLITE_DATABASE": str(Path(db_dir) / "db.sqlite")}),
@@ -66,7 +68,7 @@ def sqlite():
 
 
 @contextmanager
-def mysql(image: str = "mysql:latest"):
+def _mysql(image: str = "mysql:latest"):
     with (
         MySqlContainer(image=image) as mysql,
         env(
@@ -82,25 +84,27 @@ def mysql(image: str = "mysql:latest"):
         yield
 
 
-mariadb = partial(mysql, image="mariadb:latest")
+mariadb = partial(_mysql, image="mariadb:latest")
 
 
 _TEST_DATABASE_IMPLEMENTATIONS: dict[DatabaseType, TestingDatabase] = {
-    DatabaseType.sqlite: sqlite,
-    DatabaseType.postgresql: postgresql,
-    DatabaseType.mysql: mysql,
+    DatabaseType.sqlite: _sqlite,
+    DatabaseType.postgresql: _postgresql,
+    DatabaseType.mysql: _mysql,
     DatabaseType.mariadb: mariadb,
 }
 
 
 @contextmanager
 def testing(db_type: DatabaseType):
+    """Temporarily create and set environment variables for connection to given db type."""
     with _TEST_DATABASE_IMPLEMENTATIONS[db_type]():
         yield
 
 
 @asynccontextmanager
 async def upgraded(db: DatabaseProtocol):
+    """Temporarily deploys tables for given database, dropping them in cleanup phase."""
     async with db.engine.begin() as conn:
         for metadata in db.metadata:
             await conn.run_sync(metadata.create_all)

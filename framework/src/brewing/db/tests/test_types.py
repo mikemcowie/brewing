@@ -1,5 +1,5 @@
-from brewinglib.db import settings
-from brewinglib.db.settings import DatabaseType
+from brewing.db import settings
+from brewing.db.settings import DatabaseType
 
 
 def test_db_types_to_dialects_is_exhaustive(db_type: DatabaseType):

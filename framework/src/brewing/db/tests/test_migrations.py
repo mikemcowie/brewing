@@ -9,11 +9,11 @@ import pytest
 import pytest_alembic.tests.default
 import pytest_alembic.tests.experimental
 import pytest_asyncio
-from brewinglib.db import Database
-from brewinglib.db.migrate import (
+from brewing.db import Database
+from brewing.db.migrate import (
     Migrations,
 )
-from brewinglib.db.settings import DatabaseType
+from brewing.db.settings import DatabaseType
 from testing_samples import db_sample1
 
 

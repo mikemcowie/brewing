@@ -1,6 +1,6 @@
 import pytest
 import pytest_asyncio
-from brewinglib.db import Database, settings, testing
+from brewing.db import Database, settings, testing
 from testing_samples import db_sample1
 
 

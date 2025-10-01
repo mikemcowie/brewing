@@ -11,7 +11,7 @@ from alembic import command, context
 from alembic.config import Config as AlembicConfig
 
 if TYPE_CHECKING:
-    from brewinglib.db.types import DatabaseProtocol
+    from brewing.db.types import DatabaseProtocol
     from sqlalchemy.engine import Connection
 
 MIGRATIONS_CONTEXT_DIRECTORY = Path(__file__).parent / "_migrationcontext"
@@ -45,28 +45,35 @@ class Migrations:
 
     @property
     def metadata(self):
+        """Tuple of sqlalchemy metadata."""
         return self._database.metadata
 
     @property
     def engine(self):
+        """Async engine."""
         return self._database.engine
 
     @property
     def runner(self):
+        """Object containing alembic env implementation."""
         return self._runner
 
     @property
     def revisions_dir(self):
+        """The directory that database revisions are found in."""
         return self._revisions_dir
 
     @property
     def alembic(self):
+        """Alembic config class instance."""
         return self._alembic
 
     def __enter__(self):
+        """Set the migrations context to allow alembic to be invoked."""
         self._token = self.active_instance.set(self)
 
     def __exit__(self, *_: Any, **__: Any):
+        """Cleanup context."""
         if self._token:
             self.active_instance.reset(self._token)
             self._token = None
@@ -74,7 +81,7 @@ class Migrations:
     def generate_revision(self, message: str, autogenerate: bool):
         """Generate a new migration."""
         # late import as libraries involved may not be installed.
-        from brewinglib.db import testing  # noqa: PLC0415
+        from brewing.db import testing  # noqa: PLC0415
 
         with (
             testing.testing(self._database.database_type),
@@ -88,12 +95,12 @@ class Migrations:
             )
 
     def upgrade(self, revision: str = "head"):
-        """Upgrade the database"""
+        """Upgrade the database."""
         with self:
             command.upgrade(self._alembic, revision=revision)
 
     def downgrade(self, revision: str):
-        """Downgrade the database"""
+        """Downgrade the database."""
         with self:
             command.downgrade(self._alembic, revision=revision)
 
@@ -114,7 +121,8 @@ class Migrations:
 
 
 class MigrationRunner:
-    """Our implementation of the logic normally in env.py.
+    """
+    Our implementation of the logic normally in env.py.
 
     This can be customized in the same way env.py can normally be customized,
     but maintaining the machinery and CLI here.
@@ -124,6 +132,7 @@ class MigrationRunner:
         self.migrations = migrations
 
     def run(self, connection: Connection) -> None:
+        """Run migrations."""
         context.configure(
             connection=connection, target_metadata=self.migrations.metadata
         )
@@ -132,7 +141,10 @@ class MigrationRunner:
             context.run_migrations()
 
     async def arun(self) -> None:
-        """In this scenario we need to create an Engine
+        """
+        Asyncronously run migrations.
+
+        In this scenario we need to create an Engine
         and associate a connection with the context.
 
         """
@@ -143,7 +155,6 @@ class MigrationRunner:
 
     def online(self) -> None:
         """Run migrations in 'online' mode."""
-
         asyncio.run(self.arun())
 
     def offline(self) -> None:
@@ -152,6 +163,7 @@ class MigrationRunner:
 
 
 def run():
+    """Run migrations in the current context."""
     if migrations := Migrations.active_instance.get():
         if context.is_offline_mode():
             migrations.runner.offline()

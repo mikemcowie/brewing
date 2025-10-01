@@ -33,7 +33,12 @@ except AttributeError:
 
 
 def uuid_primary_key(uuid_provider: NewUUIDFactory = uuid_default_provider):
-    """A UUID"""
+    """
+    UUID primary key column.
+
+    If the provider given is an sqlalchemy function, a server default will be provided
+    otherwise a sqlalchemy/python-generated value will be provided.
+    """
     if isinstance(uuid_provider, sa.Function):
         return mapped_column(
             uuid_column_type, primary_key=True, server_default=uuid_provider, init=False
@@ -48,7 +53,7 @@ def uuid_primary_key(uuid_provider: NewUUIDFactory = uuid_default_provider):
 
 
 def created_at_column(**kwargs: Any):
-    """A column that stores the datetime that the record was created."""
+    """Column that stores the datetime that the record was created."""
     return mapped_column(
         sa.DateTime(timezone=True),
         default_factory=lambda: datetime.now(UTC),
@@ -58,5 +63,5 @@ def created_at_column(**kwargs: Any):
 
 
 def updated_at_column():
-    """A column that stores the datetime that the record was last updated."""
+    """Column that stores the datetime that the record was last updated."""
     return created_at_column(onupdate=lambda: datetime.now(UTC))

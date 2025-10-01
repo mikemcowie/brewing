@@ -11,7 +11,6 @@ dependencies = [
     "brewinglib-cli",
     "brewing-test-dependencies",
     "brewing-incubator",
-    "brewinglib-db",
     "testing-samples",
 ]
 
@@ -37,7 +36,6 @@ brewinglib-generic = { workspace = true }
 brewinglib-cli = { workspace = true }
 brewing-test-dependencies = { workspace = true }
 brewing-incubator = {workspace=true}
-brewinglib-db = { workspace = true }
 testing-samples = {workspace = true}
 
 [dependency-groups]
@@ -109,7 +107,7 @@ python_files = [
     "*_test.py",
     "feat_*.py",
 ]
-norecursedirs = ".venv incubator/src/brewing_incubator/db/migrations libs/db/src"
+norecursedirs = ".venv incubator/src/brewing_incubator/db/migrations framework/src/brewing/db/_migrationcontext"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]

@@ -1,4 +1,4 @@
-from brewinglib.db import testing
+from brewing.db import testing
 
 
 def test_env_adds_variable_and_cleans_it_up():

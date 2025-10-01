@@ -1,3 +1,5 @@
+"""Settings classes for different database types."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -11,21 +13,26 @@ from sqlalchemy.engine import URL
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from brewinglib.db.types import DatabaseConnectionConfiguration
+    from brewing.db.types import DatabaseConnectionConfiguration
 
 
 class DatabaseType(StrEnum):
+    """Supported database names."""
+
     sqlite = auto()
     postgresql = auto()
     mysql = auto()
     mariadb = auto()
 
     def dialect(self) -> Dialect:
+        """Return dialect object associated with the given type."""
         return _DATABASE_TYPE_TO_DIALECT[self]
 
 
 @dataclass(frozen=True)
 class Dialect:
+    """Collection of data associated with a given database type."""
+
     database_type: DatabaseType
     package: str
     dialect_name: str
@@ -42,6 +49,7 @@ def load_url(  # noqa: PLR0913
     database: str | None,
     query: Mapping[str, tuple[str, ...] | str] | None,
 ) -> URL:
+    """Provide the sqlalchemy URL for given inputs."""
     dialect = db_type.dialect()
     return URL(
         f"{db_type.value}+{dialect.dialect_name}",
@@ -55,10 +63,14 @@ def load_url(  # noqa: PLR0913
 
 
 class OurBaseSettings(BaseSettings):
+    """Common base class for db settings."""
+
     model_config = SettingsConfigDict(frozen=True)
 
 
 class SQLiteSettings(OurBaseSettings):
+    """Connection settings for sqlite."""
+
     if TYPE_CHECKING:
 
         def __init__(self):
@@ -68,6 +80,7 @@ class SQLiteSettings(OurBaseSettings):
     SQLITE_DATABASE: str
 
     def url(self):
+        """Provide url for instance."""
         return load_url(
             DatabaseType.sqlite,
             username=None,
@@ -80,6 +93,8 @@ class SQLiteSettings(OurBaseSettings):
 
 
 class PostgresqlSettings(OurBaseSettings):
+    """Connection settings for postgresql."""
+
     if TYPE_CHECKING:
 
         def __init__(self):
@@ -95,6 +110,7 @@ class PostgresqlSettings(OurBaseSettings):
     PGDATABASE: str
 
     def url(self):
+        """Provide url for instance."""
         return load_url(
             DatabaseType.postgresql,
             username=self.PGUSER,
@@ -107,6 +123,8 @@ class PostgresqlSettings(OurBaseSettings):
 
 
 class MySQLSettings(OurBaseSettings):
+    """Connection settings for mysql."""
+
     dialect: ClassVar = DatabaseType.mysql
     if TYPE_CHECKING:
 
@@ -121,6 +139,7 @@ class MySQLSettings(OurBaseSettings):
     MYSQL_DATABASE: str
 
     def url(self):
+        """Provide url for instance."""
         return load_url(
             self.dialect,
             username=self.MYSQL_USER,
@@ -133,6 +152,8 @@ class MySQLSettings(OurBaseSettings):
 
 
 class MariaDBSettings(MySQLSettings):
+    """Connection settings for mariadb."""
+
     dialect: ClassVar = DatabaseType.mariadb
     database_type: ClassVar = DatabaseType.mariadb
     if TYPE_CHECKING:

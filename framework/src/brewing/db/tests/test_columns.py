@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 import pytest_asyncio
 import sqlalchemy as sa
-from brewinglib.db import Database, columns, mixins, new_base, settings, testing, types
+from brewing.db import Database, columns, mixins, new_base, settings, testing, types
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,

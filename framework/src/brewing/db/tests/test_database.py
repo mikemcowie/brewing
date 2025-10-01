@@ -1,9 +1,9 @@
 from pathlib import Path
 
 import pytest
-from brewinglib.db import Database, testing
-from brewinglib.db.settings import DatabaseType
-from brewinglib.db.types import DatabaseProtocol
+from brewing.db import Database, testing
+from brewing.db.settings import DatabaseType
+from brewing.db.types import DatabaseProtocol
 from sqlalchemy import MetaData, text
 from testing_samples import db_sample1
 
