@@ -1,6 +1,6 @@
 [project]
 name = "brewing"
-version = "0.0.5"
+version = "0.0.6"
 description = "A web framework built on sqlachemy and fastapi."
 readme = "README.md"
 authors = [
