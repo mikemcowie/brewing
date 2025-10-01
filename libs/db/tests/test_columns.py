@@ -23,6 +23,12 @@ class HasIncrementingPrimaryKey(
     pass
 
 
+def test_server_generated_uuid_pk():
+    column = columns.uuid_primary_key(sa.func.some())
+    assert not column.column.default
+    assert column.column.server_default
+
+
 @pytest_asyncio.fixture
 async def db(db_type: settings.DatabaseType, running_db_session: None):
     return Database[db_type.dialect().connection_config_type](Base.metadata)
