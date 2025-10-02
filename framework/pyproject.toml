@@ -23,7 +23,7 @@ mysql = [
     "aiomysql>=0.2.0",
 ]
 mariadb = [
-    "brewinglib-db[mysql]"
+    "brewing[mysql]"
 ]
 sqlite = [
     "aiosqlite>=0.21.0",

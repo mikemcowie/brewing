@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from alembic import command
 from alembic.config import Config
-from brewinglib.generic import runtime_generic
+from brewing.generic import runtime_generic
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 

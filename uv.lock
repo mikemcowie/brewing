@@ -12,8 +12,6 @@ members = [
     "brewing-incubator",
     "brewing-test-dependencies",
     "brewing-uv-workspace",
-    "brewinglib-cli",
-    "brewinglib-generic",
     "project-manager",
     "testing-samples",
 ]
@@ -177,10 +175,9 @@ dependencies = [
 all = [
     { name = "aiomysql" },
     { name = "aiosqlite" },
-    { name = "brewinglib-db", extra = ["mysql"] },
 ]
 mariadb = [
-    { name = "brewinglib-db", extra = ["mysql"] },
+    { name = "aiomysql" },
 ]
 mysql = [
     { name = "aiomysql" },
@@ -199,8 +196,8 @@ testing = [
 requires-dist = [
     { name = "aiomysql", marker = "extra == 'mysql'", specifier = ">=0.2.0" },
     { name = "aiosqlite", marker = "extra == 'sqlite'", specifier = ">=0.21.0" },
+    { name = "brewing", extras = ["mysql"], marker = "extra == 'mariadb'", editable = "framework" },
     { name = "brewing", extras = ["mysql", "mariadb", "postgresql", "sqlite"], marker = "extra == 'all'", editable = "framework" },
-    { name = "brewinglib-db", extras = ["mysql"], marker = "extra == 'mariadb'" },
     { name = "frozendict", specifier = ">=2.4.6" },
     { name = "psycopg", marker = "extra == 'posgresql'", specifier = ">=3.2.9" },
     { name = "pydantic", specifier = ">=2.11.7" },
@@ -239,7 +236,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.16.2" },
-    { name = "brewinglib-generic", editable = "libs/generic" },
+    { name = "brewinglib-generic" },
     { name = "cryptography", specifier = ">=45.0.5" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.13" },
     { name = "passlib", extras = ["argon2"], specifier = ">=1.7.4" },
@@ -330,8 +327,6 @@ dependencies = [
     { name = "brewing" },
     { name = "brewing-incubator" },
     { name = "brewing-test-dependencies" },
-    { name = "brewinglib-cli" },
-    { name = "brewinglib-generic" },
     { name = "project-manager" },
     { name = "testing-samples" },
 ]
@@ -352,8 +347,6 @@ requires-dist = [
     { name = "brewing", editable = "framework" },
     { name = "brewing-incubator", editable = "incubator" },
     { name = "brewing-test-dependencies", editable = "test-dependencies" },
-    { name = "brewinglib-cli", editable = "libs/cli" },
-    { name = "brewinglib-generic", editable = "libs/generic" },
     { name = "project-manager", editable = "samples/project-manager" },
     { name = "testing-samples", editable = "samples/testing-samples" },
 ]
@@ -370,46 +363,13 @@ docs = [
 ]
 
 [[package]]
-name = "brewinglib-cli"
-version = "0.0.6"
-source = { editable = "libs/cli" }
-dependencies = [
-    { name = "pydantic" },
-    { name = "typer" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pydantic", specifier = ">=2.11.7" },
-    { name = "typer", specifier = ">=0.16.1" },
-]
-
-[[package]]
-name = "brewinglib-db"
-version = "0.0.6"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "brewinglib-cli" },
-    { name = "brewinglib-generic" },
-    { name = "frozendict" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "sqlalchemy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/30/a37773bbd0b534df007b29ff56290bdabe35954f2412d38334fa1f7ac38d/brewinglib_db-0.0.6.tar.gz", hash = "sha256:babdc2fbbf740fbe23b834b195c43bf92bd925eaa0da9e5c60b804dbaba5c11a", size = 11214, upload-time = "2025-10-01T10:54:02.676Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/49/1f4152e84cd4b984f290508d0c113b7273c0448483cf333d275a306a9d01/brewinglib_db-0.0.6-py3-none-any.whl", hash = "sha256:92b67fdc224b938b61761f3f5157c1b20cb25e5cd73024dda2a8dab231203120", size = 10927, upload-time = "2025-10-01T10:54:01.896Z" },
-]
-
-[package.optional-dependencies]
-mysql = [
-    { name = "aiomysql" },
-]
-
-[[package]]
 name = "brewinglib-generic"
 version = "0.0.6"
-source = { editable = "libs/generic" }
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/ae/7278dbad447123be75249e54cf0affadf06ff0a096344c64c267121c881b/brewinglib_generic-0.0.6.tar.gz", hash = "sha256:6cd079aac46beef67c41becef601298018d926416f8fc5697038638ad5db9598", size = 4581, upload-time = "2025-10-01T10:54:04.999Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/77/dd/217537fde8aab44497467d59836b8bf65626c6d362486620ee5e71a94d17/brewinglib_generic-0.0.6-py3-none-any.whl", hash = "sha256:83e55b1c83260e5fc996e645fdfc37fb86d4a1d9cef0c830c6f670af48f5301f", size = 2745, upload-time = "2025-10-01T10:54:03.701Z" },
+]
 
 [[package]]
 name = "certifi"

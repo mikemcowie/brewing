@@ -5,7 +5,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from brewinglib.generic import runtime_generic
+from brewing.generic import runtime_generic
 from starlette.staticfiles import StaticFiles
 
 from brewing_incubator import root_router

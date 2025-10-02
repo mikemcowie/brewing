@@ -1,4 +1,5 @@
-"""1-line decorator to allow a class to be subclassed via generic syntax.
+"""
+1-line decorator to allow a class to be subclassed via generic syntax.
 
 Specifically limited to the pattern where:
 
@@ -52,15 +53,16 @@ def _get_class_attributes(cls: type):
 
 
 def runtime_generic[T](cls: type[T]) -> type[T]:
-    """Decorator that makes some class's generic be able to be instantiated.
+    """
+    Make some class cls able to be subclassed via generic, i.e. Foo[Bar] syntax.
 
-    Given a class of type T, decorating with this will allow creation of a subclass
-    with generic parameters mapped to matching unbound class attributes.
+    Given a class Cls of type T, decorating with this will allow creation of a subclass
+    Cls[T] with generic parameter T mapped to a matching unbound class attribute.
 
     """
 
-    def subclass(types: type | tuple[type | TypeVar, ...]):
-        """Function applied to class as __class_getitem__  in order to enable runtime generic."""
+    def _subclass(types: type | tuple[type | TypeVar, ...]):
+        """Create a subclass of cls with generic parameters applied."""
         nonlocal cls
         all_annotations = _get_type_hints(cls)
         unbound_class_attributes = set(all_annotations.keys()).difference(
@@ -91,5 +93,5 @@ def runtime_generic[T](cls: type[T]) -> type[T]:
     if not hasattr(cls, "__parameters__"):
         raise TypeError(f"Cannot decorate non-generic class '{cls.__name__}'")
 
-    cls.__class_getitem__ = cache(subclass)  # type: ignore
+    cls.__class_getitem__ = cache(_subclass)  # type: ignore
     return cls

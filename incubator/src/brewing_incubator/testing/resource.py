@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 import pytest
-from brewinglib.generic import runtime_generic
+from brewing.generic import runtime_generic
 from polyfactory.factories.pydantic_factory import ModelFactory
 from project_manager.app import Organization
 

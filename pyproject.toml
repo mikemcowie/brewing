@@ -7,8 +7,6 @@ requires-python = ">=3.13"
 dependencies = [
     "brewing",
     "project-manager",
-    "brewinglib-generic",
-    "brewinglib-cli",
     "brewing-test-dependencies",
     "brewing-incubator",
     "testing-samples",
@@ -23,7 +21,6 @@ Releases = "https://github.com/mikemcowie/brewing/releases"
 [tool.uv.workspace]
 members = [
     "framework",
-    "libs/*",
     "samples/*",
     "test-dependencies",
     "incubator",
@@ -32,8 +29,6 @@ members = [
 [tool.uv.sources]
 project-manager = { workspace = true }
 brewing = { workspace = true }
-brewinglib-generic = { workspace = true }
-brewinglib-cli = { workspace = true }
 brewing-test-dependencies = { workspace = true }
 brewing-incubator = {workspace=true}
 testing-samples = {workspace = true}
