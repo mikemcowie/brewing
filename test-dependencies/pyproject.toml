@@ -45,4 +45,3 @@ dev = [
 ]
 
 [tool.uv.sources]
-brewinglib-db = { workspace = true }

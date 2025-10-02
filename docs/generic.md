@@ -1,1 +1,1 @@
-::: brewinglib.generic
+::: brewing.generic

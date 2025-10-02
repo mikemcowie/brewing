@@ -29,7 +29,7 @@ from sqlalchemy.orm import (
 )
 
 if TYPE_CHECKING:
-    from brewinglib.db.types import DatabaseProtocol
+    from brewing.db.types import DatabaseProtocol
 
     pass
 

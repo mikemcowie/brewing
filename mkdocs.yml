@@ -30,10 +30,11 @@ plugins:
 
           preload_modules:
             - brewing
-            - brewinglib.cli
+            - brewing.cli
+            - brewing.generic
 nav:
 - Introduction: README.md
-- brewinglib.cli: cli.md
-- brewinglib.generic: generic.md
+- brewing.cli: cli.md
+- brewing.generic: generic.md
 markdown_extensions:
   - admonition
