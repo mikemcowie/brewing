@@ -1,5 +1,5 @@
 """
-Declarative base factory for brewinglib.db .
+Declarative base factory for brewing.db .
 
 We provide a new_base factory, which ensures a new base with a fresh metadata
 is available. It's not important to use it - any old declarative base class will do;

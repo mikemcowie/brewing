@@ -1,5 +1,5 @@
 """
-Stub env.py file for brewinglib.db.migrate.
+Stub env.py file for brewing.db.migrate.
 
 All the real migration machinery is in the migrate module,
 but alembic requires this file as a script.

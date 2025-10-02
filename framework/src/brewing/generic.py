@@ -9,7 +9,7 @@ Specifically limited to the pattern where:
 # Example
 
 ```python
-from brewinglib.generic import runtime_generic
+from brewing.generic import runtime_generic
 
 
 @runtime_generic

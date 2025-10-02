@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated
 
 import typer
 import uvicorn
-from brewinglib.cli import CLI
+from brewing.cli import CLI
 
 from brewing_incubator.development import (
     DevelopmentEnvironment,

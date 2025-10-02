@@ -7,7 +7,6 @@ from brewing import CLI
 class PublishMatrix(CLI):
     PACKAGES: ClassVar[dict[str, str]] = {
         "brewing": "framework",
-        "brewinglib-cli": "libs/cli",
     }
 
     def matrix(self):

@@ -49,10 +49,6 @@ Releases = "https://github.com/mikemcowie/brewing/releases"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.uv.sources]
-brewinglib-generic = { workspace = true }
-brewinglib-cli = { workspace = true }
-
 [tool.ruff.lint]
 # Extra rules for this package
 # on top of the repo rules

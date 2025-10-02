@@ -1,3 +1,3 @@
 
 
-::: brewinglib.cli
+::: brewing.cli
