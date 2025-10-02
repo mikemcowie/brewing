@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Annotated, Any
 
 import pytest
 import typer
-from brewinglib.cli import CLI, ConflictingCommandError
-from brewinglib.cli.testing import BrewingCLIRunner
+from brewing.cli import CLI, ConflictingCommandError
+from brewing.cli.testing import BrewingCLIRunner
 from typer import Argument
 
 if TYPE_CHECKING:

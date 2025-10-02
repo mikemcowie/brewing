@@ -9,7 +9,7 @@ from functools import cache, cached_property
 from pathlib import Path
 from typing import Any
 
-from brewinglib.cli import CLI
+from brewing.cli import CLI
 from brewing.db.migrate import Migrations
 from brewing.db.types import DatabaseConnectionConfiguration
 from brewinglib.generic import runtime_generic

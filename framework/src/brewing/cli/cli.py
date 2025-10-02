@@ -1,3 +1,5 @@
+"""Implementation of the core CLI class."""
+
 from __future__ import annotations
 
 import inspect
@@ -10,19 +12,19 @@ from typer import Option, Typer
 from typer.models import ArgumentInfo, OptionInfo
 
 
-def to_dash_case(value: str):
+def _to_dash_case(value: str):
     return to_snake(value).replace("_", "-")
 
 
 class ConflictingCommandError(ValueError):
-    pass
+    """A conflict was found setting up the CLI."""
 
 
 type Revisable = Callable[..., Any]
 
 
-def revise_annotation(func: Revisable, param: inspect.Parameter) -> Any:
-    """Return a revised annotation for parameter of function"""
+def _revise_annotation(func: Revisable, param: inspect.Parameter) -> Any:
+    """Return a revised annotation for parameter of function."""
     type_hint = get_type_hints(func, include_extras=True).get(
         param.name
     )  # Needed for the values of annotations
@@ -42,9 +44,9 @@ def revise_annotation(func: Revisable, param: inspect.Parameter) -> Any:
     return Annotated[param.annotation, *((*metadata, typer_param_type()))]
 
 
-def revise_annotations(func: Revisable):
+def _revise_annotations(func: Revisable):
     func.__annotations__ = {
-        name: revise_annotation(func, param)
+        name: _revise_annotation(func, param)
         for name, param in inspect.signature(func, eval_str=True).parameters.items()
     }
 
@@ -62,12 +64,15 @@ class CLI:
         extends: Typer | CLI | None = None,
         wraps: Any = _self,
     ):
-        """_summary_
+        """
+        Initialize the CLI.
 
         Args:
             name (str): The name of the CLI - this will be used in nested situations
-            typer (Typer  | CLI | None, optional): If provided, a typer instance or another CLI to add commands to.
+            *children: CLI: Additional  CLIs that should be nested inside this one.
+            extends (Typer  | CLI | None, optional): If provided, a typer instance or another CLI to add commands to.
             wraps (Any): Object to obtain CLI commands from. If not provided, self will be used.
+
         """
         self._name = name
         if isinstance(extends, Typer):
@@ -82,31 +87,42 @@ class CLI:
 
     @property
     def name(self) -> str:
-        """Read only name attribute.
+        """
+        Read only name attribute.
 
         Returns:
             str: The name of the CLI as provided at instantiation.
+
         """
         return self._name
 
     @property
     def command_names(self):
+        """Return list of all CLI command names."""
         return tuple(command.name for command in self.typer.registered_commands)
 
     @property
     def typer(self) -> Typer:
-        """Read only name attribute.
+        """
+        Read only name attribute.
 
         Returns:
             Typer: the typer instance that the class wraps around, as generated or provided at instantiation.
+
         """
         return self._typer
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        """Runs the CLI."""
+        """Run the CLI."""
         return self.typer(*args, **kwargs)
 
     def __getattr__(self, name: str):
+        """
+        Proxy unknown methods onto typer.
+
+        This allows a CLI instance to be used precisely as a typer instance
+        would be.
+        """
         return getattr(self.typer, name)
 
     def _setup_typer(self):
@@ -122,8 +138,8 @@ class CLI:
                 and callable(obj)
                 and getattr(obj, "__self__", None) is self._wraps
             ):
-                revise_annotations(obj.__func__)  # type: ignore
-                command_name = to_dash_case(obj.__name__)
+                _revise_annotations(obj.__func__)  # type: ignore
+                command_name = _to_dash_case(obj.__name__)
                 if command_name in self.command_names:
                     raise ConflictingCommandError(
                         f"cannot add CLI command with conflicting {command_name=}."

@@ -1,3 +1,5 @@
+"""Brewing CLI testing helper."""
+
 from collections.abc import Mapping
 from functools import partial
 
@@ -7,7 +9,7 @@ from .cli import CLI
 
 
 class BrewingCLIRunner:
-    "brewing's wrapper around typer's CLIRunner"
+    """Brewing's wrapper around typer's CLIRunner."""
 
     def __init__(
         self,
