@@ -1,4 +1,5 @@
-"""A class-based command-line generator based on typer.
+"""
+A class-based command-line generator based on typer.
 
 !!! note
 
