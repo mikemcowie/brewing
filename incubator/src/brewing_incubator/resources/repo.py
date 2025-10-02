@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from brewinglib.generic import runtime_generic
+from brewing.generic import runtime_generic
 from sqlalchemy import select
 
 from brewing_incubator.exceptions import Forbidden, NotFound

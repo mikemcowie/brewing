@@ -12,7 +12,7 @@ from typing import Any
 from brewing.cli import CLI
 from brewing.db.migrate import Migrations
 from brewing.db.types import DatabaseConnectionConfiguration
-from brewinglib.generic import runtime_generic
+from brewing.generic import runtime_generic
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 

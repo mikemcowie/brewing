@@ -4,7 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
-from brewinglib.generic import runtime_generic
+from brewing.generic import runtime_generic
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -1,61 +1,77 @@
+"""Tests for the generic module."""
+
 from __future__ import annotations
 
 from typing import ClassVar, Literal
 
 import pytest
-from brewinglib.generic import runtime_generic
+from brewing.generic import runtime_generic
 
 
 class Someclass:
+    """A basic class that is not generic."""
+
     pass
 
 
 class SomeSubClass(Someclass):
+    """Helper subclass that is not generic."""
+
     extra_attribute: Literal["foo"] = "foo"
 
 
 @runtime_generic
 class GenericThing[ModelT: Someclass]:
+    """A basic generic thing to exercise generic logic on."""
+
     generic_type: type[ModelT]
 
     def __init__(self):
         self.generic_instance = self.generic_type()
 
     def do_something(self) -> str:
+        """Something will be done, for sure."""
         return str(self.generic_instance)
 
 
 @runtime_generic
 class HasOneParam[T1]:
+    """Class with 1 param."""
+
     t1: type[T1]
 
 
 @runtime_generic
 class HasTwoParam[T1, T2]:
+    """Class with 2 params."""
+
     t1: type[T1]
     t2: type[T2]
 
 
 @runtime_generic
 class HasThreeParam[T1, T2, T3]:
+    """Class with 3 params."""
+
     t1: type[T1]
     t2: type[T2]
     t3: type[T3]
 
 
 class A:
-    pass
+    """A."""
 
 
 class B:
-    pass
+    """B."""
 
 
 class C:
-    pass
+    """C."""
 
 
 def test_adds_expected_attribute():
+    """Test basic mechanism."""
     assert GenericThing[Someclass]().generic_type is Someclass, GenericThing[
         Someclass
     ]().generic_type
@@ -65,6 +81,7 @@ def test_adds_expected_attribute():
 
 
 def test_cache():
+    """Calling generically the same way multiple times returns a cached result."""
     assert GenericThing[Someclass] is GenericThing[Someclass], (
         "subsequent calls should be cached"
     )
@@ -74,6 +91,7 @@ def test_cache():
 
 
 def test_multiple_params():
+    """Combinations of multuple params."""
     abc = HasThreeParam[A, B, C]()
     acb = HasThreeParam[A, C, B]()
     bac = HasThreeParam[B, A, C]()
@@ -107,7 +125,7 @@ def test_multiple_params():
 
 
 def test_cannot_pass_wrong_number_of_params():
-    # raise Exception(HasOneParam[A,B]())
+    """Accurage error messages raised when the wrong number of iterations."""
     with pytest.raises(TypeError) as err:
         HasOneParam[A, B]  # type: ignore
     assert "expected 1 parameter(s), got 2 parameter(s)." in err.exconly()
@@ -130,6 +148,8 @@ def test_cannot_pass_wrong_number_of_params():
 
 
 def test_class_attributes_in_different_order_from_params():
+    """Validating ordering behaviour as is as should be expected."""
+
     @runtime_generic
     class HasTwoParamsWithDifferentOrderOfClassAttr[T1, T2]:
         a: type[T2]
@@ -152,6 +172,7 @@ def test_class_attributes_in_different_order_from_params():
 
 
 def test_nongeneric_class():
+    """Cannot use the decorator on classes that don't have a generic parameter."""
     with pytest.raises(TypeError) as error:
 
         @runtime_generic
@@ -162,6 +183,8 @@ def test_nongeneric_class():
 
 
 def test_with_other_class_attributes():
+    """Validations of multiple generic parameters along with other class attributes."""
+
     @runtime_generic
     class HasOtherClassAttributes[T1, T2]:
         a: type[T1]

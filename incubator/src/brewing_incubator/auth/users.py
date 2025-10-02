@@ -8,7 +8,7 @@ from functools import cached_property
 from secrets import token_bytes
 from typing import TYPE_CHECKING, Annotated
 
-from brewinglib.generic import runtime_generic
+from brewing.generic import runtime_generic
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
