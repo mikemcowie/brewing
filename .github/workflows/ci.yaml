@@ -17,14 +17,33 @@ jobs:
       - name: Install UV
         uses: astral-sh/setup-uv@v6
 
-      - name: run pre-commit
-        run: uv run pre-commit run --all-files
-
       - name: run pytest
         run: uv run pytest -n 8 -v
 
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+
+      - name: run pre-commit
+        run: uv run pre-commit run --all-files
+
+  check-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v6
+
       - name: ensure docs build
         run: make docs-build
+
 
   docs:
     runs-on: ubuntu-latest
@@ -35,6 +54,8 @@ jobs:
       id-token: write
     needs:
     - test
+    - pre-commit
+    - check-docs
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -59,6 +80,8 @@ jobs:
     if: github.event_name == 'push' && github.ref_name == 'main'
     needs:
     - test
+    - pre-commit
+    - check-docs
     permissions:
       contents: write
     steps:
