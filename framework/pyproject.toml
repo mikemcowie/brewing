@@ -35,6 +35,15 @@ all = [
     "brewing[mysql,mariadb,postgresql,sqlite]"
 ]
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+    # Exclude tests in the source tree
+    "**/conftest.py",
+    "**/*_test.py",
+    "**/*_tests.py",
+    "**/tests/**",
+]
+
 [project.scripts]
 brewing = "brewing.cli:cli"
 dev = "brewing.cli:dev"

@@ -18,7 +18,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: run pytest
-        run: uv run pytest -n 8 -v
+        run: uv run pytest -n 8 -v framework
 
   pre-commit:
     runs-on: ubuntu-latest
