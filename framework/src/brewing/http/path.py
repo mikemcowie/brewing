@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 import re
 from types import EllipsisType
+from functools import cached_property
 
 
 class PathValidationError(Exception):
@@ -57,3 +58,28 @@ class HTTPPathComponent:
 
 class HTTPPath:
     """Represents an HTTP path made up of a tuple of HTTP path components."""
+
+    def __init__(self, path: str, /):
+        if path:
+            self.trailing_slash = path[-1] == "/"
+        else:
+            self.trailing_slash = True
+        parts = path.split("/")
+        self._parts: list[HTTPPathComponent] = []
+        for index, part in enumerate(parts):
+            if index == len(parts) - 1:
+                trailing_slash = self.trailing_slash
+            else:
+                trailing_slash = ...
+            self._parts.append(HTTPPathComponent(part, trailing_slash=trailing_slash))
+
+    @cached_property
+    def parts(self):
+        """The HTTP paath components."""
+        return tuple(self._parts)
+
+    def __str__(self):
+        retval = "/".join(str(part) for part in self.parts) or "/"
+        if retval[0] != "/":
+            retval = "/" + retval
+        return retval
