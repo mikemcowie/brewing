@@ -1,7 +1,7 @@
 """Unit tests for HTTP path."""
 
 import pytest
-from .path import HTTPPathComponent, PathValidationError
+from .path import HTTPPathComponent, PathValidationError, HTTPPath
 
 
 @pytest.mark.parametrize(
@@ -28,3 +28,33 @@ def test_http_path_components(
         else:
             raise
     assert path_component.is_constant == is_constant
+
+
+def test_root_path():
+    path = HTTPPath("")
+    assert path.parts[-1].trailing_slash
+    assert str(path) == "/"
+
+
+def test_http_path_constant_one_part_trailing_slash():
+    path = HTTPPath("/foo/")
+    assert path.parts[-1].trailing_slash
+    assert str(path) == "/foo/"
+
+
+def test_http_path_constant_one_no_trailing_slash():
+    path = HTTPPath("foo")
+    assert not path.parts[-1].trailing_slash
+    assert str(path) == "/foo"
+
+
+def test_http_path_one_part_variable_trailing_slash():
+    path = HTTPPath("/{foo_id}/")
+    assert path.parts[-1].trailing_slash
+    assert str(path) == "/{foo_id}/"
+
+
+def test_http_path_one_part_variable_no_trailing_slash():
+    path = HTTPPath("{foo_id}")
+    assert not path.parts[-1].trailing_slash
+    assert str(path) == "/{foo_id}"
