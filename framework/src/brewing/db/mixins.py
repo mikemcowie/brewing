@@ -1,6 +1,7 @@
 """Mixin classes that can be applied to help constuct declartive mapped classes."""
 
 import uuid
+import warnings
 from datetime import datetime
 
 from brewing.db import columns
@@ -19,6 +20,13 @@ class AuditMixin(orm.MappedAsDataclass):
     def updated_at(self) -> orm.Mapped[datetime]:
         """Column that is updated whenever an update is issued against an instance of class."""
         return columns.updated_at_column()
+
+
+# per https://github.com/sqlalchemy/sqlalchemy/issues/6320
+# warning raised here can be ignored.
+warnings.filterwarnings(
+    "ignore", message=".*Unmanaged access of declarative attribute.*"
+)
 
 
 class UUIDPrimaryKey(orm.MappedAsDataclass, kw_only=True):
