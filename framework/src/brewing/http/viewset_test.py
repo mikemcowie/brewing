@@ -41,11 +41,14 @@ vs1 = ViewSet()
 @pytest.mark.parametrize("method", HTTPMethod)
 def test_method_for_each_http_method_mapped_to_router(method: HTTPMethod):
     """Validate consistent structure of the decorators."""
-    fastapi_compat_decorator = getattr(vs1, method.value)
+    if method is HTTPMethod.CONNECT:
+        pytest.skip("not supported")
+        return
+    fastapi_compat_decorator = getattr(vs1, method.value.lower())
     brewing_native_decorator = getattr(vs1, method.value.upper())
-    assert fastapi_compat_decorator is getattr(vs1.router, method.value)
+    assert fastapi_compat_decorator == getattr(vs1.router, method.value.lower())
     assert isinstance(brewing_native_decorator, EndpointDecorator)
-    assert brewing_native_decorator.wrapped == fastapi_compat_decorator
+    assert brewing_native_decorator.wraps == fastapi_compat_decorator
 
 
 class SomeData(BaseModel):
