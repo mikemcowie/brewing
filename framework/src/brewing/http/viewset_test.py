@@ -5,7 +5,7 @@ from http import HTTPMethod
 from brewing.http import ViewSet, BrewingHTTP, status
 from brewing.http.endpoint_decorator import EndpointDecorator
 from brewing.http.testing import TestClient
-from fastapi import APIRouter, Header, Depends, Query, Request, HTTPException
+from fastapi import APIRouter, Header, Depends, Query, Request, HTTPException, Response
 import pytest
 from pydantic import BaseModel
 
@@ -213,6 +213,12 @@ def get_item_by_id(
     return SomeData(something=[item_id], data=value)
 
 
+@items.DEPENDS
+def extra_dependency(response: Response):
+    """A dependency declared after the routes, to make sure that a dependency can be declared after endpoints too."""
+    response.headers["extra-header"] = "yes"
+
+
 def test_depends_blocking_path():
     # Dependency blocks requests that don't get through the dependency
     client = new_client(vs5)
@@ -231,17 +237,20 @@ def test_depends_blocking_path():
 
 def test_depends_passing_path():
     """If header is set, these endpoints give 200."""
-    client = new_client(vs3)
+    client = new_client(vs5)
     client.headers["required-header"] = "somevalue"
     response = client.get("/items/")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == []
+    assert response.headers["extra-header"] == "yes"
     response = client.post(
         "/items/", json=SomeData(something=[], data="").model_dump(mode="json")
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"something": [], "data": ""}
+    assert response.headers["extra-header"] == "yes"
     response = client.get("/items/1")
     # And the fastapi-style dependency in this endpoint works too.
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"something": [1], "data": "somevalue"}
+    assert response.headers["extra-header"] == "yes"

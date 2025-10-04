@@ -7,7 +7,7 @@ from functools import partial
 from types import EllipsisType
 from fastapi import APIRouter
 from functools import cached_property
-from brewing.http.endpoint_decorator import EndpointDecorator
+from brewing.http.endpoint_decorator import EndpointDecorator, DependencyDecorator
 from http import HTTPMethod
 
 
@@ -94,7 +94,7 @@ class HTTPPath:
         router: APIRouter,
         trailing_slash_policy: TrailingSlashPolicy,
     ):
-        self._router = router
+        self.router = router
         self.path = path
         if isinstance(path, str):
             if path:
@@ -116,7 +116,7 @@ class HTTPPath:
                 trailing_slash = ...
             self._parts.append(HTTPPathComponent(part, trailing_slash=trailing_slash))
         self.trailing_slash_policy = trailing_slash_policy
-        decorator = partial(EndpointDecorator, router=router, path=str(self))
+        decorator = partial(EndpointDecorator, path=self)
         self.GET = decorator(HTTPMethod.GET)
         self.POST = decorator(HTTPMethod.POST)
         self.PUT = decorator(HTTPMethod.PUT)
@@ -125,7 +125,7 @@ class HTTPPath:
         self.OPTIONS = decorator(HTTPMethod.OPTIONS)
         self.HEAD = decorator(HTTPMethod.HEAD)
         self.TRACE = decorator(HTTPMethod.TRACE)
-        self.DEPENDS = decorator("DEPENDS")
+        self.DEPENDS = DependencyDecorator(router=router, path=self)
 
     @cached_property
     def parts(self) -> tuple[HTTPPathComponent, ...]:
@@ -155,5 +155,5 @@ class HTTPPath:
                 self.parts + (HTTPPathComponent(value, trailing_slash=trailing_slash),)
             ),
             trailing_slash_policy=self.trailing_slash_policy,
-            router=self._router,
+            router=self.router,
         )
