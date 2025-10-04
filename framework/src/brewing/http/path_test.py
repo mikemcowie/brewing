@@ -1,7 +1,11 @@
 """Unit tests for HTTP path."""
 
 import pytest
+from fastapi import APIRouter
 from .path import HTTPPathComponent, PathValidationError, HTTPPath, TrailingSlashPolicy
+
+
+router = APIRouter()
 
 
 @pytest.mark.parametrize(
@@ -31,37 +35,49 @@ def test_http_path_components(
 
 
 def test_root_path():
-    path = HTTPPath("", trailing_slash_policy=TrailingSlashPolicy.default())
+    path = HTTPPath(
+        "", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+    )
     assert path.parts[-1].trailing_slash
     assert str(path) == "/"
 
 
 def test_http_path_constant_one_part_trailing_slash():
-    path = HTTPPath("/foo/", trailing_slash_policy=TrailingSlashPolicy.default())
+    path = HTTPPath(
+        "/foo/", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+    )
     assert path.parts[-1].trailing_slash
     assert str(path) == "/foo/"
 
 
 def test_http_path_constant_one_no_trailing_slash():
-    path = HTTPPath("foo", trailing_slash_policy=TrailingSlashPolicy.default())
+    path = HTTPPath(
+        "foo", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+    )
     assert not path.parts[-1].trailing_slash
     assert str(path) == "/foo"
 
 
 def test_http_path_one_part_variable_trailing_slash():
-    path = HTTPPath("/{foo_id}/", trailing_slash_policy=TrailingSlashPolicy.default())
+    path = HTTPPath(
+        "/{foo_id}/", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+    )
     assert path.parts[-1].trailing_slash
     assert str(path) == "/{foo_id}/"
 
 
 def test_http_path_one_part_variable_no_trailing_slash():
-    path = HTTPPath("{foo_id}", trailing_slash_policy=TrailingSlashPolicy.default())
+    path = HTTPPath(
+        "{foo_id}", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+    )
     assert not path.parts[-1].trailing_slash
     assert str(path) == "/{foo_id}"
 
 
 def test_extend_http_path():
-    path = HTTPPath("foo/", trailing_slash_policy=TrailingSlashPolicy.default())
+    path = HTTPPath(
+        "foo/", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+    )
     assert path.parts[-1].trailing_slash
     assert str(path) == "/foo/"
     child1 = path("{foo_id}", trailing_slash=False)

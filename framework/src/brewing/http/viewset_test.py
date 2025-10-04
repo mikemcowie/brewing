@@ -1,9 +1,12 @@
 """Unit tests for the viewset class."""
 
 from typing import Annotated
+from http import HTTPMethod
 from brewing.http import ViewSet, BrewingHTTP, status
+from brewing.http.endpoint_decorator import EndpointDecorator
 from brewing.http.testing import TestClient
-from fastapi import APIRouter, Header, Depends, Query
+from fastapi import APIRouter, Header, Depends, Query, Request, HTTPException
+import pytest
 from pydantic import BaseModel
 
 
@@ -33,6 +36,16 @@ def test_viewset_router_if_provided():
 
 """Viewset can be used as a proxy for fastapi APIRouter."""
 vs1 = ViewSet()
+
+
+@pytest.mark.parametrize("method", HTTPMethod)
+def test_method_for_each_http_method_mapped_to_router(method: HTTPMethod):
+    """Validate consistent structure of the decorators."""
+    fastapi_compat_decorator = getattr(vs1, method.value)
+    brewing_native_decorator = getattr(vs1, method.value.upper())
+    assert fastapi_compat_decorator is getattr(vs1.router, method.value)
+    assert isinstance(brewing_native_decorator, EndpointDecorator)
+    assert brewing_native_decorator.wrapped == fastapi_compat_decorator
 
 
 class SomeData(BaseModel):
@@ -156,7 +169,7 @@ def vs4_with_path_param(item_id: int):
     return {"type": "item", "id": item_id}
 
 
-def test_new_decorator_new_pathing():
+def test_new_decorator_new_pathing_with_var():
     """Test that the above declared fastapi style endpoint works as per fastapi."""
     client = new_client(vs3)
     response = client.get("/items/1")
@@ -214,7 +227,7 @@ def test_depends_blocking_path():
 
 
 def test_depends_passing_path():
-    """If header is set, these endpoints give 200"""
+    """If header is set, these endpoints give 200."""
     client = new_client(vs3)
     client.headers["required-header"] = "somevalue"
     response = client.get("/items/")
