@@ -57,10 +57,39 @@ class HTTPPathComponent:
         return self.value
 
 
+class TrailingSlashPolicy:
+    """
+    Defines how to decide on whether to use a trailing slash.
+
+    This is read only where no explicit value has been provided.
+    """
+
+    def __init__(self, /, *, on_constant: bool, on_variable: bool):
+        self.on_constant = on_constant
+        self.on_variable = on_variable
+
+    def __call__(self, path: HTTPPath | HTTPPathComponent) -> bool:
+        """Evaluate the policy for the given path or component."""
+        if isinstance(path, HTTPPath):
+            path = path.parts[-1]
+        return self.on_constant if path.is_constant else self.on_variable
+
+    @classmethod
+    def default(cls):
+        """Provide a default version of this policy."""
+        return cls(on_constant=True, on_variable=False)
+
+
 class HTTPPath:
     """Represents an HTTP path made up of a tuple of HTTP path components."""
 
-    def __init__(self, path: str | tuple[HTTPPathComponent, ...], /):
+    def __init__(
+        self,
+        path: str | tuple[HTTPPathComponent, ...],
+        /,
+        trailing_slash_policy: TrailingSlashPolicy,
+    ):
+        self.trailing_slash_policy = trailing_slash_policy
         self.path = path
         if isinstance(path, str):
             if path:
@@ -93,14 +122,21 @@ class HTTPPath:
         retval = "/".join(part.value for part in self.parts if part.value)
         if retval[0] != "/":
             retval = "/" + retval
-        if self.parts[-1].trailing_slash and retval[-1] != "/":
+        if (
+            self.parts[-1].trailing_slash is True
+            or self.parts[-1].trailing_slash is ...
+            and self.trailing_slash_policy(self)
+        ) and retval[-1] != "/":
             retval = retval + "/"
         return retval
 
-    def __call__(self, value: str, /, *, trailing_slash: bool) -> HTTPPath:
+    def __call__(
+        self, value: str, /, *, trailing_slash: bool | EllipsisType = ...
+    ) -> HTTPPath:
         """Provide a child HTTP path."""
         return HTTPPath(
             tuple(
                 self.parts + (HTTPPathComponent(value, trailing_slash=trailing_slash),)
-            )
+            ),
+            trailing_slash_policy=self.trailing_slash_policy,
         )
