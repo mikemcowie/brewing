@@ -1,5 +1,6 @@
 """Utilities for constructing and validating HTTP paths."""
 
+from __future__ import annotations
 from dataclasses import dataclass
 import re
 from types import EllipsisType
@@ -59,14 +60,22 @@ class HTTPPathComponent:
 class HTTPPath:
     """Represents an HTTP path made up of a tuple of HTTP path components."""
 
-    def __init__(self, path: str, /):
-        if path:
-            self.trailing_slash = path[-1] == "/"
+    def __init__(self, path: str | tuple[HTTPPathComponent, ...], /):
+        self.path = path
+        if isinstance(path, str):
+            if path:
+                self.trailing_slash = path[-1] == "/"
+            else:
+                self.trailing_slash = True
+            self._parts: list[HTTPPathComponent] = []
+            parts = path.split("/")
         else:
-            self.trailing_slash = True
-        parts = path.split("/")
-        self._parts: list[HTTPPathComponent] = []
+            self.trailing_slash = bool(path[-1])
+            self._parts = list(path)
+            parts = []
         for index, part in enumerate(parts):
+            # if not part:
+            #    continue
             if index == len(parts) - 1:
                 trailing_slash = self.trailing_slash
             else:
@@ -74,12 +83,24 @@ class HTTPPath:
             self._parts.append(HTTPPathComponent(part, trailing_slash=trailing_slash))
 
     @cached_property
-    def parts(self):
+    def parts(self) -> tuple[HTTPPathComponent, ...]:
         """The HTTP paath components."""
         return tuple(self._parts)
 
     def __str__(self):
-        retval = "/".join(str(part) for part in self.parts) or "/"
+        if not self.path:
+            return "/"
+        retval = "/".join(part.value for part in self.parts if part.value)
         if retval[0] != "/":
             retval = "/" + retval
+        if self.parts[-1].trailing_slash and retval[-1] != "/":
+            retval = retval + "/"
         return retval
+
+    def __call__(self, value: str, /, *, trailing_slash: bool) -> HTTPPath:
+        """Provide a child HTTP path."""
+        return HTTPPath(
+            tuple(
+                self.parts + (HTTPPathComponent(value, trailing_slash=trailing_slash),)
+            )
+        )

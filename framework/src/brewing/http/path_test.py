@@ -58,3 +58,21 @@ def test_http_path_one_part_variable_no_trailing_slash():
     path = HTTPPath("{foo_id}")
     assert not path.parts[-1].trailing_slash
     assert str(path) == "/{foo_id}"
+
+
+def test_extend_http_path():
+    path = HTTPPath("foo/")
+    assert path.parts[-1].trailing_slash
+    assert str(path) == "/foo/"
+    child1 = path("{foo_id}", trailing_slash=False)
+    assert str(child1) == "/foo/{foo_id}"
+    child2 = path("{foo_id}", trailing_slash=True)
+    assert str(child2) == "/foo/{foo_id}/"
+    grandchild_1 = child1("bar", trailing_slash=True)
+    assert str(grandchild_1) == "/foo/{foo_id}/bar/"
+    grandchild_2 = child2("bar", trailing_slash=True)
+    assert str(grandchild_2) == "/foo/{foo_id}/bar/"
+    grandchild_3 = child1("bar", trailing_slash=False)
+    assert str(grandchild_3) == "/foo/{foo_id}/bar"
+    grandchild_4 = child2("bar", trailing_slash=False)
+    assert str(grandchild_4) == "/foo/{foo_id}/bar"
