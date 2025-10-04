@@ -154,7 +154,7 @@ def vs4_with_new_path_style(
 
 def test_new_decorator_new_pathing():
     """Test that the above declared fastapi style endpoint works as per fastapi."""
-    client = new_client(vs3)
+    client = new_client(vs4)
     response = client.get("/items/")
     assert response.status_code == status.HTTP_200_OK, response.text
     assert response.json()["something"] == []
@@ -174,7 +174,7 @@ def vs4_with_path_param(item_id: int):
 
 def test_new_decorator_new_pathing_with_var():
     """Test that the above declared fastapi style endpoint works as per fastapi."""
-    client = new_client(vs3)
+    client = new_client(vs4)
     response = client.get("/items/1")
     assert response.status_code == status.HTTP_200_OK, response.text
     assert response.json() == {"type": "item", "id": 1}
@@ -183,7 +183,7 @@ def test_new_decorator_new_pathing_with_var():
 """In addition to standard HTTP methods, a  DEPENDS can be declared which functions as a prerequisite for all HTTP methods, and all nested endpoints."""
 
 vs5 = ViewSet()
-items = vs4("items")
+items = vs5("items")
 item_id = items("{item_id}")
 
 
@@ -215,7 +215,7 @@ def get_item_by_id(
 
 def test_depends_blocking_path():
     # Dependency blocks requests that don't get through the dependency
-    client = new_client(vs3)
+    client = new_client(vs5)
     response = client.get("/items/")
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json() == {"detail": "nope, can't do that."}

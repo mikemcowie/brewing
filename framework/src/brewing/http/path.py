@@ -3,6 +3,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import re
+from functools import partial
 from types import EllipsisType
 from fastapi import APIRouter
 from functools import cached_property
@@ -94,16 +95,6 @@ class HTTPPath:
         trailing_slash_policy: TrailingSlashPolicy,
     ):
         self._router = router
-        self.GET = EndpointDecorator(HTTPMethod.GET, router)
-        self.POST = EndpointDecorator(HTTPMethod.POST, router)
-        self.PUT = EndpointDecorator(HTTPMethod.PUT, router)
-        self.PATCH = EndpointDecorator(HTTPMethod.PATCH, router)
-        self.DELETE = EndpointDecorator(HTTPMethod.DELETE, router)
-        self.OPTIONS = EndpointDecorator(HTTPMethod.OPTIONS, router)
-        self.HEAD = EndpointDecorator(HTTPMethod.HEAD, router)
-        self.TRACE = EndpointDecorator(HTTPMethod.TRACE, router)
-        self.DEPENDS = EndpointDecorator("DEPENDS", router)
-        self.trailing_slash_policy = trailing_slash_policy
         self.path = path
         if isinstance(path, str):
             if path:
@@ -124,6 +115,17 @@ class HTTPPath:
             else:
                 trailing_slash = ...
             self._parts.append(HTTPPathComponent(part, trailing_slash=trailing_slash))
+        self.trailing_slash_policy = trailing_slash_policy
+        decorator = partial(EndpointDecorator, router=router, path=str(self))
+        self.GET = decorator(HTTPMethod.GET)
+        self.POST = decorator(HTTPMethod.POST)
+        self.PUT = decorator(HTTPMethod.PUT)
+        self.PATCH = decorator(HTTPMethod.PATCH)
+        self.DELETE = decorator(HTTPMethod.DELETE)
+        self.OPTIONS = decorator(HTTPMethod.OPTIONS)
+        self.HEAD = decorator(HTTPMethod.HEAD)
+        self.TRACE = decorator(HTTPMethod.TRACE)
+        self.DEPENDS = decorator("DEPENDS")
 
     @cached_property
     def parts(self) -> tuple[HTTPPathComponent, ...]:
