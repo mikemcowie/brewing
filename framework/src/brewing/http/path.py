@@ -4,7 +4,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 from types import EllipsisType
+from fastapi import APIRouter
 from functools import cached_property
+from brewing.http.endpoint_decorator import EndpointDecorator
+from http import HTTPMethod
 
 
 class PathValidationError(Exception):
@@ -87,8 +90,19 @@ class HTTPPath:
         self,
         path: str | tuple[HTTPPathComponent, ...],
         /,
+        router: APIRouter,
         trailing_slash_policy: TrailingSlashPolicy,
     ):
+        self._router = router
+        self.GET = EndpointDecorator(HTTPMethod.GET, router)
+        self.POST = EndpointDecorator(HTTPMethod.POST, router)
+        self.PUT = EndpointDecorator(HTTPMethod.PUT, router)
+        self.PATCH = EndpointDecorator(HTTPMethod.PATCH, router)
+        self.DELETE = EndpointDecorator(HTTPMethod.DELETE, router)
+        self.OPTIONS = EndpointDecorator(HTTPMethod.OPTIONS, router)
+        self.HEAD = EndpointDecorator(HTTPMethod.HEAD, router)
+        self.TRACE = EndpointDecorator(HTTPMethod.TRACE, router)
+        self.DEPENDS = EndpointDecorator("DEPENDS", router)
         self.trailing_slash_policy = trailing_slash_policy
         self.path = path
         if isinstance(path, str):
@@ -139,4 +153,5 @@ class HTTPPath:
                 self.parts + (HTTPPathComponent(value, trailing_slash=trailing_slash),)
             ),
             trailing_slash_policy=self.trailing_slash_policy,
+            router=self._router,
         )
