@@ -70,11 +70,8 @@ class EndpointDecorator:
         self.path = path
         self.wraps = getattr(path.router, method.value.lower())
 
-    def __call__(self, first_arg: Any, *args: Any, **kwargs: Any):
+    def __call__(self, *args: Any, **kwargs: Any):
         """Register a route for the object's path and the given HTTP method."""
-        if not callable(first_arg):
-            retval = self.wraps(first_arg, *args, **kwargs)
-        else:
-            retval = self.wraps(str(self.path), *args, **kwargs)(first_arg)
+        retval = self.wraps(str(self.path), *args, **kwargs)
         self.path.DEPENDS.apply()
         return retval

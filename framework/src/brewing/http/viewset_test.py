@@ -85,14 +85,12 @@ def test_functional_fastapi_style_endpoint():
     assert response.json()["data"] == "foo"
 
 
-"""Functional viewset usage - still similar pattern to fastapi.
-
-The upper-case method names in the decorators are used for the brewing-specific variants.
+"""Functional viewset usage - the path component is removed
 """
 vs2 = ViewSet()
 
 
-@vs2.GET("/", response_model=SomeData)
+@vs2.GET(response_model=SomeData)
 def vs2_new_decorator_with_fastapi_style(
     data: Annotated[str | None, Depends(dependency)], count: Annotated[int, Query()] = 0
 ):
@@ -117,7 +115,7 @@ def test_new_decorator_with_fastapi_style_endpoint():
 vs3 = ViewSet()
 
 
-@vs3.GET
+@vs3.GET()
 def vs3_new_decorator_simplified_decorator(
     data: Annotated[str | None, Depends(dependency)], count: Annotated[int, Query()] = 0
 ):
@@ -144,7 +142,7 @@ items = vs4("items")
 item_id = items("{item_id}")
 
 
-@items.GET
+@items.GET()
 def vs4_with_new_path_style(
     data: Annotated[str | None, Depends(dependency)], count: Annotated[int, Query()] = 0
 ):
@@ -166,7 +164,7 @@ def test_new_decorator_new_pathing():
     assert response.json()["data"] == "foo"
 
 
-@item_id.GET
+@item_id.GET()
 def vs4_with_path_param(item_id: int) -> dict[str, str | int]:
     """Return an item of type int."""
     return {"type": "item", "id": item_id}
@@ -196,17 +194,17 @@ def must_provide_header(request: Request):
     )
 
 
-@items.GET
+@items.GET()
 def get_items() -> list[SomeData]:
     return []
 
 
-@items.POST
+@items.POST()
 def create_item(data: SomeData) -> SomeData:
     return data
 
 
-@item_id.GET
+@item_id.GET()
 def get_item_by_id(
     item_id: int, value: Annotated[str, Depends(must_provide_header)]
 ) -> SomeData:

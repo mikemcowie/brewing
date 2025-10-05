@@ -8,7 +8,6 @@ and Django Rest Framework's viewsets.
 
 from __future__ import annotations
 
-from typing import Any
 from types import EllipsisType
 from fastapi import APIRouter
 from brewing.http.path import HTTPPath, TrailingSlashPolicy
@@ -55,6 +54,8 @@ class ViewSet:
         self.OPTIONS = self.root_path.OPTIONS
         self.TRACE = self.root_path.TRACE
 
-    def __call__(self, path: str, trailing_slash: bool | EllipsisType = ...) -> Any:
+    def __call__(
+        self, path: str, trailing_slash: bool | EllipsisType = ...
+    ) -> HTTPPath:
         """Create an HTTP path based on the root HTTPPath of the viewset."""
         return self.root_path(path, trailing_slash=trailing_slash)
