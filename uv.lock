@@ -162,7 +162,7 @@ wheels = [
 
 [[package]]
 name = "brewing"
-version = "0.0.8rc2"
+version = "0.0.8rc3"
 source = { editable = "framework" }
 dependencies = [
     { name = "fastapi" },
@@ -213,7 +213,7 @@ provides-extras = ["testing", "postgresql", "mysql", "mariadb", "sqlite", "posgr
 
 [[package]]
 name = "brewing-incubator"
-version = "0.0.8rc2"
+version = "0.0.8rc3"
 source = { editable = "incubator" }
 dependencies = [
     { name = "alembic" },
@@ -260,7 +260,7 @@ dev = [{ name = "aiosqlite", specifier = ">=0.21.0" }]
 
 [[package]]
 name = "brewing-test-dependencies"
-version = "0.0.8rc2"
+version = "0.0.8rc3"
 source = { editable = "test-dependencies" }
 dependencies = [
     { name = "aiosqlite" },
@@ -325,7 +325,7 @@ dev = [{ name = "tomlkit", specifier = ">=0.13.3" }]
 
 [[package]]
 name = "brewing-uv-workspace"
-version = "0.0.8rc2"
+version = "0.0.8rc3"
 source = { virtual = "." }
 dependencies = [
     { name = "brewing" },
@@ -1424,7 +1424,7 @@ wheels = [
 
 [[package]]
 name = "project-manager"
-version = "0.0.8rc2"
+version = "0.0.8rc3"
 source = { editable = "samples/project-manager" }
 dependencies = [
     { name = "brewing" },
@@ -2109,7 +2109,7 @@ wheels = [
 
 [[package]]
 name = "testing-samples"
-version = "0.0.8rc2"
+version = "0.0.8rc3"
 source = { editable = "samples/testing-samples" }
 dependencies = [
     { name = "sqlalchemy" },
