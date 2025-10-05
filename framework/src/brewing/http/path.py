@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import re
 from functools import partial
 from types import EllipsisType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Literal
 from fastapi import APIRouter
 from brewing.http.endpoint_decorator import EndpointDecorator, DependencyDecorator
 from http import HTTPMethod
@@ -178,3 +178,85 @@ class HTTPPath:
             trailing_slash_policy=self.trailing_slash_policy,
             router=self.router,
         )
+
+
+@dataclass
+class DeferredDecoratorCall:
+    """Represents a call made whose outcome is deferred from class definition to class instantiation."""
+
+    method: HTTPMethod | Literal["DEPENDS"]
+    args: tuple[Any]
+    kwargs: dict[str, Any]
+
+
+class DeferredHTTPPath:
+    """
+    Construct the parameters of a futute existing HTTP path.
+
+    This serves the role of the HTTPPath object when defining
+    class-based viewsets. It captures and records the parameters
+    that are used on it, which can be used to construct the corresponding
+    HTTPPath when the viewset class is instantiated.
+    """
+
+    METADATA_KEY = "_deferred_decorations"
+
+    def __init__(self, path: str = "", **kwargs: Any) -> None:
+        self.path = path
+        self.kwargs = kwargs
+        if TYPE_CHECKING:
+            self.GET = GET
+            self.POST = POST
+            self.PUT = PUT
+            self.PATCH = PATCH
+            self.DELETE = DELETE
+            self.OPTIONS = OPTIONS
+            self.HEAD = HEAD
+            self.TRACE = TRACE
+        else:
+            self.GET = self._decorator_factory(HTTPMethod.GET)
+            self.POST = self._decorator_factory(HTTPMethod.POST)
+            self.PUT = self._decorator_factory(HTTPMethod.PUT)
+            self.PATCH = self._decorator_factory(HTTPMethod.PATCH)
+            self.DELETE = self._decorator_factory(HTTPMethod.DELETE)
+            self.OPTIONS = self._decorator_factory(HTTPMethod.OPTIONS)
+            self.HEAD = self._decorator_factory(HTTPMethod.HEAD)
+            self.TRACE = self._decorator_factory(HTTPMethod.TRACE)
+            self.DEPENDS = self._decorator_factory("DEPENDS")
+
+    if TYPE_CHECKING:
+        # Fake DEPENDS for the type-checker to not baulk over
+        # since it doesn't have a chance to understand otherwise.
+        def DEPENDS(self):
+            """
+            Register a dependency function.
+
+            This is a function that will run for all endpoints
+            on this path or any child paths.
+            """
+
+            def _inner(func: Callable[..., Any]) -> Callable[..., Any]:
+                return func
+
+            return _inner
+
+    def _decorator_factory(
+        self, method: HTTPMethod | Literal["DEPENDS"], *args: Any, **kwargs: Any
+    ):
+        def _decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            if not hasattr(func, self.METADATA_KEY):
+                setattr(func, self.METADATA_KEY, [])
+            metadata: list[DeferredDecoratorCall] = getattr(func, self.METADATA_KEY)
+            metadata.append(
+                DeferredDecoratorCall(method=method, args=args, kwargs=kwargs)
+            )
+            return func
+
+        return _decorator
+
+    def __call__(self, value: str, /, **kwargs: Any):
+        """Access a child deferred http path."""
+        return DeferredHTTPPath(value, **kwargs)
+
+
+self = DeferredHTTPPath()
