@@ -6,7 +6,6 @@ import re
 from functools import partial
 from types import EllipsisType
 from fastapi import APIRouter
-from functools import cached_property
 from brewing.http.endpoint_decorator import EndpointDecorator, DependencyDecorator
 from http import HTTPMethod
 
@@ -96,23 +95,7 @@ class HTTPPath:
     ):
         self.router = router
         self.path = path
-        if isinstance(path, str):
-            if path:
-                self.trailing_slash = path[-1] == "/"
-            else:
-                self.trailing_slash = True
-            self._parts: list[HTTPPathComponent] = []
-            parts = path.split("/")
-        else:
-            self.trailing_slash = bool(path[-1])
-            self._parts = list(path)
-            parts = []
-        for index, part in enumerate(parts):
-            if index == len(parts) - 1:
-                trailing_slash = self.trailing_slash
-            else:
-                trailing_slash = ...
-            self._parts.append(HTTPPathComponent(part, trailing_slash=trailing_slash))
+        self.parts = self._path_parts()
         self.trailing_slash_policy = trailing_slash_policy
         decorator = partial(EndpointDecorator, path=self)
         self.GET = decorator(HTTPMethod.GET)
@@ -125,10 +108,25 @@ class HTTPPath:
         self.TRACE = decorator(HTTPMethod.TRACE)
         self.DEPENDS = DependencyDecorator(router=router, path=self)
 
-    @cached_property
-    def parts(self) -> tuple[HTTPPathComponent, ...]:
-        """The HTTP paath components."""
-        return tuple(self._parts)
+    def _path_parts(self) -> tuple[HTTPPathComponent, ...]:
+        if isinstance(self.path, str):
+            if self.path:
+                self.trailing_slash = self.path[-1] == "/"
+            else:
+                self.trailing_slash = True
+            result_parts: list[HTTPPathComponent] = []
+            parts = self.path.split("/")
+        else:
+            self.trailing_slash = bool(self.path[-1])
+            result_parts = list(self.path)
+            parts = []
+        for index, part in enumerate(parts):
+            if index == len(parts) - 1:
+                trailing_slash = self.trailing_slash
+            else:
+                trailing_slash = ...
+            result_parts.append(HTTPPathComponent(part, trailing_slash=trailing_slash))
+        return tuple(result_parts)
 
     def __str__(self):
         if not self.path:
