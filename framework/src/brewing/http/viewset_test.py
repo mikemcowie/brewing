@@ -219,6 +219,12 @@ def extra_dependency(response: Response):
     response.headers["extra-header"] = "yes"
 
 
+@item_id.DEPENDS
+def item_id_only_dep(response: Response):
+    """Used to test that a dependency on an endpoint doesn't get applied to the parent endpoint."""
+    response.headers["item-id-only-dep-handled-this"] = "yes"
+
+
 def test_depends_blocking_path():
     # Dependency blocks requests that don't get through the dependency
     client = new_client(vs5)
@@ -254,3 +260,21 @@ def test_depends_passing_path():
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"something": [1], "data": "somevalue"}
     assert response.headers["extra-header"] == "yes"
+
+
+def test_depends_not_applied_on_parent():
+    """If depends is set on a child endpoint, it doesn't apply to parent endpoint."""
+    # Given a dependency on the item_id endpoint
+    # If we call the item_id endpoint
+    client = new_client(vs5)
+    client.headers["required-header"] = "somevalue"
+    response = client.get("/items/1")
+    assert response.status_code == status.HTTP_200_OK
+    # then the response header will show the dependency was run.
+    assert response.headers["item-id-only-dep-handled-this"] == "yes"
+    # but if we call the parent items endpoint
+    response = client.get("/items")
+    assert response.status_code == status.HTTP_200_OK
+    # then no such header will be present
+    # showing that the dependency did not run.
+    assert not response.headers.get("item-id-only-dep-handled-this")
