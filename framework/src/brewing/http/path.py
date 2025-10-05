@@ -108,8 +108,6 @@ class HTTPPath:
             self._parts = list(path)
             parts = []
         for index, part in enumerate(parts):
-            # if not part:
-            #    continue
             if index == len(parts) - 1:
                 trailing_slash = self.trailing_slash
             else:
