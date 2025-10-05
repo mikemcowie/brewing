@@ -5,9 +5,24 @@ from dataclasses import dataclass
 import re
 from functools import partial
 from types import EllipsisType
+from typing import TYPE_CHECKING
 from fastapi import APIRouter
 from brewing.http.endpoint_decorator import EndpointDecorator, DependencyDecorator
 from http import HTTPMethod
+
+
+if TYPE_CHECKING:
+    # We are making some fake assignments
+    # so that the type checker will give better completions.
+    r = APIRouter()
+    GET = partial(r.get, "")
+    POST = partial(r.post, "")
+    PUT = partial(r.put, "")
+    PATCH = partial(r.patch, "")
+    DELETE = partial(r.delete, "")
+    HEAD = partial(r.head, "")
+    OPTIONS = partial(r.options, "")
+    TRACE = partial(r.trace, "")
 
 
 class PathValidationError(Exception):
@@ -98,14 +113,24 @@ class HTTPPath:
         self.parts = self._path_parts()
         self.trailing_slash_policy = trailing_slash_policy
         decorator = partial(EndpointDecorator, path=self)
-        self.GET = decorator(HTTPMethod.GET)
-        self.POST = decorator(HTTPMethod.POST)
-        self.PUT = decorator(HTTPMethod.PUT)
-        self.PATCH = decorator(HTTPMethod.PATCH)
-        self.DELETE = decorator(HTTPMethod.DELETE)
-        self.OPTIONS = decorator(HTTPMethod.OPTIONS)
-        self.HEAD = decorator(HTTPMethod.HEAD)
-        self.TRACE = decorator(HTTPMethod.TRACE)
+        if TYPE_CHECKING:
+            self.GET = GET
+            self.POST = POST
+            self.PUT = PUT
+            self.PATCH = PATCH
+            self.DELETE = DELETE
+            self.OPTIONS = OPTIONS
+            self.HEAD = HEAD
+            self.TRACE = TRACE
+        else:
+            self.GET = decorator(HTTPMethod.GET)
+            self.POST = decorator(HTTPMethod.POST)
+            self.PUT = decorator(HTTPMethod.PUT)
+            self.PATCH = decorator(HTTPMethod.PATCH)
+            self.DELETE = decorator(HTTPMethod.DELETE)
+            self.OPTIONS = decorator(HTTPMethod.OPTIONS)
+            self.HEAD = decorator(HTTPMethod.HEAD)
+            self.TRACE = decorator(HTTPMethod.TRACE)
         self.DEPENDS = DependencyDecorator(router=router, path=self)
 
     def _path_parts(self) -> tuple[HTTPPathComponent, ...]:
