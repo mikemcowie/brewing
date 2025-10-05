@@ -167,7 +167,7 @@ def test_new_decorator_new_pathing():
 
 
 @item_id.GET
-def vs4_with_path_param(item_id: int):
+def vs4_with_path_param(item_id: int) -> dict[str, str | int]:
     """Return an item of type int."""
     return {"type": "item", "id": item_id}
 
