@@ -56,11 +56,20 @@ class DependencyDecorator:
                 ):
                     route.dependencies.append(Depends(func))
 
-    def __call__(self, func: Callable[..., Any]):
+    def __call__(
+        self,
+    ):
         """Apply dependency func to all endpoints, current and future, of the given path."""
-        self.dependencies.append(func)
-        self.apply()
-        return func
+        # To maintain a visual consistency between DEPENDS and GET/POST etc decorators
+        # This is implemented as a decorator factory rather than decorator.
+        # Currently there are no parameters, though it would not be insane to add some.
+
+        def inner(func: Callable[..., Any]):
+            self.dependencies.append(func)
+            self.apply()
+            return func
+
+        return inner
 
 
 class EndpointDecorator:

@@ -185,7 +185,7 @@ items = vs5("items")
 item_id = items("{item_id}")
 
 
-@items.DEPENDS
+@items.DEPENDS()
 def must_provide_header(request: Request):
     if value := request.headers.get("required-header"):
         return value
@@ -211,13 +211,13 @@ def get_item_by_id(
     return SomeData(something=[item_id], data=value)
 
 
-@items.DEPENDS
+@items.DEPENDS()
 def extra_dependency(response: Response):
     """A dependency declared after the routes, to make sure that a dependency can be declared after endpoints too."""
     response.headers["extra-header"] = "yes"
 
 
-@item_id.DEPENDS
+@item_id.DEPENDS()
 def item_id_only_dep(response: Response):
     """Used to test that a dependency on an endpoint doesn't get applied to the parent endpoint."""
     response.headers["item-id-only-dep-handled-this"] = "yes"
