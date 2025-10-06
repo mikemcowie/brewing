@@ -243,7 +243,7 @@ class DeferredHTTPPath:
     def _decorator_factory(
         self, method: HTTPMethod | Literal["DEPENDS"], *args: Any, **kwargs: Any
     ):
-        def _middle(*args:Any, **kwargs:Any):
+        def _middle(*args: Any, **kwargs: Any):
             def _inner(func: Callable[..., Any]) -> Callable[..., Any]:
                 if not hasattr(func, self.METADATA_KEY):
                     setattr(func, self.METADATA_KEY, [])
@@ -252,11 +252,14 @@ class DeferredHTTPPath:
                     DeferredDecoratorCall(method=method, args=args, kwargs=kwargs)
                 )
                 return func
+
             return _inner
+
         return _middle
 
     def __call__(self, value: str, /, **kwargs: Any):
         """Access a child deferred http path."""
         return DeferredHTTPPath(value, **kwargs)
+
 
 self = DeferredHTTPPath()
