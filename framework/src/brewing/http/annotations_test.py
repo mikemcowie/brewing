@@ -12,33 +12,48 @@ ob1 = object()
 ob2 = object()
 
 
-class CapturedAnnotations:
-    """Represents the total captured annotations of a function"""
+type AnnotatedFunctionAdaptor = Callable[[_AnnotationState], _AnnotationState]
+type AnnotatedFunctionAdaptorPipeline = Sequence[AnnotatedFunctionAdaptor]
 
-    def __init__(self, func: FunctionType, /, **kwargs: Annotation):
-        self.func = func
-        self.kwargs = kwargs
+_ADAPTOR_KEY = "_brewing_adaptor"
 
 
 @dataclass(frozen=True)
-class Annotation:
-    type_: type | None | inspect.Parameter.empty
-    annotations: tuple[Any, ...] | None
+class _Annotation:
+    """Struct representing a single annotation"""
+
+    type_: Any
+    annotated: tuple[Any, ...] | None
+
+    def raw(self) -> Any:
+        """Returns the annotation in the form used in __annotations__"""
+        if self.annotated:
+            return Annotated[self.type_, self.annotated]
+        else:
+            return self.type_
 
 
-def some_func(self, foo: str, bar: Annotated[int, ob1]) -> Annotated[float, (ob1, ob2)]:
-    """Just a random function."""
-    return (len(foo) + bar) / 2
+class _AnnotationState:
+    """Mutable data structure processed in 'adapted()' by a sequence of adaptors."""
+
+    def __init__(self, func: FunctionType, /, **kwargs: _Annotation):
+        self.func = func
+        self.kwargs = kwargs
+
+    def apply(self):
+        """Apply the current state of the annotations to the function."""
+        for key, value in self.kwargs.items():
+            self.func.__annotations__[key] = value.raw()
 
 
-def capture(func: FunctionType) -> CapturedAnnotations:
-    hints: dict[str, Annotation] = {}
+def capture(func: FunctionType) -> _AnnotationState:
+    hints: dict[str, _Annotation] = {}
     # first we capture annotations with get_type_hints
     for name, hint in get_type_hints(func, include_extras=True).items():
         if metadata := getattr(hint, "__metadata__", None):
-            hints[name] = Annotation(getattr(hint, "__origin__"), metadata)
+            hints[name] = _Annotation(getattr(hint, "__origin__"), metadata)
         else:
-            hints[name] = Annotation(hint, None)
+            hints[name] = _Annotation(hint, None)
     # get_type_hints doesn't tell us about any unannotated parameters,
     # so we use inspect.signature to find those
     inspect_params = inspect.signature(func).parameters
@@ -51,27 +66,12 @@ def capture(func: FunctionType) -> CapturedAnnotations:
                     f"unexpected: parameter {name} is annotated according to inspect.signature, "
                     "but not according to typing.get_type_hints."
                 )
-            hints[name] = Annotation(inspect.Parameter.empty, None)
+            hints[name] = _Annotation(inspect.Parameter.empty, None)
 
-    return CapturedAnnotations(func, **hints)
-
-
-def test_capture_annotation():
-    assert capture(some_func).kwargs == {
-        "self": Annotation(inspect.Parameter.empty, None),
-        "foo": Annotation(str, None),
-        "bar": Annotation(int, (ob1,)),
-        "return": Annotation(float, ((ob1, ob2),)),
-    }
+    return _AnnotationState(func, **hints)
 
 
-type AnnotatedFunctionAdaptor = Callable[[CapturedAnnotations], CapturedAnnotations]
-type AnnotatedFunctionAdaptorPipeline = Sequence[AnnotatedFunctionAdaptor]
-
-_ADAPTOR_KEY = "_brewing_adaptor"
-
-
-def adapted(
+def adapt(
     func: FunctionType, pipeline: AnnotatedFunctionAdaptorPipeline
 ) -> FunctionType:
     """Return an adapted version of a function, by applying a pipeline of adaptors.
@@ -93,6 +93,7 @@ def adapted(
                 f"{adaptor=} needs to be decorated with brewing.http.annotations.adaptor"
             )
         captured = adaptor(captured)
+    captured.apply()
     return captured.func
 
 
@@ -100,7 +101,7 @@ def adaptor(func: AnnotatedFunctionAdaptor):
     """Mark function as an adaptor.
 
     Intended to be used as a decorator. It must be applied to any function
-    in order for that function to be usable in a pipeline for adapted().
+    in order for that function to be usable in a pipeline for adapt().
 
     It adds metadata to the function, without which the function will not be
     allowed to be used in adapted.
@@ -113,12 +114,26 @@ def adaptor(func: AnnotatedFunctionAdaptor):
     return func
 
 
+def some_func(self, foo: str, bar: Annotated[int, ob1]) -> Annotated[float, (ob1, ob2)]:
+    """Just a random function."""
+    return (len(foo) + bar) / 2
+
+
+def test_capture_annotation():
+    assert capture(some_func).kwargs == {
+        "self": _Annotation(inspect.Parameter.empty, None),
+        "foo": _Annotation(str, None),
+        "bar": _Annotation(int, (ob1,)),
+        "return": _Annotation(float, ((ob1, ob2),)),
+    }
+
+
 def test_adaptor_pipeline():
     def adaptee(foo) -> str:
         return "bar"
 
     @adaptor
-    def all_unannotated_as_any(annotations: CapturedAnnotations) -> CapturedAnnotations:
+    def all_unannotated_as_any(annotations: _AnnotationState) -> _AnnotationState:
         """Any unannoted parameter gets typing.Any applied."""
         for key, value in annotations.kwargs.items():
             if value.type_ is inspect.Parameter.empty:
@@ -127,19 +142,19 @@ def test_adaptor_pipeline():
 
     # Give a function with an unannotated paramter
     assert capture(adaptee).kwargs == {
-        "foo": Annotation(inspect.Parameter.empty, None),
-        "return": Annotation(str, None),
+        "foo": _Annotation(inspect.Parameter.empty, None),
+        "return": _Annotation(str, None),
     }
     # If we call adapt with a pipeline containing a function that adapts it to
     # add the Any annotation
-    result = adapted(adaptee, [all_unannotated_as_any])
+    result = adapt(adaptee, [all_unannotated_as_any])
     # Given that the all_unannoted_as_any returns the same function that was passed
     # It should be the same object
     assert result is adaptee
     # But the annotation should have changed.
     assert capture(adaptee).kwargs == {
-        "foo": Annotation(Any, None),
-        "return": Annotation(str, None),
+        "foo": _Annotation(Any, None),
+        "return": _Annotation(str, None),
     }
 
 
@@ -147,7 +162,7 @@ def test_adaptor_pipeline_fails_if_pipeline_func_is_not_decorated():
     def adaptee(foo) -> str:
         return "bar"
 
-    def all_unannotated_as_any(annotations: CapturedAnnotations) -> CapturedAnnotations:
+    def all_unannotated_as_any(annotations: _AnnotationState) -> _AnnotationState:
         """Any unannoted parameter gets typing.Any applied."""
         for key, value in annotations.kwargs.items():
             if value.type_ is inspect.Parameter.empty:
@@ -155,7 +170,7 @@ def test_adaptor_pipeline_fails_if_pipeline_func_is_not_decorated():
         return annotations
 
     with pytest.raises(TypeError) as error:
-        adapted(adaptee, [all_unannotated_as_any])
+        adapt(adaptee, [all_unannotated_as_any])
     assert (
         "needs to be decorated with brewing.http.annotations.adaptor" in error.exconly()
     )
