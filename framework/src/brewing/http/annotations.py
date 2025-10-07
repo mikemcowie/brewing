@@ -1,7 +1,8 @@
 """Utilities for managing and rewriting annotations."""
 
 from __future__ import annotations
-from typing import Annotated, get_type_hints, Any, Callable
+from typing import Annotated, get_type_hints, Any, Protocol
+from abc import abstractmethod
 from collections.abc import Sequence
 from types import FunctionType
 from dataclasses import dataclass
@@ -11,7 +12,26 @@ ob1 = object()
 ob2 = object()
 
 
-type AnnotatedFunctionAdaptor = Callable[[AnnotationState], AnnotationState]
+class AnnotatedFunctionAdaptor(Protocol):
+    """Protocol for a callable that adapts a function's annotations."""
+
+    @abstractmethod
+    def __call__(self, state: AnnotationState) -> AnnotationState:
+        """
+        Adapt annotation state object.
+
+        This is used in a pipeline of similar objects in 'adapt()'
+
+        * The returned object may be the same as the input or different.
+        * The function referred in the state object may be replaced.
+        * The hints mapping in the returned object may be mutated.
+
+        Hence to ensure predictability, it's recommended to use the returned object
+        rather than assuming mutation of the input object.
+        """
+        ...
+
+
 type AnnotatedFunctionAdaptorPipeline = Sequence[AnnotatedFunctionAdaptor]
 
 _ADAPTOR_KEY = "_brewing_adaptor"
@@ -33,42 +53,43 @@ class Annotation:
 
 
 class AnnotationState:
-    """Mutable data structure processed in 'adapted()' by a sequence of adaptors."""
+    """Facilty for loading the current state of a function's annotations and applying changes."""
 
-    def __init__(self, func: FunctionType, /, **kwargs: Annotation):
+    def __init__(
+        self,
+        func: FunctionType,
+        /,
+    ):
         self.func = func
-        self.kwargs = kwargs
+        self.hints: dict[str, Annotation] = {}
+        # first we capture annotations with get_type_hints
+        for name, hint in get_type_hints(func, include_extras=True).items():
+            if metadata := getattr(hint, "__metadata__", None):
+                self.hints[name] = Annotation(getattr(hint, "__origin__"), metadata)
+            else:
+                self.hints[name] = Annotation(hint, None)
+        # get_type_hints doesn't tell us about any unannotated parameters,
+        # so we use inspect.signature to find those
+        inspect_params = inspect.signature(func).parameters
+        for name, parameter in inspect_params.items():
+            if name not in self.hints:
+                # assumption - inspect.signature should only return untyped parameters here.
+                # so incase that assumption is wrong, catch it.
+                if parameter.annotation is not inspect.Parameter.empty:
+                    raise RuntimeError(
+                        f"unexpected: parameter {name} is annotated according to inspect.signature, "
+                        "but not according to typing.get_type_hints."
+                    )
+                self.hints[name] = Annotation(inspect.Parameter.empty, None)
 
-    def apply(self):
+    def abandon_pending(self):
+        """Abandon/reset any changes and reset to the current state of the function's annotations."""
+        self.__init__(self.func)
+
+    def apply_pending(self):
         """Apply the current state of the annotations to the function."""
-        for key, value in self.kwargs.items():
+        for key, value in self.hints.items():
             self.func.__annotations__[key] = value.raw()
-
-
-def capture(func: FunctionType) -> AnnotationState:
-    """Capture the state of annotations on a function."""
-    hints: dict[str, Annotation] = {}
-    # first we capture annotations with get_type_hints
-    for name, hint in get_type_hints(func, include_extras=True).items():
-        if metadata := getattr(hint, "__metadata__", None):
-            hints[name] = Annotation(getattr(hint, "__origin__"), metadata)
-        else:
-            hints[name] = Annotation(hint, None)
-    # get_type_hints doesn't tell us about any unannotated parameters,
-    # so we use inspect.signature to find those
-    inspect_params = inspect.signature(func).parameters
-    for name, parameter in inspect_params.items():
-        if name not in hints:
-            # assumption - inspect.signature should only return untyped parameters here.
-            # so incase that assumption is wrong, catch it.
-            if parameter.annotation is not inspect.Parameter.empty:
-                raise RuntimeError(
-                    f"unexpected: parameter {name} is annotated according to inspect.signature, "
-                    "but not according to typing.get_type_hints."
-                )
-            hints[name] = Annotation(inspect.Parameter.empty, None)
-
-    return AnnotationState(func, **hints)
 
 
 def adapt(
@@ -88,15 +109,15 @@ def adapt(
            each taking and returning a CapturedAnnotations object.
 
     """
-    captured = capture(func)
+    state = AnnotationState(func)
     for adaptor in pipeline:
         if not hasattr(adaptor, _ADAPTOR_KEY):
             raise TypeError(
                 f"{adaptor=} needs to be decorated with brewing.http.annotations.adaptor"
             )
-        captured = adaptor(captured)
-    captured.apply()
-    return captured.func
+        state = adaptor(state)
+    state.apply_pending()
+    return state.func
 
 
 def adaptor(func: AnnotatedFunctionAdaptor):
