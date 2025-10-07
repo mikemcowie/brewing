@@ -6,7 +6,6 @@ from dataclasses import replace
 import pytest
 import inspect
 from brewing.http.annotations import (
-    capture,
     Annotation,
     AnnotationState,
     adapt,
@@ -25,7 +24,7 @@ def some_func(self, foo: str, bar: Annotated[int, ob1]) -> Annotated[float, (ob1
 
 
 def test_capture_annotation():
-    assert capture(some_func).kwargs == {
+    assert AnnotationState(some_func).hints == {
         "self": Annotation(inspect.Parameter.empty, None),
         "foo": Annotation(str, None),
         "bar": Annotation(int, (ob1,)),
@@ -40,13 +39,13 @@ def test_adaptor_pipeline():
     @adaptor
     def all_unannotated_as_any(annotations: AnnotationState) -> AnnotationState:
         """Any unannoted parameter gets typing.Any applied."""
-        for key, value in annotations.kwargs.items():
+        for key, value in annotations.hints.items():
             if value.type_ is inspect.Parameter.empty:
-                annotations.kwargs[key] = replace(value, type_=Any)
+                annotations.hints[key] = replace(value, type_=Any)
         return annotations
 
     # Give a function with an unannotated paramter
-    assert capture(adaptee).kwargs == {
+    assert AnnotationState(adaptee).hints == {
         "foo": Annotation(inspect.Parameter.empty, None),
         "return": Annotation(str, None),
     }
@@ -57,7 +56,7 @@ def test_adaptor_pipeline():
     # It should be the same object
     assert result is adaptee
     # But the annotation should have changed.
-    assert capture(adaptee).kwargs == {
+    assert AnnotationState(adaptee).hints == {
         "foo": Annotation(Any, None),
         "return": Annotation(str, None),
     }
@@ -69,9 +68,9 @@ def test_adaptor_pipeline_fails_if_pipeline_func_is_not_decorated():
 
     def all_unannotated_as_any(annotations: AnnotationState) -> AnnotationState:
         """Any unannoted parameter gets typing.Any applied."""
-        for key, value in annotations.kwargs.items():
+        for key, value in annotations.hints.items():
             if value.type_ is inspect.Parameter.empty:
-                annotations.kwargs[key] = replace(value, type_=Any)
+                annotations.hints[key] = replace(value, type_=Any)
         return annotations
 
     with pytest.raises(TypeError) as error:
