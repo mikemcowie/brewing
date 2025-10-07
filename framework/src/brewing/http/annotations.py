@@ -1,12 +1,16 @@
 """Utilities for managing and rewriting annotations."""
 
 from __future__ import annotations
-from typing import Annotated, get_type_hints, Any, Protocol
+from typing import Annotated, get_type_hints, Any, Protocol, TYPE_CHECKING
+from fastapi import Depends
 from abc import abstractmethod
 from collections.abc import Sequence
 from types import FunctionType
 from dataclasses import dataclass
 import inspect
+
+if TYPE_CHECKING:
+    from brewing.http import ViewSet
 
 ob1 = object()
 ob2 = object()
@@ -136,3 +140,22 @@ def adaptor(func: AnnotatedFunctionAdaptor):
     """
     setattr(func, _ADAPTOR_KEY, True)
     return func
+
+
+class ApplyViewSetDependency(AnnotatedFunctionAdaptor):
+    """If first parameter of an viewset endpoint function is untyped, annotate it as the viewset."""
+
+    def __init__(self, viewset: ViewSet):
+        self.viewset = viewset
+
+    def __call__(self, state: AnnotationState) -> AnnotationState:
+        """Annotate the viewset as a fastapi dependency if the first parameter is untyped."""
+        for key, value in state.hints.items():
+            if value.type_ is inspect.Parameter.empty:
+                state.hints[key] = Annotation(
+                    type(self.viewset), (Depends(lambda: self.viewset),)
+                )
+            # unconditionally break after first iteration:
+            # this is only applicable to the first parameter
+            break
+        return state
