@@ -1,7 +1,7 @@
 """Utilities for managing and rewriting annotations."""
 
 from __future__ import annotations
-from typing import Annotated, get_type_hints, Any, Protocol, TYPE_CHECKING
+from typing import Annotated, get_type_hints, Any, Protocol, TYPE_CHECKING, Callable
 from fastapi import Depends
 from abc import abstractmethod
 from collections.abc import Sequence
@@ -11,9 +11,6 @@ import inspect
 
 if TYPE_CHECKING:
     from brewing.http import ViewSet
-
-ob1 = object()
-ob2 = object()
 
 
 class AnnotatedFunctionAdaptor(Protocol):
@@ -51,7 +48,7 @@ class Annotation:
     def raw(self) -> Any:
         """Return the annotation in the form used in __annotations__."""
         if self.annotated:
-            return Annotated[self.type_, self.annotated]
+            return Annotated[self.type_, *self.annotated]
         else:
             return self.type_
 
@@ -94,6 +91,7 @@ class AnnotationState:
         """Apply the current state of the annotations to the function."""
         for key, value in self.hints.items():
             self.func.__annotations__[key] = value.raw()
+        self.__init__(self.func)
 
 
 def adapt(
@@ -120,11 +118,11 @@ def adapt(
                 f"{adaptor=} needs to be decorated with brewing.http.annotations.adaptor"
             )
         state = adaptor(state)
-    state.apply_pending()
+        state.apply_pending()
     return state.func
 
 
-def adaptor(func: AnnotatedFunctionAdaptor):
+def adaptor[T: Callable[..., Any]](func: T) -> T:
     """
     Mark function as an adaptor.
 
@@ -142,6 +140,7 @@ def adaptor(func: AnnotatedFunctionAdaptor):
     return func
 
 
+@adaptor
 class ApplyViewSetDependency(AnnotatedFunctionAdaptor):
     """If first parameter of an viewset endpoint function is untyped, annotate it as the viewset."""
 
@@ -149,13 +148,33 @@ class ApplyViewSetDependency(AnnotatedFunctionAdaptor):
         self.viewset = viewset
 
     def __call__(self, state: AnnotationState) -> AnnotationState:
-        """Annotate the viewset as a fastapi dependency if the first parameter is untyped."""
+        """Modify annotations of parameters should be a dependency on the viewset."""
+        # late import to avoid circular dependency
+        from brewing.http import ViewSet
+
         for key, value in state.hints.items():
+            # A single unannotated parameter - typically, though not required to be
+            # the first positional paramter, is turned into a dependency on the viewset.
+            # This is to support the first parameter of a method (self) being automatically
+            # set via dependency injection to the viewset in class-based endpoints.
+            annotation = Annotation(
+                type(self.viewset), (Depends(lambda: self.viewset),)
+            )
             if value.type_ is inspect.Parameter.empty:
-                state.hints[key] = Annotation(
-                    type(self.viewset), (Depends(lambda: self.viewset),)
+                state.hints[key] = annotation
+                break
+            # And anyting typed as the viewset type, or a superclass of it
+            # that is also a subclass of ViewSet, also gets this setup.
+            if any(
+                (
+                    (
+                        isinstance(value.type_, type)
+                        and issubclass(value.type_, ViewSet)
+                    ),
+                    value.type_ is type(self.viewset),
+                    type(self.viewset) in getattr(value.type_, "__mro__", []),
                 )
-            # unconditionally break after first iteration:
-            # this is only applicable to the first parameter
-            break
+            ):
+                state.hints[key] = annotation
+
         return state
