@@ -1,6 +1,6 @@
 [project]
 name = "brewing-incubator"
-version = "0.0.8-rc.3"
+version = "0.0.8-rc.4"
 description = "Experimental/preview modules for brewing."
 readme = "README.md"
 authors = [
