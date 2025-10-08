@@ -8,6 +8,7 @@ from types import EllipsisType
 from typing import TYPE_CHECKING, Any, Callable, Literal
 from fastapi import APIRouter
 from brewing.http.endpoint_decorator import EndpointDecorator, DependencyDecorator
+from brewing.http.annotations import AnnotatedFunctionAdaptorPipeline
 from http import HTTPMethod
 
 
@@ -107,12 +108,15 @@ class HTTPPath:
         /,
         router: APIRouter,
         trailing_slash_policy: TrailingSlashPolicy,
+        annotation_pipeline: AnnotatedFunctionAdaptorPipeline,
     ):
         self.router = router
         self.path = path
         self.parts = self._path_parts()
         self.trailing_slash_policy = trailing_slash_policy
-        decorator = partial(EndpointDecorator, path=self)
+        decorator = partial(
+            EndpointDecorator, path=self, annotation_pipeline=annotation_pipeline
+        )
         if TYPE_CHECKING:
             self.GET = GET
             self.POST = POST
@@ -177,6 +181,7 @@ class HTTPPath:
             ),
             trailing_slash_policy=self.trailing_slash_policy,
             router=self.router,
+            annotation_pipeline=(),
         )
 
 

@@ -7,7 +7,7 @@ It wraps around fastapi's endpoint decorator.
 
 from __future__ import annotations
 
-from functools import wraps
+from functools import partial
 from typing import Callable, Any, TYPE_CHECKING, Protocol, cast
 from types import FunctionType
 from http import HTTPMethod
@@ -83,34 +83,26 @@ class EndpointDecorator:
         self,
         method: HTTPMethod,
         path: HTTPPath,
-        annotation_pipeline: AnnotatedFunctionAdaptorPipeline = (),
+        annotation_pipeline: AnnotatedFunctionAdaptorPipeline,
     ):
         self.path = path
         self.annotation_pipeline = annotation_pipeline
         self.wraps = getattr(path.router, method.value.lower())
 
-    def __call__(self, *args: Any, **kwargs: Any):
+    def __call__(self, **kwargs: Any) -> Callable[[FunctionType], Callable[..., Any]]:
         """Register a route for the object's path and the given HTTP method."""
-        retval = self.endpoint_function_wrapper(self.wraps)(
-            str(self.path), *args, **kwargs
-        )
         self.path.DEPENDS.apply()
-        return retval
+        return partial(self.endpoint_function_decorator, path=str(self.path), **kwargs)
 
-    def endpoint_function_wrapper(self, func: FunctionType):
+    def endpoint_function_decorator(
+        self, func: FunctionType, path: str, **kwargs: Any
+    ) -> Callable[..., Any]:
         """
         Adapted fastapi endpoint wrapper.
 
         Applies additional step from the usual fastapi endpoint decorator:
         adapts the type annotations of the wrapped function.
         """
-        adapt(func, self.annotation_pipeline)
-
-        # In future some annotation handlers will require a transformation of
-        # args and kwargs before passing to the handled function, so in anticipation,
-        # return a wrapped function instead of the original function.
-        @wraps(func)
-        def inner(*args: Any, **kwargs: Any):
-            return func(*args, **kwargs)
-
-        return inner
+        func = adapt(func, self.annotation_pipeline)
+        self.wraps(path, **kwargs)(func)
+        return func

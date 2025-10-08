@@ -22,7 +22,7 @@ class CluckingViewSet(ViewSet):
         self,
         root_path: str = "",
         router: APIRouter | None = None,
-        trailing_slash_policy: TrailingSlashPolicy = ...,
+        trailing_slash_policy: TrailingSlashPolicy = TrailingSlashPolicy.default(),
     ):
         super().__init__(root_path, router, trailing_slash_policy)
         self.sound = "cluck"
@@ -42,10 +42,10 @@ def test_untyped_first_parameter():
     client = new_client(vs1)
     result = client.get("/")
     assert result.status_code == status.HTTP_200_OK, result.text
-    assert result.text == "cluck"
+    assert result.text == '"cluck"'
     result = client.get("/?shout=1")
     assert result.status_code == status.HTTP_200_OK, result.text
-    assert result.text == "CLUCK"
+    assert result.text == '"CLUCK"'
 
 
 def test_viewset_typed_first_parameter():
@@ -61,7 +61,7 @@ def test_viewset_typed_first_parameter():
     client = new_client(vs1)
     result = client.get("/")
     assert result.status_code == status.HTTP_200_OK, result.text
-    assert result.text == "cluck"
+    assert result.text == '"cluck"'
     result = client.get("/?shout=1")
     assert result.status_code == status.HTTP_200_OK, result.text
-    assert result.text == "CLUCK"
+    assert result.text == '"CLUCK"'

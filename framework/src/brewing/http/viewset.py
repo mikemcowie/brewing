@@ -31,7 +31,10 @@ class ViewSet:
         self.annotation_adaptors = (ApplyViewSetDependency(self),)
         self.router = router or APIRouter()
         self.root_path = HTTPPath(
-            root_path, trailing_slash_policy=trailing_slash_policy, router=self.router
+            root_path,
+            trailing_slash_policy=trailing_slash_policy,
+            router=self.router,
+            annotation_pipeline=self.annotation_adaptors,
         )
         self.trailing_slash_policy = trailing_slash_policy
         # All the HTTP method decorators from the router
