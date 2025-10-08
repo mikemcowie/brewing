@@ -9,7 +9,7 @@ from fastapi import Depends, Query
 vs2 = ViewSet()
 
 
-@vs2.GET(response_model=SomeData)
+@vs2.GET(response_model=SomeData, status_code=status.HTTP_200_OK, operation_id="SomeOp")
 def vs2_new_decorator_with_fastapi_style(
     data: Annotated[str | None, Depends(dependency)], count: Annotated[int, Query()] = 0
 ):
@@ -29,6 +29,14 @@ def test_new_decorator_with_fastapi_style_endpoint():
     response = client.get("/", headers={"data": "foo"})
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["data"] == "foo"
+
+
+def test_decorator_args_applied_correctly():
+    """Validate that arbitart extra arg in the decorator applies as expected."""
+    openapi_response = new_client(vs2).get("/openapi.json")
+    assert openapi_response.status_code == status.HTTP_200_OK
+    # we specified a custom operation_id in the decorator. Check it was read.
+    assert openapi_response.json()["paths"]["/"]["get"]["operationId"] == "SomeOp"
 
 
 vs3 = ViewSet()
