@@ -7,11 +7,15 @@ It wraps around fastapi's endpoint decorator.
 
 from __future__ import annotations
 
+from functools import wraps
 from typing import Callable, Any, TYPE_CHECKING, Protocol, cast
+from types import FunctionType
 from http import HTTPMethod
 from fastapi.routing import APIRouter
 from fastapi import Depends
 from fastapi.params import Depends as DependsParam
+from brewing.http.annotations import adapt, AnnotatedFunctionAdaptorPipeline
+
 
 if TYPE_CHECKING:
     from brewing.http.path import HTTPPath
@@ -75,12 +79,38 @@ class DependencyDecorator:
 class EndpointDecorator:
     """Provide an upper-case decorator that serves as brewing's native endpoint decorator."""
 
-    def __init__(self, method: HTTPMethod, path: HTTPPath):
+    def __init__(
+        self,
+        method: HTTPMethod,
+        path: HTTPPath,
+        annotation_pipeline: AnnotatedFunctionAdaptorPipeline = (),
+    ):
         self.path = path
+        self.annotation_pipeline = annotation_pipeline
         self.wraps = getattr(path.router, method.value.lower())
 
     def __call__(self, *args: Any, **kwargs: Any):
         """Register a route for the object's path and the given HTTP method."""
-        retval = self.wraps(str(self.path), *args, **kwargs)
+        retval = self.endpoint_function_wrapper(self.wraps)(
+            str(self.path), *args, **kwargs
+        )
         self.path.DEPENDS.apply()
         return retval
+
+    def endpoint_function_wrapper(self, func: FunctionType):
+        """
+        Adapted fastapi endpoint wrapper.
+
+        Applies additional step from the usual fastapi endpoint decorator:
+        adapts the type annotations of the wrapped function.
+        """
+        adapt(func, self.annotation_pipeline)
+
+        # In future some annotation handlers will require a transformation of
+        # args and kwargs before passing to the handled function, so in anticipation,
+        # return a wrapped function instead of the original function.
+        @wraps(func)
+        def inner(*args: Any, **kwargs: Any):
+            return func(*args, **kwargs)
+
+        return inner

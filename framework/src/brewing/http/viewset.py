@@ -11,10 +11,16 @@ from __future__ import annotations
 from types import EllipsisType
 from fastapi import APIRouter
 from brewing.http.path import HTTPPath, TrailingSlashPolicy
+from brewing.http.annotations import (
+    AnnotatedFunctionAdaptorPipeline,
+    ApplyViewSetDependency,
+)
 
 
 class ViewSet:
     """A collection of related http endpoint handlers."""
+
+    annotation_adaptors: AnnotatedFunctionAdaptorPipeline
 
     def __init__(
         self,
@@ -22,6 +28,7 @@ class ViewSet:
         router: APIRouter | None = None,
         trailing_slash_policy: TrailingSlashPolicy = TrailingSlashPolicy.default(),
     ):
+        self.annotation_adaptors = (ApplyViewSetDependency(self),)
         self.router = router or APIRouter()
         self.root_path = HTTPPath(
             root_path, trailing_slash_policy=trailing_slash_policy, router=self.router
