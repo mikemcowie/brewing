@@ -36,7 +36,10 @@ def test_http_path_components(
 
 def test_root_path():
     path = HTTPPath(
-        "", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+        "",
+        trailing_slash_policy=TrailingSlashPolicy.default(),
+        router=router,
+        annotation_pipeline=(),
     )
     assert path.parts[-1].trailing_slash
     assert str(path) == "/"
@@ -44,7 +47,10 @@ def test_root_path():
 
 def test_http_path_constant_one_part_trailing_slash():
     path = HTTPPath(
-        "/foo/", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+        "/foo/",
+        trailing_slash_policy=TrailingSlashPolicy.default(),
+        router=router,
+        annotation_pipeline=(),
     )
     assert path.parts[-1].trailing_slash
     assert str(path) == "/foo/"
@@ -52,7 +58,10 @@ def test_http_path_constant_one_part_trailing_slash():
 
 def test_http_path_constant_one_no_trailing_slash():
     path = HTTPPath(
-        "foo", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+        "foo",
+        trailing_slash_policy=TrailingSlashPolicy.default(),
+        router=router,
+        annotation_pipeline=(),
     )
     assert not path.parts[-1].trailing_slash
     assert str(path) == "/foo"
@@ -60,7 +69,10 @@ def test_http_path_constant_one_no_trailing_slash():
 
 def test_http_path_one_part_variable_trailing_slash():
     path = HTTPPath(
-        "/{foo_id}/", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+        "/{foo_id}/",
+        trailing_slash_policy=TrailingSlashPolicy.default(),
+        router=router,
+        annotation_pipeline=(),
     )
     assert path.parts[-1].trailing_slash
     assert str(path) == "/{foo_id}/"
@@ -68,7 +80,10 @@ def test_http_path_one_part_variable_trailing_slash():
 
 def test_http_path_one_part_variable_no_trailing_slash():
     path = HTTPPath(
-        "{foo_id}", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+        "{foo_id}",
+        trailing_slash_policy=TrailingSlashPolicy.default(),
+        router=router,
+        annotation_pipeline=(),
     )
     assert not path.parts[-1].trailing_slash
     assert str(path) == "/{foo_id}"
@@ -76,7 +91,10 @@ def test_http_path_one_part_variable_no_trailing_slash():
 
 def test_extend_http_path():
     path = HTTPPath(
-        "foo/", trailing_slash_policy=TrailingSlashPolicy.default(), router=router
+        "foo/",
+        trailing_slash_policy=TrailingSlashPolicy.default(),
+        router=router,
+        annotation_pipeline=(),
     )
     assert path.parts[-1].trailing_slash
     assert str(path) == "/foo/"
