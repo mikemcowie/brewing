@@ -18,7 +18,7 @@ ob2 = object()
 _ADAPTOR_KEY = "_brewing_adaptor"
 
 
-def some_func(self, foo: str, bar: Annotated[int, ob1]) -> Annotated[float, (ob1, ob2)]:
+def some_func(self, foo: str, bar: Annotated[int, ob1]) -> Annotated[float, (ob1, ob2)]:  # pyright: ignore[reportUnknownParameterType]
     """Just a random function."""
     return (len(foo) + bar) / 2
 
@@ -33,16 +33,16 @@ def test_capture_annotation():
 
 
 def test_adaptor_pipeline():
-    def adaptee(foo) -> str:
+    def adaptee(foo) -> str:  # pyright: ignore[reportMissingParameterType, reportUnknownParameterType]
         return "bar"
 
     @adaptor
-    def all_unannotated_as_any(annotations: AnnotationState) -> AnnotationState:
+    def all_unannotated_as_any(state: AnnotationState) -> AnnotationState:
         """Any unannoted parameter gets typing.Any applied."""
-        for key, value in annotations.hints.items():
+        for key, value in state.hints.items():
             if value.type_ is inspect.Parameter.empty:
-                annotations.hints[key] = replace(value, type_=Any)
-        return annotations
+                state.hints[key] = replace(value, type_=Any)
+        return state
 
     # Give a function with an unannotated paramter
     assert AnnotationState(adaptee).hints == {
@@ -66,12 +66,12 @@ def test_adaptor_pipeline_fails_if_pipeline_func_is_not_decorated():
     def adaptee(foo) -> str:
         return "bar"
 
-    def all_unannotated_as_any(annotations: AnnotationState) -> AnnotationState:
+    def all_unannotated_as_any(state: AnnotationState) -> AnnotationState:
         """Any unannoted parameter gets typing.Any applied."""
-        for key, value in annotations.hints.items():
+        for key, value in state.hints.items():
             if value.type_ is inspect.Parameter.empty:
-                annotations.hints[key] = replace(value, type_=Any)
-        return annotations
+                state.hints[key] = replace(value, type_=Any)
+        return state
 
     with pytest.raises(TypeError) as error:
         adapt(adaptee, [all_unannotated_as_any])
