@@ -3,7 +3,7 @@
 from typing import Annotated
 from brewing.http import ViewSet, status, self
 from brewing.http.path import TrailingSlashPolicy
-from .helpers import SomeData
+from .helpers import SomeData, new_client
 from fastapi import APIRouter, Depends, HTTPException
 
 
@@ -70,4 +70,30 @@ class ItemViewSet(ViewSet):
         del self._db[item_id]
 
 
-vs6 = ItemViewSet()
+def test_post_create_items():
+    """Test the api root endponts - list and create."""
+    client = new_client(ItemViewSet())
+    list_result = client.get("/")
+    assert list_result.status_code == status.HTTP_200_OK
+    assert list_result.json() == []
+    data = SomeData(something=[1], data="bar")
+    create_result = client.post("/", json=data.model_dump(mode="json"))
+    assert create_result.status_code == status.HTTP_201_CREATED
+    assert SomeData.model_validate(create_result.json()) == data
+    list_result2 = client.get("/")
+    assert len(list_result2.json()) == 1
+
+
+def test_get_update_delete():
+    """Test the endpoints that involve the instance_id and hence the dependency"""
+    client = new_client(ItemViewSet())
+    initial_get = client.get("/1")
+    assert initial_get.status_code == status.HTTP_404_NOT_FOUND
+
+    data = SomeData(something=[1], data="bar")
+    create_result = client.post("/", json=data.model_dump(mode="json"))
+    assert create_result.status_code == status.HTTP_201_CREATED
+
+    second_get = client.get("/1")
+    assert second_get.status_code == status.HTTP_200_OK
+    assert SomeData.model_validate(second_get.json()) == data
