@@ -8,9 +8,14 @@ and Django Rest Framework's viewsets.
 
 from __future__ import annotations
 
-from types import EllipsisType
+from types import EllipsisType, FunctionType
 from fastapi import APIRouter
-from brewing.http.path import HTTPPath, TrailingSlashPolicy
+from brewing.http.path import (
+    HTTPPath,
+    TrailingSlashPolicy,
+    DeferredHTTPPath,
+    DeferredDecoratorCall,
+)
 from brewing.http.annotations import (
     AnnotatedFunctionAdaptorPipeline,
     ApplyViewSetDependency,
@@ -63,6 +68,24 @@ class ViewSet:
         self.HEAD = self.root_path.HEAD
         self.OPTIONS = self.root_path.OPTIONS
         self.TRACE = self.root_path.TRACE
+        self.DEPENDS = self.root_path.DEPENDS
+        self._all_methods = [
+            getattr(self, m) for m in dir(self) if callable(getattr(self, m))
+        ]
+        self._setup_classbased_endpoints()
+
+    def _setup_classbased_endpoints(self):
+        decorated_methods: list[tuple[FunctionType, list[DeferredDecoratorCall]]] = [
+            (m, getattr(m, DeferredHTTPPath.METADATA_KEY, None))
+            for m in self._all_methods
+            if getattr(m, DeferredHTTPPath.METADATA_KEY, None)
+        ]
+        for decorated_method in decorated_methods:
+            endpoint_func, calls = decorated_method
+            for call in calls:
+                decorator_factory = getattr(self, call.method.upper())
+                decorator = decorator_factory(*call.args, **call.kwargs)
+                decorator(endpoint_func)
 
     def __call__(
         self, path: str, trailing_slash: bool | EllipsisType = ...
