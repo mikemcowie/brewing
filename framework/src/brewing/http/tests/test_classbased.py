@@ -26,7 +26,7 @@ class ItemViewSet(ViewSet):
         """List all the items."""
         return list(self._db.values())
 
-    @self.POST()
+    @self.POST(status_code=status.HTTP_201_CREATED)
     def create_item(self, item: SomeData) -> SomeData:
         """Create an item."""
         id = sorted(self._db.keys())[-1]  # Find next key
@@ -74,7 +74,7 @@ def test_post_create_items():
     """Test the api root endponts - list and create."""
     client = new_client(ItemViewSet())
     list_result = client.get("/")
-    assert list_result.status_code == status.HTTP_200_OK
+    assert list_result.status_code == status.HTTP_200_OK, list_result.json()
     assert list_result.json() == []
     data = SomeData(something=[1], data="bar")
     create_result = client.post("/", json=data.model_dump(mode="json"))
