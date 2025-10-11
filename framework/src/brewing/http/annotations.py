@@ -72,15 +72,8 @@ class AnnotationState:
         # get_type_hints doesn't tell us about any unannotated parameters,
         # so we use inspect.signature to find those
         inspect_params = inspect.signature(func).parameters
-        for name, parameter in inspect_params.items():
+        for name in inspect_params.keys():
             if name not in self.hints:
-                # assumption - inspect.signature should only return untyped parameters here.
-                # so incase that assumption is wrong, catch it.
-                if parameter.annotation is not inspect.Parameter.empty:
-                    raise RuntimeError(
-                        f"unexpected: parameter {name} is annotated according to inspect.signature, "
-                        "but not according to typing.get_type_hints."
-                    )
                 self.hints[name] = Annotation(inspect.Parameter.empty, None)
 
     def abandon_pending(self):
@@ -90,7 +83,10 @@ class AnnotationState:
     def apply_pending(self):
         """Apply the current state of the annotations to the function."""
         for key, value in self.hints.items():
-            self.func.__annotations__[key] = value.raw()
+            try:
+                self.func.__annotations__[key] = value.raw()
+            except AttributeError:
+                pass
         self.__init__(self.func)
 
 

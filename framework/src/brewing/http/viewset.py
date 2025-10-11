@@ -9,7 +9,9 @@ and Django Rest Framework's viewsets.
 from __future__ import annotations
 
 from types import EllipsisType, FunctionType
+from dataclasses import replace
 from fastapi import APIRouter
+from fastapi.params import Depends
 from brewing.http.path import (
     HTTPPath,
     TrailingSlashPolicy,
@@ -19,6 +21,7 @@ from brewing.http.path import (
 from brewing.http.annotations import (
     AnnotatedFunctionAdaptorPipeline,
     ApplyViewSetDependency,
+    AnnotationState,
     adapt,
 )
 
@@ -78,7 +81,32 @@ class ViewSet:
             for m in dir(self)
             if isinstance(getattr(self, m), DeferredHTTPPath)
         ]
+        self._rewrite_fastapi_style_depends()
         self._setup_classbased_endpoints()
+
+    def _rewrite_fastapi_style_depends(self):
+        for method in self._all_methods:
+            try:
+                annotation_state = AnnotationState(method)
+            except TypeError:
+                # Just indicates its not an item we need to handle
+                continue
+            for key, value in annotation_state.hints.items():
+                if value.annotated:
+                    annotations_as_list = list(value.annotated)
+                    for annotation in value.annotated:
+                        if isinstance(
+                            annotation, Depends
+                        ) and annotation.dependency in [
+                            getattr(f, "__func__", ...) for f in self._all_methods
+                        ]:
+                            annotations_as_list.remove(annotation)
+                            annotations_as_list.append(
+                                Depends(getattr(self, annotation.dependency.__name__))  # type: ignore
+                            )
+                    value = replace(value, annotated=tuple(annotations_as_list))
+                annotation_state.hints[key] = value
+            annotation_state.apply_pending()
 
     def _setup_classbased_endpoints(self):
         decorated_methods: list[tuple[FunctionType, list[DeferredDecoratorCall]]] = [  # type: ignore
