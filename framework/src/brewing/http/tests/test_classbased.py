@@ -148,6 +148,30 @@ def test_self_refers_to_correct_viewset():
     assert new_client(VS2()).get("/").text == '"v2"'
 
 
+def test_fastapi_style_dependencies():
+    """Test in-class fastapi-style dependency handling
+
+    This needs our own logic, because we (may) conceptually need
+    to rewrite the annotation to work with the instantiated class instance.
+    """
+
+    class VS(ViewSet):
+        def dep1(self):
+            return "dep1"
+
+        def dep2(self, dep1: Annotated[str, Depends(dep1)]):
+            return dep1 + "dep2"
+
+        def dep3(self, dep2: Annotated[str, Depends(dep2)]):
+            return dep2 + "dep3"
+
+        @self.GET()
+        def read_value(self, dep3: Annotated[str, Depends(dep3)]):
+            return dep3
+
+    assert new_client(VS()).get("/").text == '"dep1dep2dep3"'
+
+
 if __name__ == "__main__":  # pragma: no cover
     # Can run this file as a script to debug.
     import uvicorn
