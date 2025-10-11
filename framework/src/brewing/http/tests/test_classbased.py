@@ -127,7 +127,29 @@ def test_get_update_delete():
     assert SomeData.model_validate(second_get.json()) == data
 
 
-if __name__ == "__main__":
+def test_self_refers_to_correct_viewset():
+    """Re-using a method via subclassing (or some other reference to another class) can cause in-place modifications.
+
+    Make sure that "self" parameter of methods behaves as would be expected, as it seems that getting this wrong *could*
+    lead to the dependency on the wrong viewset.
+    """
+
+    class VS1(ViewSet):
+        value = "v1"
+
+        @self.GET()
+        def read_value(self):
+            return self.value
+
+    class VS2(VS1):
+        value = "v2"
+
+    assert new_client(VS1()).get("/").text == '"v1"'
+    assert new_client(VS2()).get("/").text == '"v2"'
+
+
+if __name__ == "__main__":  # pragma: no cover
+    # Can run this file as a script to debug.
     import uvicorn
     from brewing.http import BrewingHTTP
 
