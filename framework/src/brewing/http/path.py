@@ -13,6 +13,8 @@ from http import HTTPMethod
 
 
 if TYPE_CHECKING:
+    from brewing.http import ViewSet
+
     # We are making some fake assignments
     # so that the type checker will give better completions.
     r = APIRouter()
@@ -161,6 +163,8 @@ class HTTPPath:
         if not self.path:
             return "/"
         retval = "/".join(part.value for part in self.parts if part.value)
+        if not retval:
+            retval = "/"
         if retval[0] != "/":
             retval = "/" + retval
         if (
@@ -189,8 +193,9 @@ class HTTPPath:
 class DeferredDecoratorCall:
     """Represents a call made whose outcome is deferred from class definition to class instantiation."""
 
+    path: DeferredHTTPPath
     method: HTTPMethod | Literal["DEPENDS"]
-    args: tuple[Any]
+    args: tuple[Any, ...]
     kwargs: dict[str, Any]
 
 
@@ -245,16 +250,16 @@ class DeferredHTTPPath:
 
             return _inner
 
-    def _decorator_factory(
-        self, method: HTTPMethod | Literal["DEPENDS"], *args: Any, **kwargs: Any
-    ):
+    def _decorator_factory(self, method: HTTPMethod | Literal["DEPENDS"]):
         def _middle(*args: Any, **kwargs: Any):
             def _inner(func: Callable[..., Any]) -> Callable[..., Any]:
                 if not hasattr(func, self.METADATA_KEY):
                     setattr(func, self.METADATA_KEY, [])
                 metadata: list[DeferredDecoratorCall] = getattr(func, self.METADATA_KEY)
                 metadata.append(
-                    DeferredDecoratorCall(method=method, args=args, kwargs=kwargs)
+                    DeferredDecoratorCall(
+                        path=self, method=method, args=args, kwargs=kwargs
+                    )
                 )
                 return func
 
@@ -264,7 +269,16 @@ class DeferredHTTPPath:
 
     def __call__(self, value: str, /, **kwargs: Any):
         """Access a child deferred http path."""
-        return DeferredHTTPPath(value, **kwargs)
+        return DeferredHTTPPath(self.path + "/" + value, **kwargs)
+
+    def apply(self, viewset: ViewSet, call: DeferredDecoratorCall):
+        """Convert to an HTTPPath in the context of a given viewset."""
+        return HTTPPath(
+            str(viewset.root_path) + call.path.path,
+            viewset.router,
+            viewset.trailing_slash_policy,
+            viewset.annotation_adaptors,
+        )
 
 
 self = DeferredHTTPPath()

@@ -1,9 +1,10 @@
 """Class based viewset tests"""
 
 from typing import Annotated
+from http import HTTPMethod
 from brewing.http import ViewSet, status, self
-from brewing.http.path import TrailingSlashPolicy
-from .helpers import SomeData, new_client
+from brewing.http.path import TrailingSlashPolicy, DeferredDecoratorCall
+from brewing.http.tests.helpers import SomeData, new_client
 from fastapi import APIRouter, Depends, HTTPException
 
 
@@ -29,11 +30,15 @@ class ItemViewSet(ViewSet):
     @self.POST(status_code=status.HTTP_201_CREATED)
     def create_item(self, item: SomeData) -> SomeData:
         """Create an item."""
-        id = sorted(self._db.keys())[-1]  # Find next key
+        try:
+            id = sorted(self._db.keys())[-1] + 1  # Find next key
+        except IndexError:  # When nothing in the db, the above raised IndexError
+            id = 0
         self._db[id] = item
+        print(sorted(self._db.keys()))
         return item
 
-    item_id = self("item_id")
+    item_id = self("{item_id}")
 
     @item_id.DEPENDS()
     def item(self, item_id: int) -> SomeData:
@@ -70,6 +75,29 @@ class ItemViewSet(ViewSet):
         del self._db[item_id]
 
 
+def test_deferred_annotations():
+    assert ItemViewSet.item_id.path == "/{item_id}"
+    assert ItemViewSet.list_items._deferred_decorations == [
+        DeferredDecoratorCall(self, HTTPMethod.GET, args=(), kwargs={})
+    ]
+    assert ItemViewSet.create_item._deferred_decorations == [
+        DeferredDecoratorCall(
+            self, HTTPMethod.POST, args=(), kwargs={"status_code": 201}
+        )
+    ]
+    assert ItemViewSet.get_item._deferred_decorations == [
+        DeferredDecoratorCall(ItemViewSet.item_id, HTTPMethod.GET, args=(), kwargs={})
+    ]
+    assert ItemViewSet.update_item._deferred_decorations == [
+        DeferredDecoratorCall(ItemViewSet.item_id, HTTPMethod.PUT, args=(), kwargs={})
+    ]
+    assert ItemViewSet.delete_item._deferred_decorations == [
+        DeferredDecoratorCall(
+            ItemViewSet.item_id, HTTPMethod.DELETE, args=(), kwargs={}
+        )
+    ]
+
+
 def test_post_create_items():
     """Test the api root endponts - list and create."""
     client = new_client(ItemViewSet())
@@ -97,3 +125,12 @@ def test_get_update_delete():
     second_get = client.get("/1")
     assert second_get.status_code == status.HTTP_200_OK
     assert SomeData.model_validate(second_get.json()) == data
+
+
+if __name__ == "__main__":
+    import uvicorn
+    from brewing.http import BrewingHTTP
+
+    app = BrewingHTTP()
+    app.include_viewset(ItemViewSet())
+    uvicorn.run(app)
