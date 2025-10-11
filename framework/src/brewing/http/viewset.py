@@ -19,6 +19,7 @@ from brewing.http.path import (
 from brewing.http.annotations import (
     AnnotatedFunctionAdaptorPipeline,
     ApplyViewSetDependency,
+    adapt,
 )
 
 
@@ -80,19 +81,19 @@ class ViewSet:
         self._setup_classbased_endpoints()
 
     def _setup_classbased_endpoints(self):
-        decorated_methods: list[tuple[FunctionType, list[DeferredDecoratorCall]]] = [
+        decorated_methods: list[tuple[FunctionType, list[DeferredDecoratorCall]]] = [  # type: ignore
             (m, getattr(m, DeferredHTTPPath.METADATA_KEY, None))
             for m in self._all_methods
             if getattr(m, DeferredHTTPPath.METADATA_KEY, None)
         ]
         for decorated_method in decorated_methods:
             endpoint_func, calls = decorated_method
+            adapt(endpoint_func.__func__, self.annotation_adaptors)  # type: ignore
             for call in calls:
                 http_path = call.path.apply(self, call)
                 decorator_factory = getattr(http_path, call.method)
-                print(f"{endpoint_func=}, {call=}, {decorator_factory=}")
                 decorator = decorator_factory(*call.args, **call.kwargs)
-                decorator(getattr(self, endpoint_func.__name__))
+                decorator(endpoint_func.__func__)  # type: ignore
 
     def __call__(
         self, path: str, trailing_slash: bool | EllipsisType = ...
