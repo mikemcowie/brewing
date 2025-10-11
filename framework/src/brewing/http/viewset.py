@@ -72,6 +72,11 @@ class ViewSet:
         self._all_methods = [
             getattr(self, m) for m in dir(self) if callable(getattr(self, m))
         ]
+        self._defferred_paths = [
+            getattr(self, m)
+            for m in dir(self)
+            if isinstance(getattr(self, m), DeferredHTTPPath)
+        ]
         self._setup_classbased_endpoints()
 
     def _setup_classbased_endpoints(self):
@@ -83,9 +88,11 @@ class ViewSet:
         for decorated_method in decorated_methods:
             endpoint_func, calls = decorated_method
             for call in calls:
-                decorator_factory = getattr(self, call.method.upper())
+                http_path = call.path.apply(self, call)
+                decorator_factory = getattr(http_path, call.method)
+                print(f"{endpoint_func=}, {call=}, {decorator_factory=}")
                 decorator = decorator_factory(*call.args, **call.kwargs)
-                decorator(endpoint_func)
+                decorator(getattr(self, endpoint_func.__name__))
 
     def __call__(
         self, path: str, trailing_slash: bool | EllipsisType = ...
