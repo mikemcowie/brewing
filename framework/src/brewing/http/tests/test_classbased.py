@@ -33,7 +33,7 @@ class ItemViewSet(ViewSet):
         try:
             id = sorted(self._db.keys())[-1] + 1  # Find next key
         except IndexError:  # When nothing in the db, the above raised IndexError
-            id = 0
+            id = 1
         self._db[id] = item
         print(sorted(self._db.keys()))
         return item
@@ -77,21 +77,21 @@ class ItemViewSet(ViewSet):
 
 def test_deferred_annotations():
     assert ItemViewSet.item_id.path == "/{item_id}"
-    assert ItemViewSet.list_items._deferred_decorations == [
+    assert ItemViewSet.list_items._deferred_decorations == [  # type: ignore[reportFunctionMemberAccess]
         DeferredDecoratorCall(self, HTTPMethod.GET, args=(), kwargs={})
     ]
-    assert ItemViewSet.create_item._deferred_decorations == [
+    assert ItemViewSet.create_item._deferred_decorations == [  # type: ignore[reportFunctionMemberAccess]
         DeferredDecoratorCall(
             self, HTTPMethod.POST, args=(), kwargs={"status_code": 201}
         )
     ]
-    assert ItemViewSet.get_item._deferred_decorations == [
+    assert ItemViewSet.get_item._deferred_decorations == [  # type: ignore[reportFunctionMemberAccess]
         DeferredDecoratorCall(ItemViewSet.item_id, HTTPMethod.GET, args=(), kwargs={})
     ]
-    assert ItemViewSet.update_item._deferred_decorations == [
+    assert ItemViewSet.update_item._deferred_decorations == [  # type: ignore[reportFunctionMemberAccess]
         DeferredDecoratorCall(ItemViewSet.item_id, HTTPMethod.PUT, args=(), kwargs={})
     ]
-    assert ItemViewSet.delete_item._deferred_decorations == [
+    assert ItemViewSet.delete_item._deferred_decorations == [  # type: ignore[reportFunctionMemberAccess]
         DeferredDecoratorCall(
             ItemViewSet.item_id, HTTPMethod.DELETE, args=(), kwargs={}
         )
