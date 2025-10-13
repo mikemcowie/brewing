@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Annotated, Any
 
 import pytest
 import typer
-from brewing.cli import CLI, ConflictingCommandError
+from brewing.cli import CLI, ConflictingCommandError, callback
 from brewing.cli.testing import BrewingCLIRunner
 from typer import Argument
 
@@ -313,3 +313,35 @@ def test_cannot_extend_with_conflicting_names():
         "cannot add CLI command with conflicting command_name='quiet'."
         in error.exconly()
     )
+
+
+def test_callback(subtests: SubTests):
+    class CLI1(CLI):
+        def __init__(self, name: str, message: str):
+            self.message = message
+            super().__init__(name)
+
+        @callback()
+        def initial(self):
+            """First noise."""
+            print("calling back!")
+
+        def quiet(self):
+            """Allows you to do something"""
+            print(self.message.lower())
+
+    cli = CLI1(name="root", message="Something")
+    runner = BrewingCLIRunner(cli)
+
+    assert "quiet" in cli.command_names
+    assert "initial" not in cli.command_names
+
+    with subtests.test("help"):
+        result = runner.invoke(["--help"])
+        assert "quiet" in result.output
+        assert "initial" not in result.output
+
+    with subtests.test("cmd"):
+        result = runner.invoke(["quiet"])
+        assert result.stdout.strip() == "calling back!\nsomething"
+        assert result.exit_code == 0
