@@ -48,6 +48,7 @@ class MyCLI(CLI):
 """
 
 from .cli import CLI as CLI
+from .cli import callback as callback
 from .cli import ConflictingCommandError as ConflictingCommandError
 
-__all__ = ["CLI", "ConflictingCommandError"]
+__all__ = ["CLI", "ConflictingCommandError", "callback"]

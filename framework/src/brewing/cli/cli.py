@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import string
 from collections.abc import Callable
-from typing import Annotated, Any, get_type_hints
+from typing import Annotated, Any, get_type_hints, TYPE_CHECKING
 
 from pydantic.alias_generators import to_snake
 from typer import Option, Typer
@@ -21,6 +21,29 @@ class ConflictingCommandError(ValueError):
 
 
 type Revisable = Callable[..., Any]
+
+_CALLBACK_KEY = "_callback"
+
+
+def _callback(*args: Any, **kwargs: Any):
+    """Mark give function to be intepreted as a typer callback."""
+
+    def _inner[T: Callable[..., Any]](func: T) -> T:
+        setattr(func, _CALLBACK_KEY, dict(args=args, kwargs=kwargs))
+        return func
+
+    return _inner
+
+
+if TYPE_CHECKING:
+    callback = Typer().callback
+else:
+    callback = _callback
+
+
+def _is_callback(func: Any) -> bool:
+    """Return whether given function or object should be intepreted as a typer callback."""
+    return hasattr(func, _CALLBACK_KEY)
 
 
 def _revise_annotation(func: Revisable, param: inspect.Parameter) -> Any:
@@ -144,6 +167,12 @@ class CLI:
                     raise ConflictingCommandError(
                         f"cannot add CLI command with conflicting {command_name=}."
                     )
-                self.typer.command(command_name)(obj)
+                if _is_callback(obj):
+                    call_params = getattr(obj, _CALLBACK_KEY)
+                    self.typer.callback(*call_params["args"], **call_params["kwargs"])(
+                        obj
+                    )
+                else:
+                    self.typer.command(command_name)(obj)
         for child in self._children:
             self.typer.add_typer(child.typer, name=child.name)
