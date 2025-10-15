@@ -84,6 +84,7 @@ class CLI:
         name: str,
         /,
         *children: CLI,
+        help: str | None = None,
         extends: Typer | CLI | None = None,
         wraps: Any = _self,
     ):
@@ -103,7 +104,12 @@ class CLI:
         elif isinstance(extends, CLI):
             self._typer = extends.typer
         else:
-            self._typer = Typer(name=name, no_args_is_help=True, add_help_option=True)
+            self._typer = Typer(
+                name=name,
+                no_args_is_help=True,
+                add_help_option=True,
+                help=help or self.__doc__,
+            )
         self._children = children
         self._wraps = self if wraps is self._self else wraps
         self._setup_typer()

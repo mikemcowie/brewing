@@ -47,8 +47,11 @@ exclude = [
 ]
 
 [project.scripts]
-brewing = "brewing.cli:cli"
+brewing = "brewing.cli.global_cli:run"
 dev = "brewing.cli:dev"
+
+[project.entry-points.brewing]
+project = "brewing.project.cli:load"
 
 [project.urls]
 Homepage = "https://mikemcowie.github.io/brewing/"
