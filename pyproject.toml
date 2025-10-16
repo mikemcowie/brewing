@@ -10,6 +10,7 @@ dependencies = [
     "brewing-test-dependencies",
     "brewing-incubator",
     "testing-samples",
+    "tomlkit>=0.13.3",
 ]
 
 [project.urls]

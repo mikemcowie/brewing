@@ -12,6 +12,7 @@ members = [
     "brewing-incubator",
     "brewing-test-dependencies",
     "brewing-uv-workspace",
+    "generated-project",
     "project-manager",
     "testing-samples",
 ]
@@ -333,6 +334,7 @@ dependencies = [
     { name = "brewing-test-dependencies" },
     { name = "project-manager" },
     { name = "testing-samples" },
+    { name = "tomlkit" },
 ]
 
 [package.dev-dependencies]
@@ -355,6 +357,7 @@ requires-dist = [
     { name = "brewing-test-dependencies", editable = "test-dependencies" },
     { name = "project-manager", editable = "samples/project-manager" },
     { name = "testing-samples", editable = "samples/testing-samples" },
+    { name = "tomlkit", specifier = ">=0.13.3" },
 ]
 
 [package.metadata.requires-dev]
@@ -767,6 +770,17 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/d0/d482c39cee2ab2978a892558cf130681d4574ea208e162da8958b31e9250/frozendict-2.4.6-py312-none-any.whl", hash = "sha256:49344abe90fb75f0f9fdefe6d4ef6d4894e640fadab71f11009d52ad97f370b9", size = 16146, upload-time = "2024-10-13T12:15:28.16Z" },
     { url = "https://files.pythonhosted.org/packages/a5/8e/b6bf6a0de482d7d7d7a2aaac8fdc4a4d0bb24a809f5ddd422aa7060eb3d2/frozendict-2.4.6-py313-none-any.whl", hash = "sha256:7134a2bb95d4a16556bb5f2b9736dceb6ea848fa5b6f3f6c2d6dba93b44b4757", size = 16146, upload-time = "2024-10-13T12:15:29.495Z" },
 ]
+
+[[package]]
+name = "generated-project"
+version = "0.0.1"
+source = { editable = "samples/generated-project" }
+dependencies = [
+    { name = "brewing" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "brewing", editable = "framework" }]
 
 [[package]]
 name = "ghp-import"

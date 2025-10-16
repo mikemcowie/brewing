@@ -8,6 +8,7 @@ from typing import Callable, Any
 from contextlib import contextmanager
 import httpx
 from pathlib import Path
+import brewing
 from brewing.cli.testing import BrewingCLIRunner
 from brewing.cli import global_cli
 from brewing.project import cli
@@ -57,9 +58,23 @@ def test_project_init(tmp_path: Path):
     runner = cli_runner()
     runner.invoke(["init", "--path", str(project_dir)], catch_exceptions=False)
     subprocess.run([uv.find_uv_bin(), "sync"], check=True, cwd=project_dir)
+    # Change install of brewing to local install
+    subprocess.run(
+        [
+            uv.find_uv_bin(),
+            "add",
+            str(
+                Path(brewing.__file__).parents[2].relative_to(project_dir, walk_up=True)
+            ),
+        ],
+        check=True,
+        cwd=project_dir,
+    )
+
     # Then the directory will contain a starter brewing project
     assert set(f for f in project_dir.glob("**") if ".venv" not in f.parts) == {
         project_dir,
+        project_dir / "README.md",
         project_dir / "pyproject.toml",
         project_dir / "uv.lock",
         project_dir / "src",
@@ -77,7 +92,7 @@ def test_project_init(tmp_path: Path):
         ready_status.raise_for_status()
 
     # start the dev server (in another thread)
-    with run("uv", "run", "brewing", readiness_callback=readiness_callback):
+    with run("uv", "run", "brewing", "dev", readiness_callback=readiness_callback):
         result = httpx.get("http://127.0.0.1:8000")
         assert result.status_code == status.HTTP_200_OK
         assert "It works!!" in result.text

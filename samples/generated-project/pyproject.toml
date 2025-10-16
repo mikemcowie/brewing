@@ -1,0 +1,10 @@
+[project]
+name = "generated_project"
+readme = "README.md"
+version = "0.0.1"
+dependencies = ["brewing"]
+requires-python = ">=3.13"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

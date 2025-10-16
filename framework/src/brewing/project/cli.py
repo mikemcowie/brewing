@@ -5,12 +5,15 @@ This is the main brewing CLI that manages project, similar
 to the rails CLI for rails or manage.py for django.
 """
 
+import sys
 from typing import Callable, Annotated
 from dataclasses import dataclass
 from brewing.cli import CLI
 from pathlib import Path
 from typer import Option
 import structlog
+import tomlkit
+from brewing.project import pyproject_model
 
 
 logger = structlog.get_logger()
@@ -30,9 +33,27 @@ def empty_file_content(context: InitContext):
 PROJECT_NAME_WITH_UNDERSCORES = "{PROJECT_NAME}"
 
 
+def load_pyproject_content(context: InitContext):
+    return tomlkit.dumps(
+        pyproject_model.PyprojectTomlData(
+            project=pyproject_model.Project(
+                name=context.name,
+                version="0.0.1",
+                requires_python=f">={sys.version_info.major}.{sys.version_info.minor}",
+                dependencies=["brewing"],
+                readme="README.md",
+            ),
+            build_system=pyproject_model.BuildSystem(
+                requires=["hatchling"], build_backend="hatchling.build"
+            ),
+        ).model_dump(mode="json", exclude_none=True, by_alias=True)
+    )
+
+
 def write_initial_files(context: InitContext):
     files: dict[Path, Callable[[InitContext], str]] = {
-        Path("pyproject.toml"): empty_file_content,
+        Path("pyproject.toml"): load_pyproject_content,
+        Path("README.md"): empty_file_content,
         Path(".gitignore"): empty_file_content,
         Path("src", PROJECT_NAME_WITH_UNDERSCORES, "__init__.py"): empty_file_content,
         Path("src", PROJECT_NAME_WITH_UNDERSCORES, "app.py"): empty_file_content,
