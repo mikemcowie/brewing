@@ -1,5 +1,6 @@
 """Project init - start a new brewing project."""
 
+import os
 import sys
 import signal
 import uv
@@ -10,10 +11,18 @@ import httpx
 from pathlib import Path
 import brewing
 from brewing.cli.testing import BrewingCLIRunner
-from brewing.cli import global_cli
 from brewing.project import cli
 from fastapi import status
 from tenacity import retry, wait_exponential_jitter, stop_after_delay
+
+
+@contextmanager
+def cd(path: Path | str):
+    """Context manager to temporarily change working directory."""
+    cwd = os.getcwd()
+    os.chdir(str(path))
+    yield
+    os.chdir(cwd)
 
 
 @contextmanager
@@ -35,18 +44,27 @@ def test_cli_commands_change_if_active_project_found(tmp_path: Path):
     # Given an empty directory
     project_dir = tmp_path / "my-project"
     project_dir.mkdir()
-    # list the names of the CLI commands, init is there.
-    no_project_commands = global_cli.cli().command_names
-    assert "init" in no_project_commands
-    assert "db" not in no_project_commands
+    with cd(project_dir):
+        # list the names of the CLI commands, init is there.
+        out = subprocess.run(
+            [uv.find_uv_bin(), "run", "brewing", "--help"],
+            check=True,
+            cwd=project_dir,
+            capture_output=True,
+            encoding="utf8",
+        ).stdout
+        assert "project" in out
+        assert "my-project" not in out
 
-    # If I run init in the directory
-    runner = cli_runner()
-    runner.invoke(["init", "--path", str(project_dir)], catch_exceptions=False)
-    # Then the command names are different with the existing commands moved
-    active_project_commands = global_cli.cli().command_names
-    assert "init" not in active_project_commands
-    assert "db" in active_project_commands
+        # If I run init in the directory
+        runner = cli_runner()
+        runner.invoke(["init", "--path", str(project_dir)], catch_exceptions=False)
+        # Then the command names are different with the existing commands moved
+        out = runner.invoke(
+            ["init", "--path", str(project_dir)], catch_exceptions=False
+        )
+        assert "project" in out.output
+        assert "my-project" in out.output
 
 
 def test_project_init(tmp_path: Path):

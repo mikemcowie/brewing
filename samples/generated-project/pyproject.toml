@@ -5,6 +5,9 @@ version = "0.0.1"
 dependencies = ["brewing"]
 requires-python = ">=3.13"
 
+[project.entry-points.brewing]
+generated-project = "generated_project.app:app"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

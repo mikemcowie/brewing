@@ -1,6 +1,6 @@
 {
     "python.testing.pytestArgs": [
-        "tests"
+        "framework"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true

@@ -5,7 +5,7 @@ It is a shallow wrapper around fastapi with extra methods to support native feat
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 from fastapi import FastAPI
 
 if TYPE_CHECKING:
@@ -30,3 +30,18 @@ class BrewingHTTP(FastAPI):
 
         """
         self.include_router(viewset.router, **kwargs)
+
+    def with_viewsets(self, *vs: ViewSet) -> Self:
+        """
+        _summary_
+
+        Args:
+            *vs (ViewSet): viewsets to include
+
+        Returns:
+            Self: The BrewingHTTP instance (self)
+
+        """
+        for v in vs:
+            self.include_viewset(v)
+        return self

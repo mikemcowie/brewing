@@ -31,7 +31,9 @@ class Project(BaseModel):
     keywords: list[str] | None = None
     classifiers: list[str] | None = None
     urls: RootModel[dict[str, str]] | None = None
-    entry_points: RootModel[dict[str, dict[str, str]]] | None = None
+    entry_points: RootModel[dict[str, dict[str, str]]] | None = Field(
+        default=None, serialization_alias="entry-points"
+    )
     scripts: RootModel[dict[str, str]] | None = None
 
     @field_validator("name", mode="after")

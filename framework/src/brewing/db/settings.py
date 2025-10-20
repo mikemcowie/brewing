@@ -10,10 +10,10 @@ from frozendict import frozendict
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL
 
+from brewing.db.types import DatabaseConnectionConfiguration
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
-
-    from brewing.db.types import DatabaseConnectionConfiguration
 
 
 class DatabaseType(StrEnum):

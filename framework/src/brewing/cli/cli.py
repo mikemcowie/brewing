@@ -108,7 +108,7 @@ class CLI:
                 name=name,
                 no_args_is_help=True,
                 add_help_option=True,
-                help=help or self.__doc__,
+                help=help or (self.__doc__ if self.__doc__ != CLI.__doc__ else None),
             )
         self._children = children
         self._wraps = self if wraps is self._self else wraps
