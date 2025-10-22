@@ -19,5 +19,9 @@ with Settings(
     )
 ):
     app = Brewing(
-        "generated-project", BrewingHTTP().with_viewsets(HealthCheckViewset())
+        "generated-project", http=BrewingHTTP().with_viewsets(HealthCheckViewset())
     )
+
+
+def __getattr__(name: str):
+    return getattr(app, name)

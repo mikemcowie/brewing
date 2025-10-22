@@ -5,7 +5,14 @@ from __future__ import annotations
 import inspect
 import string
 from collections.abc import Callable
-from typing import Annotated, Any, get_type_hints, TYPE_CHECKING
+from typing import (
+    Annotated,
+    Any,
+    get_type_hints,
+    TYPE_CHECKING,
+    Protocol,
+    NamedTuple,
+)
 
 from pydantic.alias_generators import to_snake
 from typer import Option, Typer
@@ -74,18 +81,31 @@ def _revise_annotations(func: Revisable):
     }
 
 
-class CLI:
+class CLIBaseOptions(Protocol):
+    """Base duck-type class for CLI options."""
+
+    @property
+    def name(self) -> str: ...
+
+
+class CLIOptions(NamedTuple):
+    """Minimal configuration options for a CLI."""
+
+    name: str
+
+
+class CLI[OptionsT: CLIBaseOptions]:
     """A class-based command-line generator based on typer."""
 
     _self = object()  # sentinal value to serve as default for wraps
 
     def __init__(
         self,
-        name: str,
+        options: OptionsT,
         /,
-        *children: CLI,
+        *children: CLI[Any],
         help: str | None = None,
-        extends: Typer | CLI | None = None,
+        extends: Typer | CLI[Any] | None = None,
         wraps: Any = _self,
     ):
         """
@@ -98,14 +118,14 @@ class CLI:
             wraps (Any): Object to obtain CLI commands from. If not provided, self will be used.
 
         """
-        self._name = name
+        self._options = options
         if isinstance(extends, Typer):
             self._typer = extends
         elif isinstance(extends, CLI):
             self._typer = extends.typer
         else:
             self._typer = Typer(
-                name=name,
+                name=self._options.name,
                 no_args_is_help=True,
                 add_help_option=True,
                 help=help or (self.__doc__ if self.__doc__ != CLI.__doc__ else None),
@@ -123,7 +143,7 @@ class CLI:
             str: The name of the CLI as provided at instantiation.
 
         """
-        return self._name
+        return self._options.name
 
     @property
     def command_names(self):
@@ -152,14 +172,19 @@ class CLI:
         This allows a CLI instance to be used precisely as a typer instance
         would be.
         """
-        return getattr(self.typer, name)
+        return getattr(self._typer, name)
+
+    @staticmethod
+    def _hidden_noop_callback():
+        return None
 
     def _setup_typer(self):
         # Setting a callback overrides typer's default behaviour
         # which sets the a single command on the root of the CLI
         # It means the CLI behaves the same with one or several CLI options
         # which this author thinks is more predictable and explicit.
-        self._typer.command("hidden", hidden=True)(lambda: None)
+
+        self._typer.command("hidden", hidden=True)(self._hidden_noop_callback)
         for attr in dir(self._wraps):
             obj = getattr(self._wraps, attr)
             if (

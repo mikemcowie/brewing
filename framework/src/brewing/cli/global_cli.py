@@ -8,7 +8,7 @@ import tomllib
 from pathlib import Path
 import importlib.metadata
 from typer import Typer
-from brewing.cli import CLI
+from brewing.cli import CLI, CLIOptions
 from brewing.brewing import Brewing
 
 
@@ -42,7 +42,7 @@ def find_current_project() -> str | None:
 
 
 def cli():
-    cli = CLI("brewing", extends=Typer(no_args_is_help=True))
+    cli = CLI(CLIOptions(name="brewing"), extends=Typer(no_args_is_help=True))
     cli.typer.callback()
     entrypoints = importlib.metadata.entry_points(group="brewing")
     for entrypoint in entrypoints:
@@ -59,3 +59,7 @@ def cli():
 
 def run():
     cli()()
+
+
+if __name__ == "__main__":
+    run()

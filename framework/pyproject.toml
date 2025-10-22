@@ -10,10 +10,12 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.118.0",
     "frozendict>=2.4.6",
+    "gunicorn>=23.0.0",
     "httpx>=0.28.1",
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",
     "sqlalchemy>=2.0.43",
+    "watchfiles>=1.1.0",
 ]
 
 [project.optional-dependencies]

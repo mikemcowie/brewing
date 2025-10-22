@@ -5,11 +5,24 @@ It is a shallow wrapper around fastapi with extra methods to support native feat
 """
 
 from __future__ import annotations
+import inspect
 from typing import TYPE_CHECKING, Any, Self
 from fastapi import FastAPI
 
 if TYPE_CHECKING:
     from . import ViewSet
+
+
+def find_calling_module():
+    frame = inspect.currentframe()
+    while True:
+        assert frame
+        frame = frame.f_back
+        module = inspect.getmodule(frame)
+        assert module
+        mod_name = module.__name__
+        if mod_name != __name__:
+            return mod_name
 
 
 class BrewingHTTP(FastAPI):
@@ -19,6 +32,15 @@ class BrewingHTTP(FastAPI):
     It is subclassed from FastAPI with extra methods to handle and translate
     brewing-specific objects.
     """
+
+    app_string_identifier: str
+    if not TYPE_CHECKING:
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.app_string_identifier = (
+                f"{find_calling_module()}:{self.extra.get('name', 'http')}"
+            )
 
     def include_viewset(self, viewset: ViewSet, **kwargs: Any):
         """
@@ -33,7 +55,7 @@ class BrewingHTTP(FastAPI):
 
     def with_viewsets(self, *vs: ViewSet) -> Self:
         """
-        _summary_
+        _summary_.
 
         Args:
             *vs (ViewSet): viewsets to include

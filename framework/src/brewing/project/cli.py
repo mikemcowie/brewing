@@ -8,7 +8,7 @@ to the rails CLI for rails or manage.py for django.
 import sys
 from typing import Callable, Annotated
 from dataclasses import dataclass
-from brewing.cli import CLI
+from brewing.cli import CLI, CLIOptions
 from pathlib import Path
 from textwrap import dedent
 from typer import Option
@@ -34,6 +34,7 @@ def empty_file_content(context: InitContext):
 def initial_app_file(context: InitContext):
     return dedent(
         f"""
+
     from pathlib import Path
     from brewing import Brewing, Settings
     from brewing.http import BrewingHTTP
@@ -53,7 +54,12 @@ def initial_app_file(context: InitContext):
             revisions_directory=Path(__file__).parent / "db_revisions",
         )
     ):
-        app = Brewing("{context.name}", BrewingHTTP().with_viewsets(HealthCheckViewset()))
+        app = Brewing("{context.name}", http=BrewingHTTP().with_viewsets(HealthCheckViewset()))
+
+
+    def __getattr__(name:str):
+        return getattr(app, name)
+
     """
     )
 
@@ -116,7 +122,7 @@ def write_initial_files(context: InitContext):
         out_path.write_text(content)
 
 
-class ProjectCLI(CLI):
+class ProjectCLI(CLI[CLIOptions]):
     """
     Manages a brewing project.
 
@@ -147,7 +153,7 @@ class ProjectCLI(CLI):
 
 
 def load() -> ProjectCLI:
-    return ProjectCLI("project")
+    return ProjectCLI(CLIOptions(name="project"))
 
 
 if __name__ == "__main__":
