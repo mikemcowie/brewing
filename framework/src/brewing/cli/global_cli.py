@@ -28,7 +28,9 @@ def load_entrypoint(entrypoint: importlib.metadata.EntryPoint) -> CLI | Brewing:
 
 
 def find_current_project() -> str | None:
-    search_files = [path / "pyproject.toml" for path in Path.cwd().parents]
+    search_files = [
+        path / "pyproject.toml" for path in [Path.cwd()] + list(Path.cwd().parents)
+    ]
     project_name: str | None = None
     for file in search_files:
         if file.is_file():
@@ -50,9 +52,7 @@ def cli():
             # The current project, if identifiable, is merged into the
             # top-level typer by providing the name as None
             # Otherwise we will use the entrypoint name to
-            cli.typer.add_typer(load_entrypoint(entrypoint).typer, name=None)
-        # Regardless of the above, the CLI is always available as a subcommand
-        # based on the entrypoint name.
+            cli.typer.add_typer(load_entrypoint(entrypoint).typer, name="current")
         cli.typer.add_typer(load_entrypoint(entrypoint).typer, name=entrypoint.name)
     return cli
 

@@ -26,9 +26,9 @@ def cd(path: Path | str):
 
 
 @contextmanager
-def run(*cmd: str, readiness_callback: Callable[..., Any]):
+def run(*cmd: str, readiness_callback: Callable[..., Any], cwd: Path | None = None):
     """Run given command in a background thread."""
-    proc = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
+    proc = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr, cwd=cwd)
     readiness_callback()
     yield
     proc.send_signal(signal.SIGINT)
@@ -110,7 +110,15 @@ def test_project_init(tmp_path: Path):
         ready_status.raise_for_status()
 
     # start the dev server (in another thread)
-    with run("uv", "run", "brewing", "dev", readiness_callback=readiness_callback):
+    with run(
+        "uv",
+        "run",
+        "brewing",
+        "current",
+        "http",
+        readiness_callback=readiness_callback,
+        cwd=project_dir,
+    ):
         result = httpx.get("http://127.0.0.1:8000")
         assert result.status_code == status.HTTP_200_OK
         assert "It works!!" in result.text
