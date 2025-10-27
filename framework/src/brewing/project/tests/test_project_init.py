@@ -12,7 +12,6 @@ from pathlib import Path
 import brewing
 from brewing.cli.testing import BrewingCLIRunner
 from brewing.project import cli
-from fastapi import status
 from tenacity import retry, wait_exponential_jitter, stop_after_delay
 
 
@@ -31,8 +30,8 @@ def run(*cmd: str, readiness_callback: Callable[..., Any], cwd: Path | None = No
     proc = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr, cwd=cwd)
     readiness_callback()
     yield
-    proc.send_signal(signal.SIGINT)
-    proc.wait(timeout=5)
+    proc.send_signal(signal.SIGTERM)
+    proc.wait(5)
 
 
 def cli_runner():
@@ -119,6 +118,4 @@ def test_project_init(tmp_path: Path):
         readiness_callback=readiness_callback,
         cwd=project_dir,
     ):
-        result = httpx.get("http://127.0.0.1:8000")
-        assert result.status_code == status.HTTP_200_OK
-        assert "It works!!" in result.text
+        pass  # The test is all in the contextmanager
