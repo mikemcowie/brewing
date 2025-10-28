@@ -19,15 +19,15 @@ and instantiate an instance of that class. brewing CLI will automatically build 
 
 
 ```python
-from brewing import CLI
+from brewing import CLI, CLIOptions
 
 
-class MyCLI(CLI):
+class MyCLI(CLI[CLIOptions]):
     def greet(self, message: str):
         print("message")
 
 
-cli = MyCLI("mycli").typer
+cli = MyCLI(CLIOptions(name="mycli")).typer
 ```
 
 
@@ -38,10 +38,10 @@ To explicitely declare a parameter to be an option, use typing.Annotated with ty
 ```python
 from typing import Annotated
 from typer import Option
-from brewing import CLI
+from brewing import CLI, CLIOptions
 
 
-class MyCLI(CLI):
+class MyCLI(CLI[CLIOptions]):
     def greet(self, message: [Annotated[str, Option()]]):
         print("message")
 ```

@@ -85,7 +85,9 @@ class CLIBaseOptions(Protocol):
     """Base duck-type class for CLI options."""
 
     @property
-    def name(self) -> str: ...
+    def name(self) -> str:
+        """The name of the CLI, to be used as a default in nested situations."""
+        ...
 
 
 class CLIOptions(NamedTuple):
@@ -112,20 +114,21 @@ class CLI[OptionsT: CLIBaseOptions]:
         Initialize the CLI.
 
         Args:
-            name (str): The name of the CLI - this will be used in nested situations
+            options (OptionsT): Options for this CLI.
             *children: CLI: Additional  CLIs that should be nested inside this one.
+            help: (str | None): Help message to be displayed for the CLI; if not provided, class docstring will be used.
             extends (Typer  | CLI | None, optional): If provided, a typer instance or another CLI to add commands to.
             wraps (Any): Object to obtain CLI commands from. If not provided, self will be used.
 
         """
-        self._options = options
+        self.options = options
         if isinstance(extends, Typer):
             self._typer = extends
         elif isinstance(extends, CLI):
             self._typer = extends.typer
         else:
             self._typer = Typer(
-                name=self._options.name,
+                name=self.options.name,
                 no_args_is_help=True,
                 add_help_option=True,
                 help=help or (self.__doc__ if self.__doc__ != CLI.__doc__ else None),
@@ -143,7 +146,7 @@ class CLI[OptionsT: CLIBaseOptions]:
             str: The name of the CLI as provided at instantiation.
 
         """
-        return self._options.name
+        return self.options.name
 
     @property
     def command_names(self):
