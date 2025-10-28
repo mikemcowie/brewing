@@ -22,23 +22,27 @@ logger = structlog.get_logger()
 
 @dataclass
 class InitContext:
+    """Shared context for the project initialization."""
+
     name: str
     path: Path
     force: bool
 
 
 def empty_file_content(context: InitContext):
+    """Return an empty file content."""
     return ""
 
 
 def initial_app_file(context: InitContext):
+    """Return the content of the initial app.py file."""
     return dedent(
         f"""
 
     from pathlib import Path
     from brewing import Brewing, Settings
     from brewing.http import BrewingHTTP
-    from brewing.healthcheck.viewset import HealthCheckViewset
+    from brewing.healthcheck.viewset import HealthCheckViewset, HealthCheckOptions
     from brewing.db import Database, new_base
     from brewing.db.settings import PostgresqlSettings
 
@@ -54,7 +58,11 @@ def initial_app_file(context: InitContext):
             revisions_directory=Path(__file__).parent / "db_revisions",
         )
     ):
-        app = Brewing("{context.name}", http=BrewingHTTP().with_viewsets(HealthCheckViewset()))
+        app = Brewing("{context.name}",
+            http=BrewingHTTP().with_viewsets(
+                HealthCheckViewset(HealthCheckOptions)
+            )
+        )
 
 
     def __getattr__(name:str):
@@ -68,6 +76,7 @@ PROJECT_NAME_WITH_UNDERSCORES = "{PROJECT_NAME}"
 
 
 def load_pyproject_content(context: InitContext):
+    """Load the pyproject.toml file."""
     return tomlkit.dumps(
         pyproject_model.PyprojectTomlData(
             project=pyproject_model.Project(
@@ -92,6 +101,7 @@ def load_pyproject_content(context: InitContext):
 
 
 def write_initial_files(context: InitContext):
+    """Write the initial files of the project."""
     files: dict[Path, Callable[[InitContext], str]] = {
         Path("pyproject.toml"): load_pyproject_content,
         Path("README.md"): empty_file_content,
@@ -153,6 +163,7 @@ class ProjectCLI(CLI[CLIOptions]):
 
 
 def load() -> ProjectCLI:
+    """Instantiate the project CLI."""
     return ProjectCLI(CLIOptions(name="project"))
 
 

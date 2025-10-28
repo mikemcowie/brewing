@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 
 def find_calling_module():
+    """Inspect the stack frame and return the module that called this."""
     frame = inspect.currentframe()
     while True:
         assert frame
@@ -42,7 +43,7 @@ class BrewingHTTP(FastAPI):
                 f"{find_calling_module()}:{self.extra.get('name', 'http')}"
             )
 
-    def include_viewset(self, viewset: ViewSet, **kwargs: Any):
+    def include_viewset(self, viewset: ViewSet[Any], **kwargs: Any):
         """
         Add viewset to the application.
 
