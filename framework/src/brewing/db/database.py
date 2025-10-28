@@ -9,7 +9,7 @@ from functools import cache, cached_property
 from pathlib import Path
 from typing import Any
 
-from brewing.cli import CLI
+from brewing.cli import CLI, CLIOptions
 from brewing.db.migrate import Migrations
 from brewing.db.types import DatabaseConnectionConfiguration
 from brewing.generic import runtime_generic
@@ -54,9 +54,9 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
         self._migrations: Migrations | None = None
 
     @cached_property
-    def cli(self) -> CLI:
+    def cli(self) -> CLI[CLIOptions]:
         """Typer CLI for the database."""
-        return CLI("db", wraps=self.migrations)
+        return CLI(CLIOptions("db"), wraps=self.migrations)
 
     @property
     def metadata(self) -> tuple[MetaData, ...]:
