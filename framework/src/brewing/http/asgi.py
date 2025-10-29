@@ -54,7 +54,7 @@ class BrewingHTTP(FastAPI):
         """
         self.include_router(viewset.router, **kwargs)
 
-    def with_viewsets(self, *vs: ViewSet) -> Self:
+    def with_viewsets(self, *vs: ViewSet[Any]) -> Self:
         """
         _summary_.
 

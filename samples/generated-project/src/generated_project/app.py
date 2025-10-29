@@ -3,7 +3,7 @@ from pathlib import Path
 from brewing import Brewing, Settings
 from brewing.db import Database, new_base
 from brewing.db.settings import PostgresqlSettings
-from brewing.healthcheck.viewset import HealthCheckViewset
+from brewing.healthcheck.viewset import HealthCheckOptions, HealthCheckViewset
 from brewing.http import BrewingHTTP
 
 # register database models by inheriting from this base.
@@ -19,7 +19,8 @@ with Settings(
     )
 ):
     app = Brewing(
-        "generated-project", http=BrewingHTTP().with_viewsets(HealthCheckViewset())
+        "generated-project",
+        http=BrewingHTTP().with_viewsets(HealthCheckViewset(HealthCheckOptions())),
     )
 
 

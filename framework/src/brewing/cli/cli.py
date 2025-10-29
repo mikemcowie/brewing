@@ -189,7 +189,12 @@ class CLI[OptionsT: CLIBaseOptions]:
 
         self._typer.command("hidden", hidden=True)(self._hidden_noop_callback)
         for attr in dir(self._wraps):
-            obj = getattr(self._wraps, attr)
+            try:
+                obj = getattr(self._wraps, attr)
+            except Exception:
+                # If there is an error on getattr, then it's likely the object
+                # is a property or other descriptor object, and we can ignore it.
+                continue
             if (
                 attr[0] in string.ascii_letters
                 and callable(obj)
