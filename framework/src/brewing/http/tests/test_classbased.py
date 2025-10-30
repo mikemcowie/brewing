@@ -2,20 +2,19 @@
 
 from typing import Annotated
 from http import HTTPMethod
-from brewing.http import ViewSet, status, self
-from brewing.http.path import TrailingSlashPolicy, DeferredDecoratorCall
+from brewing.http import ViewSet, ViewsetOptions, status, self
+from brewing.http.path import DeferredDecoratorCall
 from brewing.http.tests.helpers import SomeData, new_client
 from fastapi import APIRouter, Depends, HTTPException
 
 
-class ItemViewSet(ViewSet):
+class ItemViewSet(ViewSet[ViewsetOptions]):
     def __init__(
         self,
-        root_path: str = "",
+        options: ViewsetOptions,
         router: APIRouter | None = None,
-        trailing_slash_policy: TrailingSlashPolicy = TrailingSlashPolicy.default(),
     ):
-        super().__init__(root_path, router, trailing_slash_policy)
+        super().__init__(options, router)
         # We make a rudimentary database being a simple dict
         self._db: dict[int, SomeData] = {}
         # And 2 more databases to track what has been deleted and replaced.
@@ -100,7 +99,7 @@ def test_deferred_annotations():
 
 def test_post_create_items():
     """Test the api root endponts - list and create."""
-    client = new_client(ItemViewSet())
+    client = new_client(ItemViewSet(ViewsetOptions()))
     list_result = client.get("/")
     assert list_result.status_code == status.HTTP_200_OK, list_result.json()
     assert list_result.json() == []
@@ -114,7 +113,7 @@ def test_post_create_items():
 
 def test_get_update_delete():
     """Test the endpoints that involve the instance_id and hence the dependency"""
-    client = new_client(ItemViewSet())
+    client = new_client(ItemViewSet(ViewsetOptions()))
     initial_get = client.get("/1")
     assert initial_get.status_code == status.HTTP_404_NOT_FOUND
 
@@ -134,7 +133,7 @@ def test_self_refers_to_correct_viewset():
     lead to the dependency on the wrong viewset.
     """
 
-    class VS1(ViewSet):
+    class VS1(ViewSet[ViewsetOptions]):
         value = "v1"
 
         @self.GET()
@@ -144,8 +143,8 @@ def test_self_refers_to_correct_viewset():
     class VS2(VS1):
         value = "v2"
 
-    assert new_client(VS1()).get("/").text == '"v1"'
-    assert new_client(VS2()).get("/").text == '"v2"'
+    assert new_client(VS1(ViewsetOptions())).get("/").text == '"v1"'
+    assert new_client(VS2(ViewsetOptions())).get("/").text == '"v2"'
 
 
 def test_fastapi_style_dependencies():
@@ -155,7 +154,7 @@ def test_fastapi_style_dependencies():
     to rewrite the annotation to work with the instantiated class instance.
     """
 
-    class VS(ViewSet):
+    class VS(ViewSet[ViewsetOptions()]):
         def dep1(self):
             return "dep1"
 
@@ -169,7 +168,7 @@ def test_fastapi_style_dependencies():
         def read_value(self, dep3: Annotated[str, Depends(dep3)]):
             return dep3
 
-    assert new_client(VS()).get("/").text == '"dep1dep2dep3"'
+    assert new_client(VS(ViewsetOptions())).get("/").text == '"dep1dep2dep3"'
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -178,5 +177,5 @@ if __name__ == "__main__":  # pragma: no cover
     from brewing.http import BrewingHTTP
 
     app = BrewingHTTP()
-    app.include_viewset(ItemViewSet())
+    app.include_viewset(ItemViewSet(ViewsetOptions()))
     uvicorn.run(app)

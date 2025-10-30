@@ -8,12 +8,18 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.16.5",
     "fastapi>=0.118.0",
     "frozendict>=2.4.6",
     "httpx>=0.28.1",
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",
     "sqlalchemy>=2.0.43",
+    "structlog>=25.4.0",
+    "tomlkit>=0.13.3",
+    "typer>=0.19.2",
+    "uvicorn>=0.37.0",
+    "watchfiles>=1.1.0",
 ]
 
 [project.optional-dependencies]
@@ -47,8 +53,11 @@ exclude = [
 ]
 
 [project.scripts]
-brewing = "brewing.cli:cli"
+brewing = "brewing.cli.global_cli:run"
 dev = "brewing.cli:dev"
+
+[project.entry-points.brewing]
+project = "brewing.project.cli:load"
 
 [project.urls]
 Homepage = "https://mikemcowie.github.io/brewing/"

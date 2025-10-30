@@ -1,12 +1,12 @@
 """In addition to standard HTTP methods, a  DEPENDS can be declared which functions as a prerequisite for all HTTP methods, and all nested endpoints."""
 
 from typing import Annotated
-from brewing.http import ViewSet, status
+from brewing.http import ViewSet, ViewsetOptions, status
 from .helpers import SomeData, new_client
 from fastapi import Depends, Request, HTTPException, Response
 
 
-vs1 = ViewSet()
+vs1 = ViewSet(ViewsetOptions())
 items = vs1("items")
 item_id = items("{item_id}")
 

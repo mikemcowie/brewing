@@ -1,12 +1,12 @@
 """Functional viewset usage - the path component is removed"""
 
 from typing import Annotated
-from brewing.http import ViewSet, status
+from brewing.http import ViewSet, ViewsetOptions, status
 from .helpers import SomeData, new_client, dependency
 from fastapi import Depends, Query
 
 
-vs2 = ViewSet()
+vs2 = ViewSet(ViewsetOptions())
 
 
 @vs2.GET(response_model=SomeData, status_code=status.HTTP_200_OK, operation_id="SomeOp")
@@ -39,7 +39,7 @@ def test_decorator_args_applied_correctly():
     assert openapi_response.json()["paths"]["/"]["get"]["operationId"] == "SomeOp"
 
 
-vs3 = ViewSet()
+vs3 = ViewSet(ViewsetOptions())
 
 
 @vs3.GET()
@@ -64,7 +64,7 @@ def test_new_decorator_simplified_usage():
     assert response.json()["data"] == "foo"
 
 
-vs4 = ViewSet()
+vs4 = ViewSet(ViewsetOptions())
 items = vs4("items")
 item_id = items("{item_id}")
 

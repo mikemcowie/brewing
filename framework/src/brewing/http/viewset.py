@@ -9,7 +9,8 @@ and Django Rest Framework's viewsets.
 from __future__ import annotations
 
 from types import EllipsisType, FunctionType
-from dataclasses import replace
+from typing import Protocol
+from dataclasses import replace, dataclass
 from fastapi import APIRouter
 from fastapi.params import Depends
 from brewing.http.path import (
@@ -26,26 +27,41 @@ from brewing.http.annotations import (
 )
 
 
-class ViewSet:
+class ViewsetOptionsProtocol(Protocol):
+    """Attributes that must be implemented for any viewset options object."""
+
+    root_path: str
+    trailing_slash_policy: TrailingSlashPolicy
+
+
+@dataclass
+class ViewsetOptions:
+    """Minimal options class for a basic viewset."""
+
+    root_path: str = ""
+    trailing_slash_policy: TrailingSlashPolicy = TrailingSlashPolicy.default()
+
+
+class ViewSet[OptionsT: ViewsetOptionsProtocol]:
     """A collection of related http endpoint handlers."""
 
     annotation_adaptors: AnnotatedFunctionAdaptorPipeline
 
     def __init__(
         self,
-        root_path: str = "",
+        viewset_options: OptionsT,
         router: APIRouter | None = None,
-        trailing_slash_policy: TrailingSlashPolicy = TrailingSlashPolicy.default(),
     ):
+        self.viewset_options = viewset_options
         self.annotation_adaptors = (ApplyViewSetDependency(self),)
         self.router = router or APIRouter()
         self.root_path = HTTPPath(
-            root_path,
-            trailing_slash_policy=trailing_slash_policy,
+            viewset_options.root_path,
+            trailing_slash_policy=viewset_options.trailing_slash_policy,
             router=self.router,
             annotation_pipeline=self.annotation_adaptors,
         )
-        self.trailing_slash_policy = trailing_slash_policy
+        self.trailing_slash_policy = viewset_options.trailing_slash_policy
         # All the HTTP method decorators from the router
         # are made directly available so it can be used with
         # exactly the same decorator syntax in a functional manner.
@@ -74,7 +90,9 @@ class ViewSet:
         self.TRACE = self.root_path.TRACE
         self.DEPENDS = self.root_path.DEPENDS
         self._all_methods = [
-            getattr(self, m) for m in dir(self) if callable(getattr(self, m))
+            getattr(self, m)
+            for m in dir(self)
+            if callable(getattr(self, m)) and not m[0] == "_"
         ]
         self._defferred_paths = [
             getattr(self, m)

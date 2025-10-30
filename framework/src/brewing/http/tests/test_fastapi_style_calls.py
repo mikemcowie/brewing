@@ -2,14 +2,14 @@
 
 from typing import Annotated
 from http import HTTPMethod
-from brewing.http import ViewSet, status
+from brewing.http import ViewSet, ViewsetOptions, status
 from brewing.http.endpoint_decorator import EndpointDecorator
 from .helpers import SomeData, new_client, dependency
 from fastapi import Depends, Query
 import pytest
 
 
-vs1 = ViewSet()
+vs1 = ViewSet(ViewsetOptions())
 
 
 @pytest.mark.parametrize("method", HTTPMethod)
