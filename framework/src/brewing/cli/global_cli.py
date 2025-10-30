@@ -56,8 +56,7 @@ def cli():
             # The current project, if identifiable, is merged into the
             # top-level typer by providing the name as None
             # Otherwise we will use the entrypoint name to
-            cli.typer.add_typer(_load_entrypoint(entrypoint).typer, name="current")
-        cli.typer.add_typer(_load_entrypoint(entrypoint).typer, name=entrypoint.name)
+            cli.typer.add_typer(_load_entrypoint(entrypoint).typer, name=None)
     return cli
 
 

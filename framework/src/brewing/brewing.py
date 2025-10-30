@@ -47,6 +47,7 @@ class Brewing:
             host: str = "0.0.0.0",
             port: int = 8000,
         ):
+            """Run the HTTP server."""
             uvicorn.run(
                 http.app_string_identifier,
                 host=host,

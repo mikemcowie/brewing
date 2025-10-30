@@ -56,7 +56,11 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
     @cached_property
     def cli(self) -> CLI[CLIOptions]:
         """Typer CLI for the database."""
-        return CLI(CLIOptions("db"), wraps=self.migrations)
+        return CLI(
+            CLIOptions("db"),
+            wraps=self.migrations,
+            help="Manage the database and its migrations.",
+        )
 
     @property
     def metadata(self) -> tuple[MetaData, ...]:
