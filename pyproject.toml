@@ -116,6 +116,7 @@ asyncio_default_fixture_loop_scope = "session"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]
+core = "ctrace"
 
 [tool.coverage.report]
 exclude_also = [
