@@ -52,11 +52,13 @@ def cli():
     cli.typer.callback()
     entrypoints = importlib.metadata.entry_points(group="brewing")
     for entrypoint in entrypoints:
-        if entrypoint.module.split(".")[0] == _find_current_project():
+        if entrypoint.module.split(".")[0].replace("_", "-") == _find_current_project():
             # The current project, if identifiable, is merged into the
             # top-level typer by providing the name as None
             # Otherwise we will use the entrypoint name to
             cli.typer.add_typer(_load_entrypoint(entrypoint).typer, name=None)
+        cli.typer.add_typer(_load_entrypoint(entrypoint).typer, name=entrypoint.name)
+
     return cli
 
 

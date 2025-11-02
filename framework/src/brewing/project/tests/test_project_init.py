@@ -113,7 +113,6 @@ def test_project_init(tmp_path: Path):
         "uv",
         "run",
         "brewing",
-        "current",
         "http",
         readiness_callback=readiness_callback,
         cwd=project_dir,
