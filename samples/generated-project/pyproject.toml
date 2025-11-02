@@ -1,9 +1,9 @@
 [project]
-name = "generated_project"
+name = "generated-project"
 readme = "README.md"
 version = "0.0.1"
 dependencies = ["brewing"]
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 
 [project.entry-points.brewing]
 generated-project = "generated_project.app:app"

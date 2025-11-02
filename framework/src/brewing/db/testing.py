@@ -97,6 +97,12 @@ _TEST_DATABASE_IMPLEMENTATIONS: dict[DatabaseType, TestingDatabase] = {
 
 
 @contextmanager
+def noop():  # type: ignore
+    """Noop conextmanager."""
+    yield
+
+
+@contextmanager
 def testing(db_type: DatabaseType):
     """Temporarily create and set environment variables for connection to given db type."""
     with _TEST_DATABASE_IMPLEMENTATIONS[db_type]():

@@ -87,7 +87,7 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
     @property
     def database_type(self):
         """The database type."""
-        return self.config.database_type
+        return self.config_type.database_type
 
     @property
     def engine(self):
