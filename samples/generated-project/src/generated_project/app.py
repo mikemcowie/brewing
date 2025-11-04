@@ -2,7 +2,7 @@ from pathlib import Path
 
 from brewing import Brewing, Settings
 from brewing.db import Database, new_base
-from brewing.db.settings import PostgresqlSettings
+from brewing.db.settings import MySQLSettings
 from brewing.healthcheck.viewset import HealthCheckOptions, HealthCheckViewset
 from brewing.http import BrewingHTTP
 
@@ -13,7 +13,7 @@ Base = new_base()
 
 # construct the application by providing the settings and components that make up the app.
 with Settings(
-    database=Database[PostgresqlSettings](
+    database=Database[MySQLSettings](
         metadata=Base.metadata,
         revisions_directory=Path(__file__).parent / "db_revisions",
     )

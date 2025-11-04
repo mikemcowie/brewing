@@ -12,13 +12,13 @@ def db_type(request: pytest.FixtureRequest):
 
 @pytest.fixture(scope="session")
 def running_db_session(db_type: settings.DatabaseType):
-    with testing.testing(db_type):
+    with testing.testing(db_type, persist_data=False):
         yield
 
 
 @pytest.fixture
 def running_db(db_type: settings.DatabaseType):
-    with testing.testing(db_type):
+    with testing.testing(db_type, persist_data=False):
         yield
 
 
