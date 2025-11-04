@@ -60,7 +60,7 @@ def initial_app_file(context: InitContext):
     ):
         app = Brewing("{context.name}",
             http=BrewingHTTP().with_viewsets(
-                HealthCheckViewset(HealthCheckOptions())
+                HealthCheckViewset(HealthCheckOptions(database=database))
             )
         )
 

@@ -5,6 +5,7 @@ from typer import Option
 from brewing.cli import CLI, CLIOptions
 from brewing.http import BrewingHTTP
 from brewing.db import Database
+from brewing.db import testing
 from brewing import settings
 import uvicorn
 
@@ -42,18 +43,28 @@ class Brewing:
 
         @self.cli.typer.command(name)
         def run(
-            reload: Annotated[bool, Option()] = False,
+            dev: Annotated[bool, Option()] = False,
             workers: None | int = None,
             host: str = "0.0.0.0",
             port: int = 8000,
         ):
             """Run the HTTP server."""
-            uvicorn.run(
+            if dev:
+                with testing.testing(
+                    self.settings.database.database_type, persist_data=True
+                ):
+                    return uvicorn.run(
+                        http.app_string_identifier,
+                        host=host,
+                        port=port,
+                        reload=dev,
+                    )
+            return uvicorn.run(
                 http.app_string_identifier,
                 host=host,
                 workers=workers,
                 port=port,
-                reload=reload,
+                reload=False,
             )
 
     def init_database(self, component: tuple[str, Database[Any]]):

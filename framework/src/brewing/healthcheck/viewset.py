@@ -2,12 +2,16 @@
 
 from dataclasses import dataclass
 from brewing.http import ViewSet, ViewsetOptions, self, status
-from fastapi.responses import PlainTextResponse
+from brewing.settings import Settings
+from fastapi.responses import PlainTextResponse, JSONResponse
 
 
-@dataclass
+@dataclass(kw_only=True)
 class HealthCheckOptions(ViewsetOptions):
     """Options for the healthcheck viewset."""
+
+    def __post_init__(self):
+        self.database = Settings.current().database
 
 
 class HealthCheckViewset(ViewSet[HealthCheckOptions]):
@@ -22,11 +26,11 @@ class HealthCheckViewset(ViewSet[HealthCheckOptions]):
     readyz = self("readyz")
 
     @livez.GET(response_class=PlainTextResponse, status_code=status.HTTP_200_OK)
-    def is_alive(self):
+    async def is_alive(self):
         """Return whether the application is responsive."""
         return "alive"
 
-    @readyz.GET(response_class=PlainTextResponse, status_code=status.HTTP_200_OK)
-    def is_ready(self):
+    @readyz.GET(response_class=JSONResponse, status_code=status.HTTP_200_OK)
+    async def is_ready(self):
         """Return whether the application is ready to receive traffic."""
-        return "ready"
+        return {"database": await self.viewset_options.database.is_alive(timeout=1.0)}

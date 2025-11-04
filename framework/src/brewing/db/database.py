@@ -2,19 +2,23 @@
 
 import asyncio
 import functools
+from datetime import datetime, UTC
 import inspect
 from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
 from functools import cache, cached_property
 from pathlib import Path
-from typing import Any
-
+from typing import Any, Literal
+import structlog
 from brewing.cli import CLI, CLIOptions
 from brewing.db.migrate import Migrations
 from brewing.db.types import DatabaseConnectionConfiguration
 from brewing.generic import runtime_generic
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
+
+logger = structlog.get_logger()
 
 
 @cache
@@ -66,6 +70,23 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
     def metadata(self) -> tuple[MetaData, ...]:
         """Tuple of sqlalchemy metadata."""
         return self._metadata
+
+    async def is_alive(self, timeout: float = 1.0) -> Literal[True]:
+        """
+        Return True when the database can be connected to.
+
+        Retry until timeout has elapsed.
+        """
+        start = datetime.now(UTC)
+        async with self.session() as session:
+            while True:
+                try:
+                    await session.execute(text("SELECT 1"))
+                    return True
+                except Exception as error:
+                    if (datetime.now(UTC) - start).total_seconds() > timeout:
+                        raise
+                    logger.error(f"database not alive, {str(error)}")
 
     @property
     def migrations(self) -> Migrations:

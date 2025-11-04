@@ -54,8 +54,12 @@ class Migrations:
         self._alembic.set_main_option("version_locations", str(revisions_dir))
         self._alembic.set_main_option("path_separator", ";")
         self._alembic.set_main_option("file_template", "rev_%%(rev)s_%%(slug)s")
-        self._test_context = testing.testing(self._database.database_type)
-        self._dev_context = testing.testing(self._database.database_type)
+        self._test_context = testing.testing(
+            self._database.database_type, persist_data=False
+        )
+        self._dev_context = testing.testing(
+            self._database.database_type, persist_data=True
+        )
 
     @property
     def metadata(self):

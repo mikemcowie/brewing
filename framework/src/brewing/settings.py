@@ -25,6 +25,7 @@ class Settings[DBConnT: DatabaseConnectionConfiguration]:
 
     def __enter__(self):
         self.current_token = _current.set(self)
+        return self
 
     def __exit__(self, *_):
         if self.current_token:

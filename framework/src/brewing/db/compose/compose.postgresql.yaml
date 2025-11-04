@@ -1,0 +1,15 @@
+volumes:
+  pgdata:
+services:
+  postgresql:
+    image: mirror.gcr.io/library/postgres:17
+    ports:
+    - ${PGPORT:-5432}:5432
+    environment:
+      POSTGRES_PORT: ${PGPORT:-5432}
+      POSTGRES_DATABASE: ${PGDATABASE:-test}
+      POSTGRES_USER: ${PGUSER:-test}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-test}
+      PGDATA: /data/pg
+    volumes:
+      - pgdata:/data

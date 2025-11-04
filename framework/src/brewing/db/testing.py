@@ -5,19 +5,48 @@ from __future__ import annotations
 import asyncio
 import os
 
-import tempfile
-from collections.abc import Callable, Generator, MutableMapping
+from collections.abc import Generator, MutableMapping
 from contextlib import AbstractContextManager, asynccontextmanager, contextmanager
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING
+import socket
 
+from typing import TYPE_CHECKING, Protocol
+import structlog
 from brewing.db.settings import DatabaseType
-from testcontainers.mysql import MySqlContainer
-from testcontainers.postgres import PostgresContainer
+from testcontainers.compose import DockerCompose
 
 if TYPE_CHECKING:
     from brewing.db.types import DatabaseProtocol
+
+
+logger = structlog.get_logger()
+
+
+def _find_free_port() -> int:
+    sock = socket.socket()
+    sock.bind(("", 0))
+    return sock.getsockname()[1]
+
+
+@contextmanager
+def _compose(context: Path, compose_file: Path, persist_data: bool):
+    with DockerCompose(
+        context=context,
+        compose_file_name=str(compose_file),
+        keep_volumes=persist_data,
+        wait=True,
+    ):
+        yield
+
+
+@contextmanager
+def persistent_volume(base_path: Path, name: str | None = None):
+    """Provision persistent storage for container."""
+    if not name:
+        yield None
+        return
+    yield base_path / name
 
 
 @contextmanager
@@ -39,47 +68,61 @@ def env(
             environ[key] = value
 
 
-type TestingDatabase = Callable[[], AbstractContextManager[None]]
+class TestingDatabase(Protocol):
+    """Protocol for running a dev or test database."""
+
+    def __call__(self, persist_data: bool) -> AbstractContextManager[None]:
+        """Generate test database with storage at path."""
+        ...
 
 
 @contextmanager
-def _postgresql():
+def _postgresql(persist_data: bool):
+    port = _find_free_port()
     with (
-        PostgresContainer() as pg,
         env(
             {
                 "PGHOST": "127.0.0.1",
-                "PGPORT": str(pg.get_exposed_port(pg.port)),
-                "PGDATABASE": pg.dbname,
-                "PGUSER": pg.username,
-                "PGPASSWORD": pg.password,
+                "PGPORT": str(port),
+                "PGDATABASE": "test",
+                "PGUSER": "test",
+                "PGPASSWORD": "test",
             }
+        ),
+        _compose(
+            context=Path(__file__).parent,
+            compose_file=Path(__file__).parent / "compose" / "compose.postgresql.yaml",
+            persist_data=persist_data,
         ),
     ):
         yield
 
 
 @contextmanager
-def _sqlite():
-    with (
-        tempfile.TemporaryDirectory() as db_dir,
-        env({"SQLITE_DATABASE": str(Path(db_dir) / "db.sqlite")}),
-    ):
+def _sqlite(persist_data: bool):
+    db = str(Path.cwd() / "db.sqlite") if persist_data else ":memory:"
+    with env({"SQLITE_DATABASE": db}):
         yield
 
 
 @contextmanager
-def _mysql(image: str = "mysql:latest"):
+def _mysql(persist_data: bool, image: str = "mysql:latest"):
+    port = _find_free_port()
     with (
-        MySqlContainer(image=image) as mysql,
         env(
             {
                 "MYSQL_HOST": "127.0.0.1",
-                "MYSQL_USER": mysql.username,
-                "MYSQL_PWD": mysql.password,
-                "MYSQL_TCP_PORT": str(mysql.get_exposed_port(mysql.port)),
-                "MYSQL_DATABASE": mysql.dbname,
+                "MYSQL_USER": "test",
+                "MYSQL_PWD": "test",
+                "MYSQL_TCP_PORT": str(port),
+                "MYSQL_DATABASE": "test",
+                "IMAGE": image,
             }
+        ),
+        _compose(
+            context=Path(__file__).parent,
+            compose_file=Path(__file__).parent / "compose" / "compose.mysql.yaml",
+            persist_data=persist_data,
         ),
     ):
         yield
@@ -103,9 +146,9 @@ def noop():  # type: ignore
 
 
 @contextmanager
-def testing(db_type: DatabaseType):
+def testing(db_type: DatabaseType, persist_data: bool):
     """Temporarily create and set environment variables for connection to given db type."""
-    with _TEST_DATABASE_IMPLEMENTATIONS[db_type]():
+    with _TEST_DATABASE_IMPLEMENTATIONS[db_type](persist_data=persist_data):
         yield
 
 
