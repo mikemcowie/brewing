@@ -40,9 +40,6 @@ class Migrations:
         database: DatabaseProtocol,
         revisions_dir: Path,
     ):
-        # late import as libraries involved may not be installed.
-        from brewing.db import testing  # noqa: PLC0415
-
         self._database = database
         self._revisions_dir = revisions_dir
         self._runner = MigrationRunner(self)
@@ -54,12 +51,6 @@ class Migrations:
         self._alembic.set_main_option("version_locations", str(revisions_dir))
         self._alembic.set_main_option("path_separator", ";")
         self._alembic.set_main_option("file_template", "rev_%%(rev)s_%%(slug)s")
-        self._test_context = testing.testing(
-            self._database.database_type, persist_data=False
-        )
-        self._dev_context = testing.testing(
-            self._database.database_type, persist_data=True
-        )
 
     @property
     def metadata(self):
@@ -98,8 +89,11 @@ class Migrations:
 
     def generate_revision(self, message: str, autogenerate: bool = True):
         """Generate a new migration."""
+        # late import as libraries involved may not be installed.
+        from brewing.db import testing  # noqa: PLC0415
+
         with (
-            self._test_context,
+            testing.testing(self._database.database_type, persist_data=False),
             self,
         ):
             command.upgrade(self.alembic, "head")
@@ -112,27 +106,42 @@ class Migrations:
 
     def upgrade(self, revision: str = "head", dev: bool = False):
         """Upgrade the database."""
-        with self._dev_context, self:
+        # late import as libraries involved may not be installed.
+        from brewing.db import testing  # noqa: PLC0415
+
+        with testing.testing(self._database.database_type, persist_data=False), self:
             command.upgrade(self._alembic, revision=revision)
 
     def downgrade(self, revision: str, dev: bool = False):
         """Downgrade the database."""
-        with self._dev_context, self:
+        # late import as libraries involved may not be installed.
+        from brewing.db import testing  # noqa: PLC0415
+
+        with testing.testing(self._database.database_type, persist_data=False), self:
             command.downgrade(self._alembic, revision=revision)
 
     def stamp(self, revision: str, dev: bool = False):
         """Write to the versions table as if the database is set to the given revision."""
-        with self._dev_context, self:
+        # late import as libraries involved may not be installed.
+        from brewing.db import testing  # noqa: PLC0415
+
+        with testing.testing(self._database.database_type, persist_data=False), self:
             command.stamp(self._alembic, revision=revision)
 
     def current(self, verbose: bool = False, dev: bool = False):
         """Display the current revision."""
-        with self._dev_context, self:
+        # late import as libraries involved may not be installed.
+        from brewing.db import testing  # noqa: PLC0415
+
+        with testing.testing(self._database.database_type, persist_data=False), self:
             command.current(self._alembic, verbose=verbose)
 
     def check(self, dev: bool = False):
         """Validate that the database is updated to the latest revision."""
-        with self._dev_context, self:
+        # late import as libraries involved may not be installed.
+        from brewing.db import testing  # noqa: PLC0415
+
+        with testing.testing(self._database.database_type, persist_data=False), self:
             command.check(self._alembic)
 
 

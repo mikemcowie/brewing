@@ -1,6 +1,5 @@
 """Database: core database functionality."""
 
-import asyncio
 import functools
 from datetime import datetime, UTC
 import inspect
@@ -23,7 +22,6 @@ logger = structlog.get_logger()
 
 @cache
 def _provide_cached_engine(
-    event_loop: asyncio.EventLoop | None,  # noqa: ARG001
     *args: Any,
     **kwargs: Any,
 ):
@@ -110,14 +108,10 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
         """The database type."""
         return self.config_type.database_type
 
-    @property
+    @cached_property
     def engine(self):
         """Sqlalchemy async engine."""
-        try:
-            event_loop = asyncio.get_running_loop()
-        except RuntimeError:
-            event_loop = None
-        return _provide_cached_engine(event_loop, url=self.config_type().url())
+        return _provide_cached_engine(url=self.config_type().url())
 
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession]:

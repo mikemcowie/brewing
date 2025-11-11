@@ -31,26 +31,34 @@ def test_server_generated_uuid_pk():
 
 @pytest_asyncio.fixture
 async def db(db_type: settings.DatabaseType, running_db_session: None):
-    return Database[db_type.dialect().connection_config_type](Base.metadata)
+    yield Database[db_type.dialect().connection_config_type](Base.metadata)
+
+
+@pytest_asyncio.fixture()
+async def upgraded_db(db: Database[Any]):
+    async with testing.upgraded(db):
+        yield db
 
 
 @pytest.mark.asyncio
 async def test_incrementing_pk[ConfigT: types.DatabaseConnectionConfiguration](
-    db: Database[ConfigT],
+    upgraded_db: Database[ConfigT],
 ):
-    async with testing.upgraded(db):
-        instances = [HasIncrementingPrimaryKey() for _ in range(20)]
-        assert {instance.id for instance in instances} == {None}
-        async with db.session() as session:
-            session.add_all(instances)
-            await session.commit()
-        async with db.session() as session:
-            read_instances = (
-                (await session.execute(sa.select(HasIncrementingPrimaryKey)))
-                .scalars()
-                .all()
-            )
-        assert {instance.id for instance in read_instances} == set(range(1, 21))
+    async with upgraded_db.engine.begin() as conn:
+        for metadata in upgraded_db.metadata:
+            await conn.run_sync(metadata.create_all)
+    instances = [HasIncrementingPrimaryKey() for _ in range(20)]
+    assert {instance.id for instance in instances} == {None}
+    async with upgraded_db.session() as session:
+        session.add_all(instances)
+        await session.commit()
+    async with upgraded_db.session() as session:
+        read_instances = (
+            (await session.execute(sa.select(HasIncrementingPrimaryKey)))
+            .scalars()
+            .all()
+        )
+    assert {instance.id for instance in read_instances} == set(range(1, 21))
 
 
 @pytest.mark.asyncio

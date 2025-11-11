@@ -5,16 +5,20 @@ from __future__ import annotations
 import asyncio
 import os
 
+from dataclasses import dataclass
 from collections.abc import Generator, MutableMapping
 from contextlib import AbstractContextManager, asynccontextmanager, contextmanager
 from functools import partial
 from pathlib import Path
 import socket
+from tempfile import TemporaryDirectory
 
 from typing import TYPE_CHECKING, Protocol
 import structlog
 from brewing.db.settings import DatabaseType
 from testcontainers.compose import DockerCompose
+from testcontainers.mysql import MySqlContainer
+from testcontainers.postgres import PostgresContainer
 
 if TYPE_CHECKING:
     from brewing.db.types import DatabaseProtocol
@@ -26,15 +30,17 @@ logger = structlog.get_logger()
 def _find_free_port() -> int:
     sock = socket.socket()
     sock.bind(("", 0))
-    return sock.getsockname()[1]
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
 
 
 @contextmanager
-def _compose(context: Path, compose_file: Path, persist_data: bool):
+def _compose(context: Path, compose_file: Path):
     with DockerCompose(
         context=context,
         compose_file_name=str(compose_file),
-        keep_volumes=persist_data,
+        keep_volumes=True,
         wait=True,
     ):
         yield
@@ -71,13 +77,30 @@ def env(
 class TestingDatabase(Protocol):
     """Protocol for running a dev or test database."""
 
-    def __call__(self, persist_data: bool) -> AbstractContextManager[None]:
-        """Generate test database with storage at path."""
+    def __call__(self) -> AbstractContextManager[None]:
+        """Generate test database."""
         ...
 
 
 @contextmanager
-def _postgresql(persist_data: bool):
+def _postgresql():
+    with (
+        PostgresContainer() as pg,
+        env(
+            {
+                "PGUSER": pg.username,
+                "PGPASSWORD": pg.password,
+                "PGPORT": str(pg.get_exposed_port(pg.port)),
+                "PGDATABASE": pg.dbname,
+                "PGHOST": "127.0.0.1",
+            }
+        ),
+    ):
+        yield
+
+
+@contextmanager
+def _postgresql_compose():
     port = _find_free_port()
     with (
         env(
@@ -92,21 +115,39 @@ def _postgresql(persist_data: bool):
         _compose(
             context=Path(__file__).parent,
             compose_file=Path(__file__).parent / "compose" / "compose.postgresql.yaml",
-            persist_data=persist_data,
         ),
     ):
         yield
 
 
 @contextmanager
-def _sqlite(persist_data: bool):
-    db = str(Path.cwd() / "db.sqlite") if persist_data else ":memory:"
-    with env({"SQLITE_DATABASE": db}):
+def _sqlite():
+    with (
+        TemporaryDirectory(delete=False) as dir,
+        env({"SQLITE_DATABASE": str(Path(dir) / "db.sqlite")}),
+    ):
         yield
 
 
 @contextmanager
-def _mysql(persist_data: bool, image: str = "mysql:latest"):
+def _mysql(image: str = "mysql:latest"):
+    with (
+        MySqlContainer(image=image) as mysql,
+        env(
+            {
+                "MYSQL_HOST": "127.0.0.1",
+                "MYSQL_USER": mysql.username,
+                "MYSQL_PWD": mysql.password,
+                "MYSQL_TCP_PORT": str(mysql.get_exposed_port(mysql.port)),
+                "MYSQL_DATABASE": "test",
+            }
+        ),
+    ):
+        yield
+
+
+@contextmanager
+def _mysql_compose(image: str = "mysql:latest"):
     port = _find_free_port()
     with (
         env(
@@ -122,20 +163,26 @@ def _mysql(persist_data: bool, image: str = "mysql:latest"):
         _compose(
             context=Path(__file__).parent,
             compose_file=Path(__file__).parent / "compose" / "compose.mysql.yaml",
-            persist_data=persist_data,
         ),
     ):
         yield
 
 
 mariadb = partial(_mysql, image="mariadb:latest")
+mariadb_compose = partial(_mysql_compose, image="mariadb:latest")
 
 
-_TEST_DATABASE_IMPLEMENTATIONS: dict[DatabaseType, TestingDatabase] = {
-    DatabaseType.sqlite: _sqlite,
-    DatabaseType.postgresql: _postgresql,
-    DatabaseType.mysql: _mysql,
-    DatabaseType.mariadb: mariadb,
+@dataclass
+class DatabaseTestImp:
+    test: TestingDatabase
+    dev: TestingDatabase
+
+
+_TEST_DATABASE_IMPLEMENTATIONS: dict[DatabaseType, DatabaseTestImp] = {
+    DatabaseType.sqlite: DatabaseTestImp(_sqlite, _sqlite),
+    DatabaseType.postgresql: DatabaseTestImp(_postgresql, _postgresql_compose),
+    DatabaseType.mysql: DatabaseTestImp(_mysql, _mysql_compose),
+    DatabaseType.mariadb: DatabaseTestImp(mariadb, mariadb),
 }
 
 
@@ -148,7 +195,7 @@ def noop():  # type: ignore
 @contextmanager
 def testing(db_type: DatabaseType, persist_data: bool):
     """Temporarily create and set environment variables for connection to given db type."""
-    with _TEST_DATABASE_IMPLEMENTATIONS[db_type](persist_data=persist_data):
+    with _TEST_DATABASE_IMPLEMENTATIONS[db_type].test():
         yield
 
 
@@ -161,7 +208,6 @@ async def upgraded(db: DatabaseProtocol):
             asyncio.get_running_loop().run_in_executor(
                 None, db.migrations.stamp, "head"
             )
-
     yield
     async with db.engine.begin() as conn:
         for metadata in db.metadata:

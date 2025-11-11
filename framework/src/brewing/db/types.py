@@ -6,6 +6,7 @@ from contextlib import (
     asynccontextmanager,
 )
 from typing import TYPE_CHECKING, ClassVar, Protocol
+from functools import cached_property
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +24,7 @@ class DatabaseProtocol(Protocol):
     """Protocol for database objects."""
 
     @property
-    def engine(self) -> AsyncEngine:
+    def engine(self) -> AsyncEngine | cached_property[AsyncEngine]:
         """Cached async engine associated with the database."""
         ...
 
