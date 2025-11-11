@@ -5,27 +5,19 @@ from datetime import datetime, UTC
 import inspect
 from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
-from functools import cache, cached_property
+from functools import cached_property
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 import structlog
 from brewing.cli import CLI, CLIOptions
 from brewing.db.migrate import Migrations
 from brewing.db.types import DatabaseConnectionConfiguration
 from brewing.generic import runtime_generic
 from sqlalchemy import MetaData, text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncEngine
 
 
 logger = structlog.get_logger()
-
-
-@cache
-def _provide_cached_engine(
-    *args: Any,
-    **kwargs: Any,
-):
-    return create_async_engine(*args, **kwargs)
 
 
 def _find_calling_file(stack: list[inspect.FrameInfo]):
@@ -54,6 +46,7 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
         )
         self._config: ConfigT | None = None
         self._migrations: Migrations | None = None
+        self._engine: AsyncEngine | None = None
 
     @cached_property
     def cli(self) -> CLI[CLIOptions]:
@@ -108,10 +101,27 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
         """The database type."""
         return self.config_type.database_type
 
-    @cached_property
+    @property
     def engine(self):
         """Sqlalchemy async engine."""
-        return _provide_cached_engine(url=self.config_type().url())
+        self._engine = self._engine or create_async_engine(url=self.config_type().url())
+        return self._engine
+
+    def force_clear_engine(self):
+        """
+        Force clear the engine.
+
+        This is required to reset the database instance in tests
+        when we may not have an active event loop.
+        """
+        self._engine = None
+        self._config = None
+
+    async def clear_engine(self):
+        """Clear the engine cleanly, dropping connections."""
+        if self._engine:
+            await self._engine.dispose()
+        self.force_clear_engine()
 
     @asynccontextmanager
     async def session(self) -> AsyncGenerator[AsyncSession]:

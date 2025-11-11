@@ -53,6 +53,11 @@ class Migrations:
         self._alembic.set_main_option("file_template", "rev_%%(rev)s_%%(slug)s")
 
     @property
+    def database(self) -> DatabaseProtocol:
+        """The database instance used by the migrations."""
+        return self._database
+
+    @property
     def metadata(self):
         """Tuple of sqlalchemy metadata."""
         return self._database.metadata
@@ -173,7 +178,7 @@ class MigrationRunner:
         and associate a connection with the context.
 
         """
-        async with self.migrations.engine.connect() as connection:
+        async with self.migrations.engine.begin() as connection:
             await connection.run_sync(self.run)
 
         await self.migrations.engine.dispose()

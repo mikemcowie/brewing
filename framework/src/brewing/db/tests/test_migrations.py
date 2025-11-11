@@ -42,10 +42,8 @@ def alembic_config(migrations: Migrations):
 @pytest_asyncio.fixture
 async def alembic_engine(migrations: Migrations):
     # Fixture required by pytest-alembic
-    try:
-        yield migrations.engine
-    finally:
-        await migrations.engine.dispose()
+    yield migrations.engine
+    await migrations.engine.dispose()
 
 
 def load_module_from_file(path: Path) -> ModuleType:
@@ -98,6 +96,7 @@ class TestMigrations:
         migrations.revisions_dir.mkdir()
         # If we call generate
         migrations.generate_revision("gen 1", autogenerate=True)
+        migrations.database.force_clear_engine()
         # then there will be a file generated in the revisions dir
         revisions_files = list(migrations.revisions_dir.glob("*.py"))
         assert len(revisions_files) == 1

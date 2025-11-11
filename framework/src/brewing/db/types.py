@@ -6,7 +6,6 @@ from contextlib import (
     asynccontextmanager,
 )
 from typing import TYPE_CHECKING, ClassVar, Protocol
-from functools import cached_property
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,8 +23,21 @@ class DatabaseProtocol(Protocol):
     """Protocol for database objects."""
 
     @property
-    def engine(self) -> AsyncEngine | cached_property[AsyncEngine]:
+    def engine(self) -> AsyncEngine:
         """Cached async engine associated with the database."""
+        ...
+
+    def force_clear_engine(self):
+        """
+        Force clear the engine.
+
+        This is required to reset the database instance in tests
+        when we may not have an active event loop.
+        """
+        ...
+
+    async def clear_engine(self):
+        """Clear the engine cleanly, dropping connections."""
         ...
 
     @property
