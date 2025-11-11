@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import os
+from contextvars import ContextVar
 
+from sqlalchemy_utils import create_database, database_exists
 from dataclasses import dataclass
 from collections.abc import Generator, MutableMapping
-from contextlib import AbstractContextManager, asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager, contextmanager, AbstractContextManager
 from functools import partial
 from pathlib import Path
+from itertools import count
 import socket
 from tempfile import TemporaryDirectory
 
@@ -25,6 +28,7 @@ if TYPE_CHECKING:
 
 
 logger = structlog.get_logger()
+iter_num = count()
 
 
 def _find_free_port() -> int:
@@ -82,21 +86,38 @@ class TestingDatabase(Protocol):
         ...
 
 
+_current_pg: ContextVar[PostgresContainer | None] = ContextVar(
+    "_current_pg", default=None
+)
+
+
 @contextmanager
 def _postgresql():
-    with (
-        PostgresContainer() as pg,
-        env(
+    pg = _current_pg.get()
+    enter_pg = noop()
+    if not pg:
+        pg = PostgresContainer()
+        enter_pg = pg
+    token = _current_pg.set(pg)
+    dbname = f"testdb_{next(iter_num)}"
+
+    with enter_pg:
+        port = pg.get_exposed_port(pg.port)
+        url = f"postgresql+psycopg://{pg.username}:{pg.password}@127.0.0.1:{port}/{dbname}"
+        if not database_exists(url):
+            create_database(url)
+        with env(
             {
                 "PGUSER": pg.username,
                 "PGPASSWORD": pg.password,
-                "PGPORT": str(pg.get_exposed_port(pg.port)),
+                "PGPORT": str(port),
                 "PGDATABASE": pg.dbname,
                 "PGHOST": "127.0.0.1",
             }
-        ),
-    ):
-        yield
+        ):
+            yield
+            if enter_pg is pg:
+                _current_pg.reset(token)
 
 
 @contextmanager
@@ -173,16 +194,16 @@ mariadb_compose = partial(_mysql_compose, image="mariadb:latest")
 
 
 @dataclass
-class DatabaseTestImp:
+class _DatabaseTestImp:
     test: TestingDatabase
     dev: TestingDatabase
 
 
-_TEST_DATABASE_IMPLEMENTATIONS: dict[DatabaseType, DatabaseTestImp] = {
-    DatabaseType.sqlite: DatabaseTestImp(_sqlite, _sqlite),
-    DatabaseType.postgresql: DatabaseTestImp(_postgresql, _postgresql_compose),
-    DatabaseType.mysql: DatabaseTestImp(_mysql, _mysql_compose),
-    DatabaseType.mariadb: DatabaseTestImp(mariadb, mariadb),
+_TEST_DATABASE_IMPLEMENTATIONS: dict[DatabaseType, _DatabaseTestImp] = {
+    DatabaseType.sqlite: _DatabaseTestImp(_sqlite, _sqlite),
+    DatabaseType.postgresql: _DatabaseTestImp(_postgresql, _postgresql_compose),
+    DatabaseType.mysql: _DatabaseTestImp(_mysql, _mysql_compose),
+    DatabaseType.mariadb: _DatabaseTestImp(mariadb, mariadb),
 }
 
 
