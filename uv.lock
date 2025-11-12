@@ -190,12 +190,15 @@ dependencies = [
 all = [
     { name = "aiomysql" },
     { name = "aiosqlite" },
+    { name = "mysqlclient" },
 ]
 mariadb = [
     { name = "aiomysql" },
+    { name = "mysqlclient" },
 ]
 mysql = [
     { name = "aiomysql" },
+    { name = "mysqlclient" },
 ]
 posgresql = [
     { name = "psycopg" },
@@ -217,6 +220,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.118.0" },
     { name = "frozendict", specifier = ">=2.4.6" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "mysqlclient", marker = "extra == 'mysql'", specifier = ">=2.2.7" },
     { name = "psycopg", marker = "extra == 'posgresql'", specifier = ">=3.2.9" },
     { name = "pydantic", specifier = ">=2.11.7" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
@@ -1268,6 +1272,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/ea/5d/38b681d3fce7a266d
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a4/8e/469e5a4a2f5855992e425f3cb33804cc07bf18d48f2db061aec61ce50270/more_itertools-10.8.0-py3-none-any.whl", hash = "sha256:52d4362373dcf7c52546bc4af9a86ee7c4579df9a8dc268be0a2f949d376cc9b", size = 69667, upload-time = "2025-09-02T15:23:09.635Z" },
 ]
+
+[[package]]
+name = "mysqlclient"
+version = "2.2.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/61/68/810093cb579daae426794bbd9d88aa830fae296e85172d18cb0f0e5dd4bc/mysqlclient-2.2.7.tar.gz", hash = "sha256:24ae22b59416d5fcce7e99c9d37548350b4565baac82f95e149cac6ce4163845", size = 91383, upload-time = "2025-01-10T12:06:00.763Z" }
 
 [[package]]
 name = "nodeenv"

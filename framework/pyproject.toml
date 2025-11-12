@@ -30,6 +30,7 @@ testing = [
 postgresql = []
 mysql = [
     "aiomysql>=0.2.0",
+    "mysqlclient>=2.2.7",
 ]
 mariadb = [
     "brewing[mysql]"

@@ -89,6 +89,12 @@ class TestingDatabase(Protocol):
 _current_pg: ContextVar[PostgresContainer | None] = ContextVar(
     "_current_pg", default=None
 )
+_current_mysql: ContextVar[MySqlContainer | None] = ContextVar(
+    "_current_mysql", default=None
+)
+_current_mariadb: ContextVar[MySqlContainer | None] = ContextVar(
+    "_current_mariadb", default=None
+)
 
 
 @contextmanager
@@ -151,20 +157,36 @@ def _sqlite():
 
 
 @contextmanager
-def _mysql(image: str = "mysql:latest"):
-    with (
-        MySqlContainer(image=image) as mysql,
-        env(
+def _mysql(
+    image: str = "mysql:latest",
+    contextvar: ContextVar[MySqlContainer | None] = _current_mysql,
+):
+    mysql = contextvar.get()
+    enter = noop()
+    if not mysql:
+        mysql = MySqlContainer(image=image)
+        enter = mysql
+    token = contextvar.set(mysql)
+    dbname = f"testdb_{next(iter_num)}"
+
+    with enter:
+        port = mysql.get_exposed_port(mysql.port)
+        url = f"mysql://root:{mysql.root_password}@127.0.0.1:{port}/{dbname}"
+        if not database_exists(url):
+            create_database(url)
+
+        with env(
             {
                 "MYSQL_HOST": "127.0.0.1",
-                "MYSQL_USER": mysql.username,
-                "MYSQL_PWD": mysql.password,
-                "MYSQL_TCP_PORT": str(mysql.get_exposed_port(mysql.port)),
-                "MYSQL_DATABASE": "test",
+                "MYSQL_USER": "root",
+                "MYSQL_PWD": mysql.root_password,
+                "MYSQL_TCP_PORT": str(port),
+                "MYSQL_DATABASE": dbname,
             }
-        ),
-    ):
-        yield
+        ):
+            yield
+            if enter is mysql:
+                contextvar.reset(token)
 
 
 @contextmanager
@@ -189,7 +211,7 @@ def _mysql_compose(image: str = "mysql:latest"):
         yield
 
 
-mariadb = partial(_mysql, image="mariadb:latest")
+mariadb = partial(_mysql, image="mariadb:latest", contextvar=_current_mariadb)
 mariadb_compose = partial(_mysql_compose, image="mariadb:latest")
 
 
