@@ -41,9 +41,7 @@ def alembic_config(migrations: Migrations):
 
 @pytest_asyncio.fixture
 async def alembic_engine(migrations: Migrations):
-    # Fixture required by pytest-alembic
     yield migrations.engine
-    await migrations.engine.dispose()
 
 
 def load_module_from_file(path: Path) -> ModuleType:

@@ -105,6 +105,10 @@ filterwarnings = [
     # testcontainers internal warnings https://github.com/testcontainers/testcontainers-python/issues/715
     "ignore:.*The wait_for_logs function with string or callable predicates is deprecated.*",
     "ignore:.*The @wait_container_is_ready decorator is deprecated and will be removed in a future version.*",
+    # sqlalchemy __del__ on connection sometimes has issues due to connection being deleted
+    # without being closed, evaluated ignorable in tests.
+    "ignore:.*Exception ignored while calling deallocator.*",
+    "ignore:.*Exception ignored while finalizing socket.*",
 ]
 python_files = [
     "test_*.py",

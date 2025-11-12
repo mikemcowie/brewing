@@ -1,6 +1,7 @@
 """Database: core database functionality."""
 
 import functools
+import asyncio
 from datetime import datetime, UTC
 import inspect
 from collections.abc import AsyncGenerator, Iterable
@@ -46,7 +47,7 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
         )
         self._config: ConfigT | None = None
         self._migrations: Migrations | None = None
-        self._engine: AsyncEngine | None = None
+        self._engine: dict[asyncio.AbstractEventLoop, AsyncEngine] = {}
 
     @cached_property
     def cli(self) -> CLI[CLIOptions]:
@@ -104,8 +105,16 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
     @property
     def engine(self):
         """Sqlalchemy async engine."""
-        self._engine = self._engine or create_async_engine(url=self.config_type().url())
-        return self._engine
+        loop = asyncio.get_running_loop()
+        if current := self._engine.get(loop):
+            return current
+        # If we are making a new loop, opportunistically we can check
+        # if we can remove any non-running event loops.
+        # for other_loop in self._engine.keys():
+        #    if not other_loop.is_running():
+        #        del self._engine[other_loop]
+        self._engine[loop] = create_async_engine(self.config.url())
+        return self._engine[loop]
 
     def force_clear_engine(self):
         """
@@ -114,13 +123,13 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
         This is required to reset the database instance in tests
         when we may not have an active event loop.
         """
-        self._engine = None
+        self._engine.clear()
         self._config = None
 
     async def clear_engine(self):
         """Clear the engine cleanly, dropping connections."""
-        if self._engine:
-            await self._engine.dispose()
+        if self.engine:
+            await self.engine.dispose()
         self.force_clear_engine()
 
     @asynccontextmanager

@@ -8,7 +8,8 @@ from sqlalchemy import MetaData, text
 from testing_samples import db_sample1
 
 
-def test_engine_cached(db_type: DatabaseType, running_db: None):
+@pytest.mark.asyncio
+async def test_engine_cached(db_type: DatabaseType, running_db: None):
     dialect = db_type.dialect()
     db = Database[dialect.connection_config_type](MetaData())
     assert db.engine is db.engine

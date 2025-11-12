@@ -24,4 +24,6 @@ def running_db(db_type: settings.DatabaseType):
 
 @pytest_asyncio.fixture
 async def database_sample_1(db_type: settings.DatabaseType, running_db: None):
-    return Database[db_type.dialect().connection_config_type](db_sample1.Base.metadata)
+    db = Database[db_type.dialect().connection_config_type](db_sample1.Base.metadata)
+    yield db
+    await db.engine.dispose()

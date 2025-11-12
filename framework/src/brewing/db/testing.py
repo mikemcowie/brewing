@@ -174,7 +174,6 @@ def _mysql(
         url = f"mysql://root:{mysql.root_password}@127.0.0.1:{port}/{dbname}"
         if not database_exists(url):
             create_database(url)
-
         with env(
             {
                 "MYSQL_HOST": "127.0.0.1",
@@ -255,6 +254,7 @@ async def upgraded(db: DatabaseProtocol):
     async with db.engine.begin() as conn:
         for metadata in db.metadata:
             await conn.run_sync(metadata.drop_all)
+    await db.engine.dispose()
 
 
 # make sure pytest doesn't try this
