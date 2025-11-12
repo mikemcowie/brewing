@@ -98,7 +98,7 @@ class Migrations:
         from brewing.db import testing  # noqa: PLC0415
 
         with (
-            testing.testing(self._database.database_type, persist_data=False),
+            testing.testing(self._database.database_type),
             self,
         ):
             command.upgrade(self.alembic, "head")
@@ -114,7 +114,7 @@ class Migrations:
         # late import as libraries involved may not be installed.
         from brewing.db import testing  # noqa: PLC0415
 
-        with testing.testing(self._database.database_type, persist_data=False), self:
+        with testing.testing(self._database.database_type), self:
             command.upgrade(self._alembic, revision=revision)
 
     def downgrade(self, revision: str, dev: bool = False):
@@ -122,7 +122,7 @@ class Migrations:
         # late import as libraries involved may not be installed.
         from brewing.db import testing  # noqa: PLC0415
 
-        with testing.testing(self._database.database_type, persist_data=False), self:
+        with testing.testing(self._database.database_type), self:
             command.downgrade(self._alembic, revision=revision)
 
     def stamp(self, revision: str, dev: bool = False):
@@ -130,7 +130,7 @@ class Migrations:
         # late import as libraries involved may not be installed.
         from brewing.db import testing  # noqa: PLC0415
 
-        with testing.testing(self._database.database_type, persist_data=False), self:
+        with testing.testing(self._database.database_type), self:
             command.stamp(self._alembic, revision=revision)
 
     def current(self, verbose: bool = False, dev: bool = False):
@@ -138,7 +138,7 @@ class Migrations:
         # late import as libraries involved may not be installed.
         from brewing.db import testing  # noqa: PLC0415
 
-        with testing.testing(self._database.database_type, persist_data=False), self:
+        with testing.testing(self._database.database_type), self:
             command.current(self._alembic, verbose=verbose)
 
     def check(self, dev: bool = False):
@@ -146,7 +146,7 @@ class Migrations:
         # late import as libraries involved may not be installed.
         from brewing.db import testing  # noqa: PLC0415
 
-        with testing.testing(self._database.database_type, persist_data=False), self:
+        with testing.testing(self._database.database_type), self:
             command.check(self._alembic)
 
 

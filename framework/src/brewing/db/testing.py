@@ -19,11 +19,10 @@ from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Protocol
 import structlog
 from brewing.db.settings import DatabaseType
-from testcontainers.compose import DockerCompose
-from testcontainers.mysql import MySqlContainer
-from testcontainers.postgres import PostgresContainer
 
 if TYPE_CHECKING:
+    from testcontainers.mysql import MySqlContainer
+    from testcontainers.postgres import PostgresContainer
     from brewing.db.types import DatabaseProtocol
 
 
@@ -41,6 +40,8 @@ def _find_free_port() -> int:
 
 @contextmanager
 def _compose(context: Path, compose_file: Path):
+    from testcontainers.compose import DockerCompose
+
     with DockerCompose(
         context=context,
         compose_file_name=str(compose_file),
@@ -99,6 +100,8 @@ _current_mariadb: ContextVar[MySqlContainer | None] = ContextVar(
 
 @contextmanager
 def _postgresql():
+    from testcontainers.postgres import PostgresContainer
+
     pg = _current_pg.get()
     enter_pg = noop()
     if not pg:
@@ -161,6 +164,8 @@ def _mysql(
     image: str = "mysql:latest",
     contextvar: ContextVar[MySqlContainer | None] = _current_mysql,
 ):
+    from testcontainers.mysql import MySqlContainer
+
     mysql = contextvar.get()
     enter = noop()
     if not mysql:
@@ -235,9 +240,16 @@ def noop():  # type: ignore
 
 
 @contextmanager
-def testing(db_type: DatabaseType, persist_data: bool):
+def testing(db_type: DatabaseType):
     """Temporarily create and set environment variables for connection to given db type."""
     with _TEST_DATABASE_IMPLEMENTATIONS[db_type].test():
+        yield
+
+
+@contextmanager
+def dev(db_type: DatabaseType):
+    """Enter a dev database context with persistence."""
+    with _TEST_DATABASE_IMPLEMENTATIONS[db_type].dev():
         yield
 
 

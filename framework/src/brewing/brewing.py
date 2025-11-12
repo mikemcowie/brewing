@@ -50,9 +50,7 @@ class Brewing:
         ):
             """Run the HTTP server."""
             if dev:
-                with testing.testing(
-                    self.settings.database.database_type, persist_data=True
-                ):
+                with testing.dev(self.settings.database.database_type):
                     return uvicorn.run(
                         http.app_string_identifier,
                         host=host,

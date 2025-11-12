@@ -12,6 +12,8 @@ from pathlib import Path
 import brewing
 from brewing.cli.testing import BrewingCLIRunner
 from brewing.project import cli
+from brewing.db import testing as db_testing
+from brewing.db.settings import DatabaseType
 from tenacity import retry, wait_exponential_jitter, stop_after_delay
 
 
@@ -32,6 +34,7 @@ def run(*cmd: str, readiness_callback: Callable[..., Any], cwd: Path | None = No
     yield
     proc.send_signal(signal.SIGTERM)
     proc.wait(5)
+    proc.kill()
 
 
 def cli_runner():
@@ -109,12 +112,15 @@ def test_project_init(tmp_path: Path):
         ready_status.raise_for_status()
 
     # start the dev server (in another thread)
-    with run(
-        "uv",
-        "run",
-        "brewing",
-        "http",
-        readiness_callback=readiness_callback,
-        cwd=project_dir,
+    with (
+        db_testing.dev(DatabaseType.postgresql),
+        run(
+            "uv",
+            "run",
+            "brewing",
+            "http",
+            readiness_callback=readiness_callback,
+            cwd=project_dir,
+        ),
     ):
         pass  # The test is all in the contextmanager

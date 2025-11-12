@@ -60,7 +60,7 @@ def initial_app_file(context: InitContext):
     ):
         app = Brewing("{context.name}",
             http=BrewingHTTP().with_viewsets(
-                HealthCheckViewset(HealthCheckOptions(database=database))
+                HealthCheckViewset(HealthCheckOptions())
             )
         )
 
@@ -83,7 +83,7 @@ def load_pyproject_content(context: InitContext):
                 name=context.name,
                 version="0.0.1",
                 requires_python=f">={sys.version_info.major}.{sys.version_info.minor}",
-                dependencies=["brewing"],
+                dependencies=["brewing", "psycopg[binary]"],
                 readme="README.md",
                 entry_points=RootModel(
                     root={
