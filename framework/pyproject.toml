@@ -1,12 +1,12 @@
 [project]
 name = "brewing"
-version = "0.0.10-rc.1"
+version = "0.0.10-rc.2"
 description = "A web framework built on sqlachemy and fastapi."
 readme = "README.md"
 authors = [
     { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.118.0",
     "frozendict>=2.4.6",
