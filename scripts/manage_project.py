@@ -14,10 +14,10 @@ import semver
 import structlog
 import tomlkit
 import yaml
-from brewing import CLI
+from brewing import CLI, CLIOptions
 from pygit2.repository import Repository
 from tomlkit.container import Container
-from typer import Argument, Typer
+from typer import Argument
 
 logger = structlog.get_logger()
 
@@ -30,13 +30,11 @@ class _VersionBumpType(StrEnum):
     finalize = auto()
 
 
-class ProjectManager(CLI):
-    def __init__(
-        self, name: str, /, *children: CLI, extends: Typer | CLI | None = None
-    ):
+class ProjectManager(CLI[CLIOptions]):
+    def __init__(self, *args: Any, **kwargs: Any):
         self._repo = Repository(__file__)
         self._repo_path = Path(self._repo.path).parent
-        super().__init__(name, *children, extends=extends)
+        super().__init__(*args, **kwargs)
 
     @cached_property
     def all_pyproject(self):
@@ -195,4 +193,4 @@ class ProjectManager(CLI):
 
 
 if __name__ == "__main__":
-    ProjectManager("project")()
+    ProjectManager(CLIOptions("project"))()
