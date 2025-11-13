@@ -48,13 +48,15 @@ def test_cli_commands_change_if_active_project_found(tmp_path: Path):
     project_dir.mkdir()
     with cd(project_dir):
         # list the names of the CLI commands, init is there.
-        out = subprocess.run(
+        res = subprocess.run(
             [uv.find_uv_bin(), "run", "brewing", "--help"],
-            check=True,
             cwd=project_dir,
             capture_output=True,
             encoding="utf8",
-        ).stdout
+        )
+        out = res.stderr + res.stdout
+        if res.returncode:
+            assert False, out
         assert "project" in out
         assert "my-project" not in out
 

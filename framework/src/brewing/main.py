@@ -13,6 +13,15 @@ from pathlib import Path
 import importlib.metadata
 
 
+class BrewingHandler:
+    """
+    Mixin class that registers a handler for a type.
+
+    This triggers code to be executed when an instance of such
+    a class is passed when instantiating a brewing instabce.
+    """
+
+
 class Brewing:
     """The top level application encapsulating related components."""
 
@@ -117,8 +126,8 @@ def current_project() -> str | None:
     for file in (
         path / "pyproject.toml" for path in [Path.cwd()] + list(Path.cwd().parents)
     ):
-        data = tomllib.loads(file.read_text())
         try:
+            data = tomllib.loads(file.read_text())
             return data["project"]["name"]
         except KeyError as error:
             raise ValueError(f"No project.name in {file=}") from error
