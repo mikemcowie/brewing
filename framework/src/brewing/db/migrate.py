@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 import asyncio
 from contextvars import ContextVar, Token
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -15,6 +17,14 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Connection
 
 MIGRATIONS_CONTEXT_DIRECTORY = Path(__file__).parent / "_migrationcontext"
+
+
+alembic_logger = logging.getLogger("alembic")
+alembic_logger.setLevel(logging.INFO)
+alembic_handler = logging.StreamHandler()
+alembic_handler.setLevel(logging.INFO)
+alembic_logger.handlers.clear()
+alembic_logger.addHandler(alembic_handler)
 
 
 class MigrationsConfigError(RuntimeError):
@@ -42,6 +52,11 @@ class Migrations:
         self._alembic.set_main_option("version_locations", str(revisions_dir))
         self._alembic.set_main_option("path_separator", ";")
         self._alembic.set_main_option("file_template", "rev_%%(rev)s_%%(slug)s")
+
+    @property
+    def database(self) -> DatabaseProtocol:
+        """The database instance used by the migrations."""
+        return self._database
 
     @property
     def metadata(self):
@@ -78,7 +93,7 @@ class Migrations:
             self.active_instance.reset(self._token)
             self._token = None
 
-    def generate_revision(self, message: str, autogenerate: bool):
+    def generate_revision(self, message: str, autogenerate: bool = True):
         """Generate a new migration."""
         # late import as libraries involved may not be installed.
         from brewing.db import testing  # noqa: PLC0415
@@ -87,6 +102,7 @@ class Migrations:
             testing.testing(self._database.database_type),
             self,
         ):
+            command.upgrade(self.alembic, "head")
             command.revision(
                 self._alembic,
                 rev_id=f"{len(list(self._revisions_dir.glob('*.py'))):05d}",
@@ -94,29 +110,38 @@ class Migrations:
                 autogenerate=autogenerate,
             )
 
-    def upgrade(self, revision: str = "head"):
+    @contextmanager
+    def add_context(self, dev: bool):
+        """If in dev context, run any dev context needed before proceeding."""
+        from brewing.db import testing  # noqa: PLC0415
+
+        context = testing.dev if dev else testing.noop  # type: ignore
+        with context(self._database.database_type):
+            yield
+
+    def upgrade(self, revision: str = "head", dev: bool = False):
         """Upgrade the database."""
-        with self:
+        with self.add_context(dev), self:
             command.upgrade(self._alembic, revision=revision)
 
-    def downgrade(self, revision: str):
+    def downgrade(self, revision: str, dev: bool = False):
         """Downgrade the database."""
-        with self:
+        with self.add_context(dev), self:
             command.downgrade(self._alembic, revision=revision)
 
-    def stamp(self, revision: str):
+    def stamp(self, revision: str, dev: bool = False):
         """Write to the versions table as if the database is set to the given revision."""
-        with self:
+        with self.add_context(dev), self:
             command.stamp(self._alembic, revision=revision)
 
-    def current(self, verbose: bool = False):
+    def current(self, verbose: bool = False, dev: bool = False):
         """Display the current revision."""
-        with self:
+        with self.add_context(dev), self:
             command.current(self._alembic, verbose=verbose)
 
-    def check(self):
+    def check(self, dev: bool = False):
         """Validate that the database is updated to the latest revision."""
-        with self:
+        with self.add_context(dev), self:
             command.check(self._alembic)
 
 
@@ -148,7 +173,7 @@ class MigrationRunner:
         and associate a connection with the context.
 
         """
-        async with self.migrations.engine.connect() as connection:
+        async with self.migrations.engine.begin() as connection:
             await connection.run_sync(self.run)
 
         await self.migrations.engine.dispose()
@@ -162,12 +187,19 @@ class MigrationRunner:
         raise NotImplementedError("offline mirations not supported.")
 
 
+class NoActiveMigrationContext(RuntimeError):
+    """No migration context has been enabled."""
+
+
 def run():
     """Run migrations in the current context."""
-    if migrations := Migrations.active_instance.get():
-        if context.is_offline_mode():
-            migrations.runner.offline()
+    try:
+        if migrations := Migrations.active_instance.get():
+            if context.is_offline_mode():
+                migrations.runner.offline()
+            else:
+                migrations.runner.online()
         else:
-            migrations.runner.online()
-    else:
-        raise RuntimeError("no current runner configured.")
+            raise RuntimeError("no current runner configured.")
+    except AttributeError as err:
+        raise NoActiveMigrationContext() from err

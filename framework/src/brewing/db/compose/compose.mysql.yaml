@@ -1,0 +1,15 @@
+volumes:
+  mysqldata:
+services:
+  mysql:
+    image: ${IMAGE:-mysql:latest}
+    ports:
+    - ${MYSQL_TCP_PORT:-3306}:3306
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-test}
+      MYSQL_USER: ${MYSQL_USER:-test}
+      MYSQL_PASSWORD: ${MYSQL_PWD:-test}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-test}
+
+    volumes:
+      - mysqldata:/var/lib/mysql

@@ -1,13 +1,15 @@
 """Database helper package."""
 
-from . import columns, mixins, settings
-from .base import new_base as new_base
-from .database import Database as Database
-from .migrate import Migrations
+from brewing.db import columns, mixins, settings, base
+from brewing.db.base import new_base as new_base
+from brewing.db.database import Database as Database
+from brewing.db.types import DatabaseConnectionConfiguration
+from brewing.db.migrate import Migrations
 
 __all__ = [
     "Database",
     "Migrations",
+    "DatabaseConnectionConfiguration",
     "base",
     "columns",
     "mixins",
