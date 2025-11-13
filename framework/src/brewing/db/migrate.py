@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import asyncio
 from contextvars import ContextVar, Token
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -109,44 +110,38 @@ class Migrations:
                 autogenerate=autogenerate,
             )
 
-    def upgrade(self, revision: str = "head", dev: bool = False):
-        """Upgrade the database."""
-        # late import as libraries involved may not be installed.
+    @contextmanager
+    def add_context(self, dev: bool):
+        """If in dev context, run any dev context needed before proceeding."""
         from brewing.db import testing  # noqa: PLC0415
 
-        with testing.testing(self._database.database_type), self:
+        context = testing.dev if dev else testing.noop  # type: ignore
+        with context(self._database.database_type):
+            yield
+
+    def upgrade(self, revision: str = "head", dev: bool = False):
+        """Upgrade the database."""
+        with self.add_context(dev), self:
             command.upgrade(self._alembic, revision=revision)
 
     def downgrade(self, revision: str, dev: bool = False):
         """Downgrade the database."""
-        # late import as libraries involved may not be installed.
-        from brewing.db import testing  # noqa: PLC0415
-
-        with testing.testing(self._database.database_type), self:
+        with self.add_context(dev), self:
             command.downgrade(self._alembic, revision=revision)
 
     def stamp(self, revision: str, dev: bool = False):
         """Write to the versions table as if the database is set to the given revision."""
-        # late import as libraries involved may not be installed.
-        from brewing.db import testing  # noqa: PLC0415
-
-        with testing.testing(self._database.database_type), self:
+        with self.add_context(dev), self:
             command.stamp(self._alembic, revision=revision)
 
     def current(self, verbose: bool = False, dev: bool = False):
         """Display the current revision."""
-        # late import as libraries involved may not be installed.
-        from brewing.db import testing  # noqa: PLC0415
-
-        with testing.testing(self._database.database_type), self:
+        with self.add_context(dev), self:
             command.current(self._alembic, verbose=verbose)
 
     def check(self, dev: bool = False):
         """Validate that the database is updated to the latest revision."""
-        # late import as libraries involved may not be installed.
-        from brewing.db import testing  # noqa: PLC0415
-
-        with testing.testing(self._database.database_type), self:
+        with self.add_context(dev), self:
             command.check(self._alembic)
 
 
@@ -192,12 +187,19 @@ class MigrationRunner:
         raise NotImplementedError("offline mirations not supported.")
 
 
+class NoActiveMigrationContext(RuntimeError):
+    """No migration context has been enabled."""
+
+
 def run():
     """Run migrations in the current context."""
-    if migrations := Migrations.active_instance.get():
-        if context.is_offline_mode():
-            migrations.runner.offline()
+    try:
+        if migrations := Migrations.active_instance.get():
+            if context.is_offline_mode():
+                migrations.runner.offline()
+            else:
+                migrations.runner.online()
         else:
-            migrations.runner.online()
-    else:
-        raise RuntimeError("no current runner configured.")
+            raise RuntimeError("no current runner configured.")
+    except AttributeError as err:
+        raise NoActiveMigrationContext() from err

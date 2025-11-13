@@ -234,7 +234,7 @@ _TEST_DATABASE_IMPLEMENTATIONS: dict[DatabaseType, _DatabaseTestImp] = {
 
 
 @contextmanager
-def noop():  # type: ignore
+def noop(*_, **__) -> Generator[None, None, None]:  # type: ignore
     """Noop conextmanager."""
     yield
 

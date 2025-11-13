@@ -17,7 +17,7 @@ def running_db_session(db_type: settings.DatabaseType):
 
 
 @pytest.fixture
-def running_db(db_type: settings.DatabaseType):
+def running_db(running_db_session: None, db_type: settings.DatabaseType):
     with testing.testing(db_type):
         yield
 
