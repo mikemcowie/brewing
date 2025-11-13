@@ -27,6 +27,19 @@ class DatabaseProtocol(Protocol):
         """Cached async engine associated with the database."""
         ...
 
+    def force_clear_engine(self):
+        """
+        Force clear the engine.
+
+        This is required to reset the database instance in tests
+        when we may not have an active event loop.
+        """
+        ...
+
+    async def clear_engine(self):
+        """Clear the engine cleanly, dropping connections."""
+        ...
+
     @property
     def database_type(self) -> DatabaseType:
         """Database type associated with the object."""
