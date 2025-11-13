@@ -1,11 +1,13 @@
 # ruff: noqa: T201
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated
+from dataclasses import dataclass
 
 import pytest
 import typer
-from brewing.cli import CLI, ConflictingCommandError, callback
+from brewing.cli import CLI, ConflictingCommandError, callback, CLIOptions
+
 from brewing.cli.testing import BrewingCLIRunner
 from typer import Argument
 
@@ -19,12 +21,12 @@ def no_color(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_basic_cli_with_one_cmd(subtests: SubTests):
-    class SomeCLI(CLI):
+    class SomeCLI(CLI[CLIOptions]):
         def do_something(self):
             """Allows you to do something"""
             print("something")
 
-    runner = BrewingCLIRunner(SomeCLI("root"))
+    runner = BrewingCLIRunner(SomeCLI(CLIOptions("root")))
     with subtests.test("help"):
         result = runner.invoke(["--help"])
         assert result.exit_code == 0
@@ -38,7 +40,7 @@ def test_basic_cli_with_one_cmd(subtests: SubTests):
 
 
 def test_basic_cli_with_two_cmd(subtests: SubTests):
-    class SomeCLI(CLI):
+    class SomeCLI(CLI[CLIOptions]):
         def do_something(self):
             """Allows you to do something"""
             print("something")
@@ -47,7 +49,7 @@ def test_basic_cli_with_two_cmd(subtests: SubTests):
             """Also allows you to do something"""
             print("also")
 
-    runner = BrewingCLIRunner(SomeCLI("root"))
+    runner = BrewingCLIRunner(SomeCLI(CLIOptions("root")))
     with subtests.test("help"):
         help_result = runner.invoke(["--help"], color=False)
         assert help_result.exit_code == 0
@@ -65,20 +67,21 @@ def test_basic_cli_with_two_cmd(subtests: SubTests):
 
 
 def test_instance_attribute(subtests: SubTests):
-    class SomeCLI(CLI):
-        def __init__(self, name: str, message: str):
-            self.message = message
-            super().__init__(name)
+    @dataclass
+    class Options:
+        name: str
+        message: str
 
+    class SomeCLI(CLI[Options]):
         def quiet(self):
             """Allows you to do something"""
-            print(self.message.lower())
+            print(self.options.message.lower())
 
         def loud(self):
             """Also allows you to do something"""
-            print(self.message.upper())
+            print(self.options.message.upper())
 
-    runner = BrewingCLIRunner(SomeCLI(name="root", message="Something"))
+    runner = BrewingCLIRunner(SomeCLI(Options(name="root", message="Something")))
 
     with subtests.test("quiet"):
         result = runner.invoke(["quiet"])
@@ -91,12 +94,12 @@ def test_instance_attribute(subtests: SubTests):
 
 
 def test_basic_option(subtests: SubTests):
-    class SomeCLI(CLI):
+    class SomeCLI(CLI[CLIOptions]):
         def speak(self, a_message: str):
             """Allows you to do speak"""
             print(a_message)
 
-    runner = BrewingCLIRunner(SomeCLI("root"))
+    runner = BrewingCLIRunner(SomeCLI(CLIOptions(name="root")))
 
     with subtests.test("happy-path"):
         result = runner.invoke(["speak", "--a-message", "hello"])
@@ -110,12 +113,12 @@ def test_basic_option(subtests: SubTests):
 
 
 def test_basic_argument(subtests: SubTests):
-    class SomeCLI(CLI):
+    class SomeCLI(CLI[CLIOptions]):
         def speak(self, a_message: Annotated[str, Argument()]):
             """Allows you to do speak"""
             print(a_message)
 
-    runner = BrewingCLIRunner(SomeCLI("root"))
+    runner = BrewingCLIRunner(SomeCLI(CLIOptions(name="root")))
 
     with subtests.test("happy-path"):
         result = runner.invoke(["speak", "hello"])
@@ -128,24 +131,24 @@ def test_basic_argument(subtests: SubTests):
         assert "Missing argument 'A_MESSAGE" in result.stderr, result.stderr
 
 
-def test_positional_parameter(subtests: SubTests):
-    class SomeCLI(CLI):
+def test_positional_parameter():
+    class SomeCLI(CLI[CLIOptions]):
         def speak(self, a_message: str, /):
             """Allows you to do speak"""
             print(a_message)  # pragma: no cover
 
     with pytest.raises(TypeError) as error:
-        SomeCLI("root")
+        SomeCLI(CLIOptions(name="root"))
     assert "Cannot support positional-only arguments." in error.exconly()
 
 
 def test_with_default(subtests: SubTests):
-    class SomeCLI(CLI):
+    class SomeCLI(CLI[CLIOptions]):
         def speak(self, a_message: str = "hello"):
             """Allows you to do speak"""
             print(a_message)
 
-    runner = BrewingCLIRunner(SomeCLI("root"))
+    runner = BrewingCLIRunner(SomeCLI(CLIOptions(name="root")))
 
     with subtests.test("wrong-invoke"):
         result = runner.invoke(["speak", "HI"])
@@ -164,21 +167,21 @@ def test_with_default(subtests: SubTests):
 
 
 def test_nested_cli(subtests: SubTests):
-    class Parent(CLI):
+    class Parent(CLI[CLIOptions]):
         def read(self):
             print("parent read")
 
         def write(self):
             print("parent write")
 
-    class Child(CLI):
+    class Child(CLI[CLIOptions]):
         def read(self):
             print("child read")
 
         def write(self):
             print("child write")
 
-    cli = Parent("parent", Child("child"))
+    cli = Parent(CLIOptions(name="parent"), Child(CLIOptions("child")))
     runner = BrewingCLIRunner(cli)
 
     with subtests.test("parent-read"):
@@ -216,7 +219,7 @@ def test_cli_wraps_another_object(subtests: SubTests):
             print(self.message.lower())
 
     something = Something(message="Something")
-    cli = CLI("something", wraps=something)
+    cli = CLI(CLIOptions("something"), wraps=something)
     runner = BrewingCLIRunner(cli)
 
     with subtests.test("quiet"):
@@ -226,26 +229,23 @@ def test_cli_wraps_another_object(subtests: SubTests):
 
 
 def test_cli_extends_another(subtests: SubTests):
-    class CLI1(CLI):
-        def __init__(self, name: str, message: str):
-            self.message = message
-            super().__init__(name)
+    @dataclass
+    class Options:
+        name: str
+        message: str
 
+    class CLI1(CLI[Options]):
         def quiet(self):
             """Allows you to do something"""
-            print(self.message.lower())
+            print(self.options.message.lower())
 
-    class CLI2(CLI):
-        def __init__(self, name: str, message: str, **kwargs: Any):
-            self.message = message
-            super().__init__(name, **kwargs)
-
+    class CLI2(CLI[Options]):
         def loud(self):
             """Also allows you to do something"""
-            print(self.message.upper())
+            print(self.options.message.upper())
 
-    cli1 = CLI1(name="root", message="Something")
-    cli2 = CLI2(name="root", message="Something", extends=cli1)
+    cli1 = CLI1(Options(name="root", message="Something"))
+    cli2 = CLI2(Options(name="root", message="Something"), extends=cli1)
     runner = BrewingCLIRunner(cli2)
 
     with subtests.test("quiet"):
@@ -265,16 +265,17 @@ def test_cli_a_typer(subtests: SubTests):
     def quiet():
         print("something")
 
-    class CLI1(CLI):
-        def __init__(self, name: str, message: str, **kwargs: Any):
-            self.message = message
-            super().__init__(name, **kwargs)
+    @dataclass
+    class Options:
+        name: str
+        message: str
 
+    class CLI1(CLI[Options]):
         def loud(self):
             """Also allows you to do something"""
-            print(self.message.upper())
+            print(self.options.message.upper())
 
-    cli2 = CLI1(name="root", message="Something", extends=app)
+    cli2 = CLI1(Options(name="root", message="Something"), extends=app)
     runner = BrewingCLIRunner(cli2)
 
     with subtests.test("quiet"):
@@ -288,27 +289,24 @@ def test_cli_a_typer(subtests: SubTests):
 
 
 def test_cannot_extend_with_conflicting_names():
-    class CLI1(CLI):
-        def __init__(self, name: str, message: str):
-            self.message = message
-            super().__init__(name)
+    @dataclass
+    class Options:
+        name: str
+        message: str
 
+    class CLI1(CLI[Options]):
         def quiet(self):
             """Allows you to do something"""
-            print(self.message.lower())  # pragma: no cover
+            print(self.options.message.lower())  # pragma: no cover
 
-    class CLI2(CLI):
-        def __init__(self, name: str, message: str, **kwargs: Any):
-            self.message = message
-            super().__init__(name, **kwargs)
-
+    class CLI2(CLI[Options]):
         def quiet(self):
             """Also allows you to do something"""
-            print(self.message.upper())  # pragma: no cover
+            print(self.options.message.upper())  # pragma: no cover
 
-    cli1 = CLI1(name="root", message="Something")
+    cli1 = CLI1(Options(name="root", message="Something"))
     with pytest.raises(ConflictingCommandError) as error:
-        CLI2(name="root", message="Something", extends=cli1)
+        CLI2(Options(name="root", message="Something"), extends=cli1)
     assert (
         "cannot add CLI command with conflicting command_name='quiet'."
         in error.exconly()
@@ -316,11 +314,12 @@ def test_cannot_extend_with_conflicting_names():
 
 
 def test_callback(subtests: SubTests):
-    class CLI1(CLI):
-        def __init__(self, name: str, message: str):
-            self.message = message
-            super().__init__(name)
+    @dataclass
+    class Options:
+        name: str
+        message: str
 
+    class CLI1(CLI[Options]):
         @callback()
         def initial(self):
             """First noise."""
@@ -328,9 +327,9 @@ def test_callback(subtests: SubTests):
 
         def quiet(self):
             """Allows you to do something"""
-            print(self.message.lower())
+            print(self.options.message.lower())
 
-    cli = CLI1(name="root", message="Something")
+    cli = CLI1(Options(name="root", message="Something"))
     runner = BrewingCLIRunner(cli)
 
     assert "quiet" in cli.command_names

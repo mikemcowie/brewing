@@ -1,5 +1,5 @@
 """brewing: An applicaton development framework and toolkit."""
 
-from brewing.cli import CLI
+from brewing.cli import CLI, CLIOptions
 
-__all__ = ["CLI"]
+__all__ = ["CLI", "CLIOptions"]
