@@ -1,6 +1,6 @@
 """The top level application encapsulating related components."""
 
-from typing import Any, Callable, Annotated, NamedTuple
+from typing import Any, Callable, Annotated
 from typer import Option
 from brewing.cli import CLI, CLIOptions
 from brewing.http import BrewingHTTP
@@ -8,12 +8,9 @@ from brewing.db import Database
 from brewing.db import testing
 from brewing import settings
 import uvicorn
-
-
-class BrewingCLIOptions(NamedTuple):
-    """Configurable options for Brewing's CLI."""
-
-    name: str
+import tomllib
+from pathlib import Path
+import importlib.metadata
 
 
 class Brewing:
@@ -75,3 +72,55 @@ class Brewing:
         """
         name, db = component
         self.cli.typer.add_typer(db.cli.typer, name=name)
+
+
+def main_cli(options: CLIOptions | None = None) -> CLI[CLIOptions]:
+    """
+    Return the main brewing command line.
+
+    This commandline discovers subcommands published
+    via [project.entry-points.brewing], includimg brewing's own toolset
+    and any other that can be detected in the current context.
+    """
+    cli = CLI(options or CLIOptions(name="brewing"))
+    entrypoints = importlib.metadata.entry_points(group="brewing")
+    for entrypoint in entrypoints:
+        if entrypoint.module.split(".")[0].replace("_", "-") == current_project():
+            # The current project, if identifiable, is merged into the
+            # top-level typer by providing the name as None
+            # Otherwise we will use the entrypoint name to
+            cli.typer.add_typer(load_entrypoint(entrypoint).typer, name=None)
+        cli.typer.add_typer(load_entrypoint(entrypoint).typer, name=entrypoint.name)
+    return cli
+
+
+def load_entrypoint(
+    entrypoint: importlib.metadata.EntryPoint,
+) -> CLI[Any] | Brewing:
+    """Process/filter packaging entrypoints to the CLI."""
+    obj = entrypoint.load()
+    error = TypeError(
+        f"{obj!r} is not suitable as a brewing entrypoint, it must be a brewing.cli.CLI instance, brewing.Brewing instance, or a callable returning such."
+    )
+    if isinstance(obj, CLI) or isinstance(obj, Brewing):
+        return obj  # pyright: ignore[reportUnknownVariableType]
+    if not callable(obj):
+        raise error
+    obj = obj()
+    if isinstance(obj, CLI):
+        return obj  # pyright: ignore[reportUnknownVariableType]
+    raise error
+
+
+def current_project() -> str | None:
+    """Scan from the current working directory to find the name of the current project."""
+    for file in (
+        path / "pyproject.toml" for path in [Path.cwd()] + list(Path.cwd().parents)
+    ):
+        data = tomllib.loads(file.read_text())
+        try:
+            return data["project"]["name"]
+        except KeyError as error:
+            raise ValueError(f"No project.name in {file=}") from error
+        except FileNotFoundError:
+            continue

@@ -2,6 +2,6 @@
 
 from brewing.cli import CLI, CLIOptions
 from brewing.settings import Settings
-from brewing.brewing import Brewing
+from brewing.main import Brewing
 
 __all__ = ["CLI", "CLIOptions", "Settings", "Brewing"]
