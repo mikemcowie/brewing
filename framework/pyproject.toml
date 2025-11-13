@@ -14,13 +14,18 @@ dependencies = [
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",
     "sqlalchemy>=2.0.43",
+    "structlog>=25.5.0",
+    "typer>=0.20.0",
+    "uvicorn>=0.38.0",
 ]
 
 [project.optional-dependencies]
 testing = [
     "testcontainers>=4.12.0",
 ]
-postgresql = []
+postgresql = [
+    "psycopg[binary]>=3.2.10",
+]
 mysql = [
     "aiomysql>=0.2.0",
 ]
