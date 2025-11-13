@@ -1,14 +1,13 @@
 [project]
 name = "brewing-uv-workspace"
-version = "0.0.10-rc.1"
+version = "0.0.10"
 description = "Add your description here"
 readme = "docs/README.md"
 requires-python = ">=3.13"
 dependencies = [
     "brewing",
-    "project-manager",
     "brewing-test-dependencies",
-    "brewing-incubator",
+    "structlog>=25.5.0",
     "testing-samples",
     "tomlkit>=0.13.3",
 ]
@@ -24,14 +23,11 @@ members = [
     "framework",
     "samples/*",
     "test-dependencies",
-    "incubator",
 ]
 
 [tool.uv.sources]
-project-manager = { workspace = true }
 brewing = { workspace = true }
 brewing-test-dependencies = { workspace = true }
-brewing-incubator = {workspace=true}
 testing-samples = {workspace = true}
 
 [dependency-groups]
@@ -114,13 +110,14 @@ python_files = [
     "test_*.py",
     "*_test.py",
 ]
-norecursedirs = ".venv incubator/src/brewing_incubator/db/migrations framework/src/brewing/db/_migrationcontext"
+norecursedirs = ".venv framework/src/brewing/db/_migrationcontext"
 asyncio_default_test_loop_scope = "session"
 asyncio_default_fixture_loop_scope = "session"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]
 core = "ctrace"
+
 
 [tool.coverage.report]
 exclude_also = [
