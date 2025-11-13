@@ -111,7 +111,7 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
             return current
         # If we are making a new loop, opportunistically we can check
         # if we can remove any non-running event loops.
-        for other_loop in self._engine.keys():
+        for other_loop in list(self._engine.keys()):
             if not other_loop.is_running():
                 del self._engine[other_loop]
         self._engine[loop] = create_async_engine(self.config.url())

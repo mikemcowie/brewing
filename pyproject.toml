@@ -1,6 +1,6 @@
 [project]
 name = "brewing-uv-workspace"
-version = "0.0.10-rc.2"
+version = "0.0.10"
 description = "Add your description here"
 readme = "docs/README.md"
 requires-python = ">=3.13"
