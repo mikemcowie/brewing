@@ -10,6 +10,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Literal
 import structlog
+
 from brewing.cli import CLI, CLIOptions
 from brewing.db.migrate import Migrations
 from brewing.db.types import DatabaseConnectionConfiguration
