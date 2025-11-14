@@ -88,7 +88,7 @@ class BrewingHTTP(FastAPI):
 
     def with_viewsets(self, *vs: ViewSet) -> Self:
         """
-        _summary_.
+        Add viewsets to the application.
 
         Args:
             *vs (ViewSet): viewsets to include
