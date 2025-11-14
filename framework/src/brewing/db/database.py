@@ -1,5 +1,6 @@
 """Database: core database functionality."""
 
+from __future__ import annotations
 import functools
 import asyncio
 from datetime import datetime, UTC
@@ -8,7 +9,7 @@ from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
 from functools import cached_property
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 import structlog
 
 from brewing.cli import CLI, CLIOptions
@@ -17,6 +18,9 @@ from brewing.db.types import DatabaseConnectionConfiguration
 from brewing.generic import runtime_generic
 from sqlalchemy import MetaData, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncEngine
+
+if TYPE_CHECKING:
+    from brewing import Brewing
 
 
 logger = structlog.get_logger()
@@ -49,6 +53,10 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
         self._config: ConfigT | None = None
         self._migrations: Migrations | None = None
         self._engine: dict[asyncio.AbstractEventLoop, AsyncEngine] = {}
+
+    def register(self, name: str, brewing: Brewing, /):
+        """Register database to brewing."""
+        brewing.cli.typer.add_typer(self.cli.typer, name=name)
 
     @cached_property
     def cli(self) -> CLI[CLIOptions]:
