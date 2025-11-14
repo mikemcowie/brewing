@@ -1,6 +1,6 @@
 """CLI entrypoint for brewing."""
 
-from brewing.main import main_cli
+from brewing.plugin import main_cli
 
 cli = main_cli()
 
