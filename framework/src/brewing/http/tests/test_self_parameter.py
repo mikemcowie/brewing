@@ -4,11 +4,10 @@ Handling this paramater is the basis of class based views
 but also can be used for functional views.
 """
 
-from brewing.http.path import TrailingSlashPolicy
-from fastapi import APIRouter
+from dataclasses import dataclass, field
 from .helpers import new_client
 
-from brewing.http import ViewSet, status
+from brewing.http import ViewSet, status, ViewsetOptions
 
 
 ## Setup - we'll construct a subclass of viewset.
@@ -17,24 +16,22 @@ from brewing.http import ViewSet, status
 # the first parameter of a functional endpoint, if untyped
 # or typed as the tyype of the ViewSet, will be adapted via fastapi depends mechanism
 # to be passed.
-class CluckingViewSet(ViewSet):
-    def __init__(
-        self,
-        root_path: str = "",
-        router: APIRouter | None = None,
-        trailing_slash_policy: TrailingSlashPolicy = TrailingSlashPolicy.default(),
-    ):
-        super().__init__(root_path, router, trailing_slash_policy)
-        self.sound = "cluck"
+@dataclass
+class CluckingViewsetOptions(ViewsetOptions):
+    sound: str = field(kw_only=True)
+
+
+class CluckingViewSet(ViewSet[CluckingViewsetOptions]):
+    pass
 
 
 def test_untyped_first_parameter():
-    vs1 = CluckingViewSet()
+    vs1 = CluckingViewSet(CluckingViewsetOptions(sound="cluck"))
 
     @vs1.GET()
     def make_sound(self, *, shout: bool = False) -> str:  # type: ignore
         assert isinstance(self, CluckingViewSet)
-        sound: str = self.sound  # type: ignore
+        sound: str = self.viewset_options.sound
         if shout:
             sound = sound.upper()
         return sound
@@ -49,11 +46,11 @@ def test_untyped_first_parameter():
 
 
 def test_viewset_typed_first_parameter():
-    vs1 = CluckingViewSet()
+    vs1 = CluckingViewSet(CluckingViewsetOptions(sound="cluck"))
 
     @vs1.GET()
     def make_sound(self: CluckingViewSet, *, shout: bool = False) -> str:  # type: ignore
-        sound: str = self.sound
+        sound = self.viewset_options.sound
         if shout:
             sound = sound.upper()
         return sound
