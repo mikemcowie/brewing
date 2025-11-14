@@ -4,7 +4,8 @@ from typing import Annotated
 from http import HTTPMethod
 from brewing.http import ViewSet, ViewsetOptions, status, self
 from brewing.http.path import DeferredDecoratorCall
-from brewing.http.tests.helpers import SomeData, new_client
+from brewing.http.testing import new_client
+from brewing.http.tests.helpers import SomeData
 from fastapi import APIRouter, Depends, HTTPException
 
 
