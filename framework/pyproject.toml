@@ -54,8 +54,7 @@ exclude = [
 ]
 
 [project.scripts]
-brewing = "brewing.cli:cli"
-dev = "brewing.cli:dev"
+brewing = "brewing.__main__:cli"
 
 [project.urls]
 Homepage = "https://mikemcowie.github.io/brewing/"

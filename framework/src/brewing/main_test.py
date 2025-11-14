@@ -2,8 +2,13 @@
 
 import pytest
 from pytest_subtests import SubTests
+from textwrap import dedent
+from typing import cast
+from typer import Typer
 from unittest.mock import MagicMock
-from brewing import main
+from pathlib import Path
+from brewing import main, CLI, CLIOptions
+from importlib.metadata import EntryPoint
 
 
 def new_options() -> main.BrewingOptions[MagicMock]:
@@ -63,3 +68,73 @@ def test_brewing(subtests: SubTests):
         pytest.raises(AttributeError),
     ):
         app.foo_bar
+
+
+def sample_entrypoints():
+    return [
+        EntryPoint(name="foo", value="foo.bar:cheese", group="brewing"),
+        EntryPoint(name="bar", value="bar.onions", group="brewing"),
+        EntryPoint(name="something-else", value="something.else:here", group="boop"),
+    ]
+
+
+def test_main_cli_brewing_entrypoints_matched():
+    """package entrypoints from brewing group are matched."""
+    cli = main.main_cli(
+        entrypoints=sample_entrypoints(),
+        entrypoint_loader=lambda _: CLI(CLIOptions(name="foo")),
+    )
+    assert set(c.name for c in cli.typer.registered_commands) == {"hidden"}
+    assert set(c.name for c in cli.typer.registered_groups) == {"foo", "bar"}
+
+
+def test_main_cli_brewing_entrypoints_of_current_project_added_to_root_cli():
+    """If we are in project foo, foo's CLI commands will be added to the root CLI."""
+
+    class FooCLI(CLI[CLIOptions]):
+        def foo1(self):
+            """ "Some CLI command."""
+
+    cli = main.main_cli(
+        entrypoints=sample_entrypoints(),
+        entrypoint_loader=lambda _: FooCLI(CLIOptions(name="foo")),
+        project_provider=lambda: "foo",
+    )
+    unnamed_groups = [g for g in cli.typer.registered_groups if not g.name]
+    assert len(unnamed_groups) == 1
+    assert set(
+        c.name
+        for c in cast(Typer, unnamed_groups[0].typer_instance).registered_commands
+    ) == {"hidden", "foo-1"}
+
+
+def test_load_current_project(tmp_path: Path, subtests: SubTests):
+    with subtests.test("finds-parent-dir"):
+        nested_search_dir = tmp_path / "parent-test" / "level1" / "level2" / "level3"
+        nested_search_dir.mkdir(parents=True)
+        (nested_search_dir.parents[1] / "pyproject.toml").write_text(
+            dedent(
+                """
+            [project]
+            name = "foo"
+            """
+            )
+        )
+        assert main.current_project(nested_search_dir) == "foo"
+
+    with subtests.test("raises-no-project-name"):
+        nested_search_dir = tmp_path / "no-name-test" / "level1" / "level2" / "level3"
+        nested_search_dir.mkdir(parents=True)
+        (nested_search_dir.parents[1] / "pyproject.toml").write_text(
+            dedent(
+                """
+            [project]
+            """
+            )
+        )
+        with pytest.raises(ValueError) as err:
+            main.current_project(nested_search_dir)
+        assert "No project.name in file=" in err.exconly()
+
+    with subtests.test("not-in-project"):
+        assert main.current_project(tmp_path) is None
