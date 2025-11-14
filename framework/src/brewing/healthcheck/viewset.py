@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from brewing.http import ViewSet, ViewsetOptions, self, status
-from brewing.settings import Settings
+from brewing.main import BrewingOptions
 from fastapi.responses import PlainTextResponse, JSONResponse
 
 
@@ -11,7 +11,7 @@ class HealthCheckOptions(ViewsetOptions):
     """Options for the healthcheck viewset."""
 
     def __post_init__(self):
-        self.database = Settings.current().database
+        self.database = BrewingOptions.current().database
 
 
 class HealthCheckViewset(ViewSet[HealthCheckOptions]):

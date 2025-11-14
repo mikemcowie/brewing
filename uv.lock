@@ -584,10 +584,14 @@ version = "0.0.1"
 source = { editable = "samples/generated-project" }
 dependencies = [
     { name = "brewing" },
+    { name = "psycopg", extra = ["binary"] },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "brewing", editable = "framework" }]
+requires-dist = [
+    { name = "brewing", editable = "framework" },
+    { name = "psycopg", extras = ["binary"] },
+]
 
 [[package]]
 name = "ghp-import"

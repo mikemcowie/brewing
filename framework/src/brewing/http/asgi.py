@@ -6,11 +6,16 @@ It is a shallow wrapper around fastapi with extra methods to support native feat
 
 from __future__ import annotations
 import inspect
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, Annotated
+from typer import Option
 from fastapi import FastAPI
+import uvicorn
+from brewing.db import testing
+
 
 if TYPE_CHECKING:
     from . import ViewSet
+    from brewing import Brewing
 
 
 def find_calling_module():
@@ -41,6 +46,33 @@ class BrewingHTTP(FastAPI):
             super().__init__(*args, **kwargs)
             self.app_string_identifier = (
                 f"{find_calling_module()}:{self.extra.get('name', 'http')}"
+            )
+
+    def register(self, name: str, brewing: Brewing, /):
+        """Register http server to brewing."""
+
+        @brewing.cli.typer.command(name)
+        def run(
+            dev: Annotated[bool, Option()] = False,
+            workers: None | int = None,
+            host: str = "0.0.0.0",
+            port: int = 8000,
+        ):
+            """Run the HTTP server."""
+            if dev:
+                with testing.dev(brewing.database.database_type):
+                    return uvicorn.run(
+                        self.app_string_identifier,
+                        host=host,
+                        port=port,
+                        reload=dev,
+                    )
+            return uvicorn.run(
+                self.app_string_identifier,
+                host=host,
+                workers=workers,
+                port=port,
+                reload=False,
             )
 
     def include_viewset(self, viewset: ViewSet[Any], **kwargs: Any):

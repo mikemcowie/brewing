@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
     from brewing.db.migrate import Migrations
+    from brewing import Brewing
     from brewing.db.settings import DatabaseType
     from sqlalchemy import MetaData
     from sqlalchemy.engine import URL
@@ -21,6 +22,9 @@ if TYPE_CHECKING:
 
 class DatabaseProtocol(Protocol):
     """Protocol for database objects."""
+
+    def register(self, name: str, brewing: Brewing, /):
+        """Rgister the database with brewing."""
 
     @property
     def engine(self) -> AsyncEngine:

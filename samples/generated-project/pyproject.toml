@@ -2,7 +2,7 @@
 name = "generated-project"
 readme = "README.md"
 version = "0.0.1"
-dependencies = ["brewing"]
+dependencies = ["brewing", "psycopg[binary]"]
 requires-python = ">=3.14"
 
 [project.entry-points.brewing]

@@ -1,86 +1,94 @@
 """The top level application encapsulating related components."""
 
-from typing import Any, Callable, Annotated
-from typer import Option
+from __future__ import annotations
+
+from contextvars import Token
+from dataclasses import dataclass, field
+from collections.abc import Mapping
+from typing import Any
 from brewing.cli import CLI, CLIOptions
-from brewing.http import BrewingHTTP
-from brewing.db import Database
-from brewing.db import testing
-from brewing import settings
-import uvicorn
+from brewing.db import Database, DatabaseConnectionConfiguration
 import tomllib
 from pathlib import Path
 import importlib.metadata
+from contextvars import ContextVar
+from typing import ClassVar, Protocol
 
 
-class BrewingHandler:
+class NoCurrentOptions(LookupError):
+    """No settings object has been pushed."""
+
+
+@dataclass
+class BrewingOptions[DBConnT: DatabaseConnectionConfiguration]:
+    """Application level settings."""
+
+    name: str
+    database: Database[DBConnT]
+    current_options: ClassVar[ContextVar[BrewingOptions[Any]]] = ContextVar(
+        "current_settings"
+    )
+    current_options_token: Token[BrewingOptions[Any]] | None = field(
+        default=None, init=False
+    )
+
+    def __enter__(self):
+        self.current_options_token = self.current_options.set(self)
+        return self
+
+    def __exit__(self, *_):
+        if self.current_options_token:
+            self.current_options.reset(self.current_options_token)
+
+    @classmethod
+    def current(cls):
+        """Return the current settings instance."""
+        try:
+            return cls.current_options.get()
+        except LookupError as error:
+            raise NoCurrentOptions(
+                "No current options available. "
+                "Push settings by constucting a BrewingOptions instance, i.e. "
+                "with BrewingOptions(...):"
+            ) from error
+
+
+class BrewingComponentType(Protocol):
     """
-    Mixin class that registers a handler for a type.
+    Duck type for any object that can be registered to brewing.
 
-    This triggers code to be executed when an instance of such
-    a class is passed when instantiating a brewing instabce.
+    The register method is called when it is passed to brewing,
+    which may be used to connect it to the CLI or any other instantiation.
     """
+
+    def register(self, name: str, brewing: Brewing, /) -> Any:
+        """
+        Register the component to a brewing instance.
+
+        This functions as a callback to integrate components to brewing.
+        """
+        ...
 
 
 class Brewing:
     """The top level application encapsulating related components."""
 
-    def __init__(self, name: str, **components: Any):
-        self.cli = CLI(CLIOptions(name=name))
+    def __init__(self, **components: BrewingComponentType):
+        self.options = BrewingOptions.current()
+        self.cli = CLI(CLIOptions(name=self.options.name))
         self.typer = self.cli.typer
-        self.settings = settings.Settings.current()
-        self.components = components | {"db": self.settings.database}
-        handlers: dict[type, Callable[[tuple[str, Any]], Any]] = {
-            BrewingHTTP: self.init_http_component,
-            type(self.settings.database): self.init_database,
+        self.database = self.options.database
+        self.components: Mapping[str, BrewingComponentType] = components | {
+            "db": self.database
         }
         for name, component in self.components.items():
-            handlers[type(component)]((name, component))
+            component.register(name, self)
 
     def __getattr__(self, name: str):
         try:
             return self.components[name]
         except KeyError as error:
             raise AttributeError(f"no attribute '{name}' in object {self}.") from error
-
-    def init_http_component(self, component: tuple[str, BrewingHTTP]):
-        """Initialize an HTTP component into the CLI."""
-        name, http = component
-
-        @self.cli.typer.command(name)
-        def run(
-            dev: Annotated[bool, Option()] = False,
-            workers: None | int = None,
-            host: str = "0.0.0.0",
-            port: int = 8000,
-        ):
-            """Run the HTTP server."""
-            if dev:
-                with testing.dev(self.settings.database.database_type):
-                    return uvicorn.run(
-                        http.app_string_identifier,
-                        host=host,
-                        port=port,
-                        reload=dev,
-                    )
-            return uvicorn.run(
-                http.app_string_identifier,
-                host=host,
-                workers=workers,
-                port=port,
-                reload=False,
-            )
-
-    def init_database(self, component: tuple[str, Database[Any]]):
-        """
-        Add the database CLI for the application.
-
-        Args:
-            component (tuple[str, Database[Any]]): name and database instance.
-
-        """
-        name, db = component
-        self.cli.typer.add_typer(db.cli.typer, name=name)
 
 
 def main_cli(options: CLIOptions | None = None) -> CLI[CLIOptions]:
