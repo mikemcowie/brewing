@@ -1,6 +1,6 @@
 [project]
 name = "brewing-test-dependencies"
-version = "0.0.10"
+version = "0.0.11-rc.1"
 description = "brewing's test dependencies"
 readme = "README.md"
 authors = [

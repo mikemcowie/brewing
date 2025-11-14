@@ -46,7 +46,7 @@ def initial_app_file(context: InitContext):
     from brewing.db.settings import PostgresqlSettings
     from brewing.healthcheck.viewset import HealthCheckOptions, HealthCheckViewset
     from brewing.http import BrewingHTTP
-    from brewing.main import BrewingOptions
+    from brewing.app import BrewingOptions
 
     # register database models by inheriting from this base.
     # brewing will automatically scan for modules inheriting from this

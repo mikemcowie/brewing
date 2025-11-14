@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from brewing.http import ViewSet, ViewsetOptions, self, status
-from brewing.main import BrewingOptions
+from brewing.app import BrewingOptions
 from fastapi.responses import PlainTextResponse, JSONResponse
 
 
