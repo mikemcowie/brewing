@@ -40,8 +40,12 @@ class DatabaseProtocol(Protocol):
         """
         ...
 
-    async def clear_engine(self):
+    async def clear_engine(self) -> None:
         """Clear the engine cleanly, dropping connections."""
+        ...
+
+    async def is_alive(self, timeout: float = 1.0) -> bool:
+        """Return true if we can connect to the database."""
         ...
 
     @property
