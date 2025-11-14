@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from contextvars import Token
 from dataclasses import dataclass, field
-from collections.abc import Mapping
-from typing import Any
+from collections.abc import Mapping, Iterable
+from typing import Any, Callable
 from brewing.cli import CLI, CLIOptions
 from brewing.db import DatabaseConnectionConfiguration
 from brewing.db.types import DatabaseProtocol
@@ -14,6 +14,11 @@ from pathlib import Path
 import importlib.metadata
 from contextvars import ContextVar
 from typing import ClassVar, Protocol
+
+
+type CLIUnionType = CLI[Any] | Brewing
+type EntrypointLoader = Callable[[importlib.metadata.EntryPoint], CLIUnionType]
+type CurrentProjectProvider = Callable[[], str | None]
 
 
 class NoCurrentOptions(LookupError):
@@ -92,29 +97,9 @@ class Brewing:
             raise AttributeError(f"no attribute '{name}' in object {self}.") from error
 
 
-def main_cli(options: CLIOptions | None = None) -> CLI[CLIOptions]:
-    """
-    Return the main brewing command line.
-
-    This commandline discovers subcommands published
-    via [project.entry-points.brewing], includimg brewing's own toolset
-    and any other that can be detected in the current context.
-    """
-    cli = CLI(options or CLIOptions(name="brewing"))
-    entrypoints = importlib.metadata.entry_points(group="brewing")
-    for entrypoint in entrypoints:
-        if entrypoint.module.split(".")[0].replace("_", "-") == current_project():
-            # The current project, if identifiable, is merged into the
-            # top-level typer by providing the name as None
-            # Otherwise we will use the entrypoint name to
-            cli.typer.add_typer(load_entrypoint(entrypoint).typer, name=None)
-        cli.typer.add_typer(load_entrypoint(entrypoint).typer, name=entrypoint.name)
-    return cli
-
-
 def load_entrypoint(
     entrypoint: importlib.metadata.EntryPoint,
-) -> CLI[Any] | Brewing:
+) -> CLIUnionType:
     """Process/filter packaging entrypoints to the CLI."""
     obj = entrypoint.load()
     error = TypeError(
@@ -130,15 +115,45 @@ def load_entrypoint(
     raise error
 
 
-def current_project() -> str | None:
+def current_project(search_dir: Path | None = None) -> str | None:
     """Scan from the current working directory to find the name of the current project."""
+    search_dir = search_dir or Path.cwd()
     for file in (
-        path / "pyproject.toml" for path in [Path.cwd()] + list(Path.cwd().parents)
+        path / "pyproject.toml" for path in [search_dir] + list(search_dir.parents)
     ):
         try:
             data = tomllib.loads(file.read_text())
             return data["project"]["name"]
         except KeyError as error:
-            raise ValueError(f"No project.name in {file=}") from error
+            raise ValueError(f"No project.name in {file=!s}") from error
         except FileNotFoundError:
             continue
+
+
+def main_cli(
+    options: CLIOptions | None = None,
+    entrypoints: Iterable[importlib.metadata.EntryPoint] | None = None,
+    entrypoint_loader: EntrypointLoader = load_entrypoint,
+    project_provider: CurrentProjectProvider = current_project,
+) -> CLI[CLIOptions]:
+    """
+    Return the main brewing command line.
+
+    This commandline discovers subcommands published
+    via [project.entry-points.brewing], includimg brewing's own toolset
+    and any other that can be detected in the current context.
+    """
+    cli = CLI(options or CLIOptions(name="brewing"))
+    entrypoints = [
+        e
+        for e in (entrypoints or importlib.metadata.entry_points())
+        if e.group == "brewing"
+    ]
+    for entrypoint in entrypoints:
+        if entrypoint.module.split(".")[0].replace("_", "-") == project_provider():
+            # The current project, if identifiable, is merged into the
+            # top-level typer by providing the name as None
+            # Otherwise we will use the entrypoint name to
+            cli.typer.add_typer(entrypoint_loader(entrypoint).typer, name=None)
+        cli.typer.add_typer(entrypoint_loader(entrypoint).typer, name=entrypoint.name)
+    return cli
