@@ -123,7 +123,7 @@ wheels = [
 
 [[package]]
 name = "brewing"
-version = "0.0.11rc1"
+version = "0.0.11rc2"
 source = { editable = "framework" }
 dependencies = [
     { name = "alembic" },
@@ -197,7 +197,7 @@ provides-extras = ["testing", "postgresql", "mysql", "mariadb", "sqlite", "posgr
 
 [[package]]
 name = "brewing-test-dependencies"
-version = "0.0.11rc1"
+version = "0.0.11rc2"
 source = { editable = "test-dependencies" }
 dependencies = [
     { name = "aiosqlite" },
@@ -262,7 +262,7 @@ dev = [{ name = "tomlkit", specifier = ">=0.13.3" }]
 
 [[package]]
 name = "brewing-uv-workspace"
-version = "0.0.11rc1"
+version = "0.0.11rc2"
 source = { virtual = "." }
 dependencies = [
     { name = "brewing" },
@@ -1801,7 +1801,7 @@ wheels = [
 
 [[package]]
 name = "testing-samples"
-version = "0.0.11rc1"
+version = "0.0.11rc2"
 source = { editable = "samples/testing-samples" }
 dependencies = [
     { name = "sqlalchemy" },

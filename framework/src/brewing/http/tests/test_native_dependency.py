@@ -2,7 +2,8 @@
 
 from typing import Annotated
 from brewing.http import ViewSet, ViewsetOptions, status
-from .helpers import SomeData, new_client
+from ..testing import new_client
+from .helpers import SomeData
 from fastapi import Depends, Request, HTTPException, Response
 
 

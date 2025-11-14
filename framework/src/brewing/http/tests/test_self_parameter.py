@@ -5,7 +5,7 @@ but also can be used for functional views.
 """
 
 from dataclasses import dataclass, field
-from .helpers import new_client
+from ..testing import new_client
 
 from brewing.http import ViewSet, status, ViewsetOptions
 
