@@ -43,7 +43,7 @@ class BrewingOptions[DBConnT: DatabaseConnectionConfiguration]:
         return self
 
     def __exit__(self, *_):
-        if self.current_options_token:
+        if self.current_options_token:  # pragma: no branch
             self.current_options.reset(self.current_options_token)
 
     @classmethod

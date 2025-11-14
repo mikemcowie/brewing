@@ -138,3 +138,25 @@ def test_load_current_project(tmp_path: Path, subtests: SubTests):
 
     with subtests.test("not-in-project"):
         assert main.current_project(tmp_path) is None
+
+
+def test_entrypoint_load(subtests: SubTests):
+    entrypoint = MagicMock()
+    load = MagicMock()
+    entrypoint.load = load
+    with subtests.test("error-on-not-valid-type"):
+        load.return_value = ""
+        with pytest.raises(TypeError):
+            main.load_entrypoint(entrypoint)
+    with subtests.test("CLI instance"):
+        cli = CLI(CLIOptions(name="foo"))
+        load.return_value = cli
+        assert main.load_entrypoint(entrypoint) is cli
+    with subtests.test("callable giving a CLI instance"):
+        cli = CLI(CLIOptions(name="foo"))
+        load.return_value = lambda: cli
+        assert main.load_entrypoint(entrypoint) is cli
+    with subtests.test("callable giving wrong type"):
+        load.return_value = lambda: ""
+        with pytest.raises(TypeError):
+            main.load_entrypoint(entrypoint)
