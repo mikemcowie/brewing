@@ -15,20 +15,19 @@ logger = structlog.get_logger()
 
 
 @dataclass
-class InitContext:
+class ProjectConfiguration:
     """Shared context for the project initialization."""
 
     name: str
     path: Path
-    force: bool
 
 
-def empty_file_content(context: InitContext):
+def empty_file_content(context: ProjectConfiguration):
     """Return an empty file content."""
     return ""
 
 
-def initial_app_file(context: InitContext):
+def initial_app_file(context: ProjectConfiguration):
     """Return the content of the initial app.py file."""
     return dedent(
         """
@@ -70,7 +69,7 @@ def initial_app_file(context: InitContext):
 _PLACEHOLDER_PROJECT_NAME = "{PROJECT_NAME}"
 
 
-def load_pyproject_content(context: InitContext):
+def load_pyproject_content(context: ProjectConfiguration):
     """Load the pyproject.toml file."""
     return tomlkit.dumps(
         pyproject.PyprojectTomlData(
@@ -95,20 +94,29 @@ def load_pyproject_content(context: InitContext):
     )
 
 
-def write_initial_files(context: InitContext):
-    """Write the initial files of the project."""
-    logger.info(f"Initializing project with options {context}")
-    files: dict[Path, Callable[[InitContext], str]] = {
-        Path("pyproject.toml"): load_pyproject_content,
-        Path("README.md"): empty_file_content,
-        Path(".gitignore"): empty_file_content,
-        Path("src", _PLACEHOLDER_PROJECT_NAME, "__init__.py"): empty_file_content,
-        Path("src", _PLACEHOLDER_PROJECT_NAME, "app.py"): initial_app_file,
-    }
-    for file, content_generator in files.items():
+type FileContentGenerator = Callable[[ProjectConfiguration], str]
+
+
+class ProjectState:
+    """Represents the current and target state of the project on the filesystem."""
+
+    def __init__(self, context: ProjectConfiguration):
+        """Initialize project state."""
+        self.context = context
+        self.files: dict[Path, FileContentGenerator] = {
+            Path("pyproject.toml"): load_pyproject_content,
+            Path("README.md"): empty_file_content,
+            Path(".gitignore"): empty_file_content,
+            Path("src", _PLACEHOLDER_PROJECT_NAME, "__init__.py"): empty_file_content,
+            Path("src", _PLACEHOLDER_PROJECT_NAME, "app.py"): initial_app_file,
+        }
+
+    def _push_file(self, file: Path, generator: FileContentGenerator):
         file = Path(
             *[
-                part.replace(_PLACEHOLDER_PROJECT_NAME, context.name.replace("-", "_"))
+                part.replace(
+                    _PLACEHOLDER_PROJECT_NAME, self.context.name.replace("-", "_")
+                )
                 for part in file.parts
             ]
         )
@@ -116,11 +124,13 @@ def write_initial_files(context: InitContext):
             raise ValueError(
                 f"File path {file=!s} was provided as an absolute path, but a relative path is required."
             )
-        out_path = context.path / file
+        out_path = self.context.path / file
         out_path.parent.mkdir(exist_ok=True, parents=True)
-        content = content_generator(context)
-        if not context.force and out_path.exists() and list(out_path.glob("**/*.py")):
-            raise FileExistsError(
-                f"Cannot generate {out_path=!s} as it already exists."
-            )
+        content = generator(self.context)
         out_path.write_text(content)
+
+    def push(self):
+        """Push the current state back to the filesystem."""
+        logger.info(f"Initializing project with options {self.context}")
+        for file, content_generator in self.files.items():
+            self._push_file(file, content_generator)

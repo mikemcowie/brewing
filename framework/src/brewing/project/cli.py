@@ -10,7 +10,7 @@ from brewing.cli import CLI, CLIOptions
 from pathlib import Path
 from typer import Option
 import structlog
-from brewing.project.initialization import InitContext, write_initial_files
+from brewing.project.state import ProjectConfiguration, ProjectState
 
 
 logger = structlog.get_logger()
@@ -34,13 +34,12 @@ class ProjectCLI(CLI[CLIOptions]):
         path: Annotated[
             Path, Option(help="The path the initialize the project in.")
         ] = Path.cwd(),
-        force: Annotated[
-            bool, Option(help="Force overwrite any existing files.")
-        ] = False,
     ):
         """Initialize a new brewing project."""
-        context = InitContext(name=name or path.name, path=path.resolve(), force=force)
-        write_initial_files(context=context)
+        state = ProjectState(
+            ProjectConfiguration(name=name or path.name, path=path.resolve())
+        )
+        state.push()
 
 
 def load() -> ProjectCLI:
