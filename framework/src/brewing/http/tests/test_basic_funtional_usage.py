@@ -2,7 +2,7 @@
 
 from typing import Annotated
 from brewing.http import ViewSet, ViewsetOptions, status
-from ..testing import new_client
+from brewing.http.testing import new_client
 from .helpers import SomeData, dependency
 from fastapi import Depends, Query
 

@@ -9,6 +9,7 @@ dependencies = [
     "brewing-test-dependencies",
     "structlog>=25.5.0",
     "testing-samples",
+    "tomlkit>=0.13.3",
 ]
 
 [project.urls]
@@ -33,6 +34,8 @@ testing-samples = {workspace = true}
 dev = [
     "brewing-test-dependencies",
     "pre-commit>=4.3.0",
+    "tenacity>=9.1.2",
+    "uv>=0.8.22",
 ]
 docs = [
     "mkdocs>=1.6.1",
@@ -102,9 +105,6 @@ filterwarnings = [
     # without being closed, evaluated ignorable in tests.
     "ignore:.*Exception ignored while calling deallocator.*",
     "ignore:.*Exception ignored while finalizing socket.*",
-    "ignore::ResourceWarning",
-    "ignore:.*Event loop is closed.*",
-    "ignore::pytest.PytestUnraisableExceptionWarning"
 ]
 python_files = [
     "test_*.py",
@@ -116,6 +116,7 @@ asyncio_default_fixture_loop_scope = "session"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]
+core = "ctrace"
 
 
 [tool.coverage.report]
