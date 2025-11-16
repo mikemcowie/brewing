@@ -126,7 +126,7 @@ class ViewSet[OptionsT: ViewsetOptionsProtocol]:
                             annotations_as_list.append(
                                 Depends(getattr(self, annotation.dependency.__name__))  # type: ignore
                             )
-                    value = replace(value, annotated=tuple(annotations_as_list))
+                    value = replace(value, annotated=tuple(annotations_as_list))  # noqa: PLW2901
                 annotation_state.hints[key] = value
             annotation_state.apply_pending()
 

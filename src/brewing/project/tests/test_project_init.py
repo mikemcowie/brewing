@@ -1,4 +1,5 @@
 """Project init - start a new brewing project."""
+
 from __future__ import annotations
 
 import os
@@ -27,10 +28,10 @@ if TYPE_CHECKING:
 @contextmanager
 def cd(path: Path | str):
     """Context manager to temporarily change working directory."""
-    cwd = os.getcwd()
+    cwd = Path.cwd()
     os.chdir(str(path))
     yield
-    os.chdir(cwd)
+    os.chdir(str(cwd))
 
 
 @contextmanager

@@ -1,5 +1,7 @@
 """Tests of the main module"""
+
 from __future__ import annotations
+
 from importlib.metadata import EntryPoint
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock
@@ -63,15 +65,15 @@ def test_brewing(subtests: SubTests):
         ## components are available as dynamic attributes.
         # this allows an entrypoint module to use module-level __getattr__ to expose them.
 
-        app.comp1 is comp1
-        app.comp2 is comp2
-        app.db is options.database
+        assert app.comp1 is comp1
+        assert app.comp2 is comp2
+        assert app.db is options.database
 
     with (
         subtests.test("__getattr__ fails on arbitart attr"),
         pytest.raises(AttributeError),
     ):
-        app.foo_bar
+        app.foo_bar  # noqa: B018
 
 
 def sample_entrypoints():

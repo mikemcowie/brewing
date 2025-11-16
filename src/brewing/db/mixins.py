@@ -1,9 +1,8 @@
 """Mixin classes that can be applied to help constuct declartive mapped classes."""
 
+import uuid  # noqa
 import warnings
-import uuid # noqa
 from datetime import datetime  # noqa
-
 
 from sqlalchemy import orm
 

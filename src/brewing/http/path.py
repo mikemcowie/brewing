@@ -238,7 +238,7 @@ class DeferredHTTPPath:
     if TYPE_CHECKING:
         # Fake DEPENDS for the type-checker to not baulk over
         # since it doesn't have a chance to understand otherwise.
-        def DEPENDS(self):
+        def DEPENDS(self):  # noqa: N802
             """
             Register a dependency function.
 

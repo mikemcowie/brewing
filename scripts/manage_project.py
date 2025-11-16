@@ -2,12 +2,12 @@
 
 # pyright: reportIndexIssue=false
 from __future__ import annotations
+
 import shutil
 import subprocess
 import sys
 from enum import StrEnum, auto
 from functools import cached_property
-
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -21,6 +21,7 @@ from typer import Argument
 from brewing import CLI, CLIOptions
 
 if TYPE_CHECKING:
+    from collections.abc import MutableMapping
 
     from tomlkit.container import Container
 
