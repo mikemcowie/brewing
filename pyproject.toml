@@ -1,6 +1,6 @@
 [project]
 name = "brewing-uv-workspace"
-version = "0.0.11-rc.2"
+version = "0.0.11"
 description = "Add your description here"
 readme = "docs/README.md"
 requires-python = ">=3.13"
@@ -35,7 +35,6 @@ dev = [
     "brewing-test-dependencies",
     "pre-commit>=4.3.0",
     "tenacity>=9.1.2",
-    "uv>=0.8.22",
 ]
 docs = [
     "mkdocs>=1.6.1",

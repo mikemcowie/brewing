@@ -10,7 +10,8 @@ from brewing.cli import CLI, CLIOptions
 from pathlib import Path
 from typer import Option
 import structlog
-from brewing.project.state import ProjectConfiguration, init
+from brewing.project.state import init
+from brewing.project.generation import ProjectConfiguration
 
 
 logger = structlog.get_logger()
