@@ -9,7 +9,7 @@ from brewing.project.state import ProjectConfiguration
 type FileContentGenerator = str | Callable[[ProjectConfiguration], str]
 type FileNameGenerator = str | Callable[[ProjectConfiguration], str]
 type Directory = MutableMapping[FileNameGenerator, File]
-type File = FileContentGenerator | NormalFile | Directory
+type File = FileContentGenerator | str | Directory
 
 
 @dataclass
@@ -19,70 +19,63 @@ class ManagedDirectory:
     files: Directory
     config: ProjectConfiguration
 
-    @property
-    def root(self) -> Path:
-        """The root directory of the project."""
-        return self.config.path
-
-    def materialize(self) -> None:
-        """Ensure that the directory matches the configuration."""
-        for name_generator, file_generator in list(self.files.items()):
-            name = (
-                name_generator(self.config)
-                if callable(name_generator)
-                else name_generator
-            )
-            file = (
-                file_generator(self.config)
-                if callable(file_generator)
-                else file_generator
-            )
-            path = self.root / name
-            if isinstance(file, str):
-                NormalFile(file).materialize_with(name, self.config)
-                continue
-            path.mkdir(exist_ok=True, parents=True)
-            subdir = self.__class__(
-                files=cast(Directory, self.files[name_generator]),
-                config=replace(self.config, path=path),
-            )
-            subdir.materialize()
-
 
 class MaterializationError(RuntimeError):
     """Error raised while materializing a file."""
 
 
-class NormalFile(str):
-    """Represents a file to be generated."""
+def materialize_directory_tree(directory: ManagedDirectory) -> None:
+    """Ensure that the directory matches the configuration."""
+    for name_generator, file_generator in list(directory.files.items()):
+        filename = (
+            name_generator(directory.config)
+            if callable(name_generator)
+            else name_generator
+        )
+        file = (
+            file_generator(directory.config)
+            if callable(file_generator)
+            else file_generator
+        )
+        path = directory.config.path / filename
+        if isinstance(file, str):
+            materialize_contnet(file, filename, directory.config)
+            continue
+        path.mkdir(exist_ok=True, parents=True)
+        subdir = directory.__class__(
+            files=cast(Directory, directory.files[name_generator]),
+            config=replace(directory.config, path=path),
+        )
+        materialize_directory_tree(subdir)
 
-    def materialize_with(self, name: str, config: ProjectConfiguration) -> None:
-        """Materializes the file within the given directory."""
-        if not config.path.is_absolute():
-            raise MaterializationError(
-                "Cannot materialize a file with a relative directory"
-            )
-        # preflight check that the file does not conflict with any existing files
-        # by walking the tree up and checking everything is either a directory or doesn't exist.
-        if not config.path.parents:
-            raise ValueError("Cannot operate on the root file.")
-        config.path.mkdir(exist_ok=True, parents=True)
-        (config.path / name).write_text(self)
+
+def materialize_contnet(content: str, name: str, config: ProjectConfiguration) -> None:
+    """Materializes the file within the given directory."""
+    if not config.path.is_absolute():
+        raise MaterializationError(
+            "Cannot materialize a file with a relative directory"
+        )
+    # preflight check that the file does not conflict with any existing files
+    # by walking the tree up and checking everything is either a directory or doesn't exist.
+    if not config.path.parents:
+        raise ValueError("Cannot operate on the root file.")
+    config.path.mkdir(exist_ok=True, parents=True)
+    (config.path / name).write_text(content)
 
 
 def test_project_materializes_files_in_immediate_directory(tmp_path: Path):
     """Simplest test: 2 files in immediate directory."""
     # Given we setup test-project in an empty directory
     files: Directory = {
-        "file1": NormalFile("foo"),
-        "file2": NormalFile("bar"),
+        "file1": "foo",
+        "file2": "bar",
     }
-    project = ManagedDirectory(
+    directory = ManagedDirectory(
         files=files, config=ProjectConfiguration(name="test-project", path=tmp_path)
     )
     assert not list(tmp_path.iterdir())
     # If we materialize the project.
-    project.materialize()
+    materialize_directory_tree(directory)
     # Then the expected files are  in place
     assert sorted(list(tmp_path.iterdir())) == sorted(
         [tmp_path / "file1", tmp_path / "file2"]
@@ -97,22 +90,22 @@ def test_project_materializes_subdirectories(tmp_path: Path):
     # Given a target state of several layers of files and directories.
     files: Directory = {
         "empty-dir": {},
-        "some-file0": NormalFile("some-file0-content"),
+        "some-file0": "some-file0-content",
         "dir1": {
-            "some-file1": NormalFile("some-file1-content"),
+            "some-file1": "some-file1-content",
             "dir2": {
-                "some-file2": NormalFile("some-file2-content"),
+                "some-file2": "some-file2-content",
                 "dir3": {
-                    "some-file3": NormalFile("some-file3-content"),
+                    "some-file3": "some-file3-content",
                 },
             },
         },
     }
-    project = ManagedDirectory(
+    directory = ManagedDirectory(
         files=files, config=ProjectConfiguration(name="test", path=tmp_path)
     )
     # If we materialize
-    project.materialize()
+    materialize_directory_tree(directory)
     # Then we can check the filesystem matches what was expected.
     assert set(tmp_path.glob("**")) == {
         tmp_path,
@@ -160,10 +153,10 @@ def test_computing(tmp_path: Path):
         _get_dir_name: {_get_file_name: _get_file_content},
     }
 
-    proj = ManagedDirectory(
+    directory = ManagedDirectory(
         files=files, config=ProjectConfiguration(name="test-computed", path=tmp_path)
     )
-    proj.materialize()
+    materialize_directory_tree(directory)
     assert set(tmp_path.glob("**")) == {
         tmp_path,
         tmp_path / "test-computed",
