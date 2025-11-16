@@ -34,10 +34,11 @@ class ProjectCLI(CLI[CLIOptions]):
             ),
         ] = None,
         path: Annotated[
-            Path, Option(help="The path the initialize the project in.")
-        ] = Path.cwd(),
+            Path | None, Option(help="The path the initialize the project in.")
+        ] = None,
     ):
         """Initialize a new brewing project."""
+        path = path or Path.cwd()
         config = ProjectConfiguration(name=name or path.name, path=path.resolve())
         logger.info("generating project skeleton", config=config)
         init(config)

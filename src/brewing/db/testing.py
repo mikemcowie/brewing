@@ -42,7 +42,7 @@ def _find_free_port() -> int:
 
 @contextmanager
 def _compose(context: Path, compose_file: Path):
-    from testcontainers.compose import DockerCompose
+    from testcontainers.compose import DockerCompose  # noqa
 
     with DockerCompose(
         context=context,
@@ -102,7 +102,7 @@ _current_mariadb: ContextVar[MySqlContainer | None] = ContextVar(
 
 @contextmanager
 def _postgresql():
-    from testcontainers.postgres import PostgresContainer
+    from testcontainers.postgres import PostgresContainer  # noqa
 
     pg = _current_pg.get()
     enter_pg = noop()
@@ -155,8 +155,8 @@ def _postgresql_compose():
 @contextmanager
 def _sqlite():
     with (
-        TemporaryDirectory(delete=False) as dir,
-        env({"SQLITE_DATABASE": str(Path(dir) / "db.sqlite")}),
+        TemporaryDirectory(delete=False) as db_dir,
+        env({"SQLITE_DATABASE": str(Path(db_dir) / "db.sqlite")}),
     ):
         yield
 
@@ -166,7 +166,7 @@ def _mysql(
     image: str = "mysql:latest",
     contextvar: ContextVar[MySqlContainer | None] = _current_mysql,
 ):
-    from testcontainers.mysql import MySqlContainer
+    from testcontainers.mysql import MySqlContainer  # noqa
 
     mysql = contextvar.get()
     enter = noop()

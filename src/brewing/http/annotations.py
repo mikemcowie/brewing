@@ -148,7 +148,7 @@ class ApplyViewSetDependency(AnnotatedFunctionAdaptor):
     def __call__(self, state: AnnotationState) -> AnnotationState:
         """Modify annotations of parameters should be a dependency on the viewset."""
         # late import to avoid circular dependency
-        from brewing.http import ViewSet
+        from brewing.http import ViewSet  # noqa: PLC0415
 
         for key, value in state.hints.items():
             # A single unannotated parameter - typically, though not required to be

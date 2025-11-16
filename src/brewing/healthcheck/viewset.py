@@ -56,10 +56,11 @@ class HealthCheckViewset(ViewSet[HealthCheckOptions]):
     async def _check(self, dependency: HealthCheckDependency):
         try:
             await dependency.is_alive(self.viewset_options.timeout)
-            return True
         except Exception:
             logger.exception("dependency failure", dependency=dependency)
             return False
+        else:
+            return True
 
     @livez.GET(response_class=PlainTextResponse, status_code=status.HTTP_200_OK)
     async def is_alive(self):

@@ -86,11 +86,12 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
             while True:
                 try:
                     await session.execute(text("SELECT 1"))
-                    return True
-                except Exception as error:
+                except Exception:
                     if (datetime.now(UTC) - start).total_seconds() > timeout:
                         raise
-                    logger.exception(f"database not alive, {error!s}")
+                    logger.exception("database not alive")
+                else:
+                    return True
 
     @property
     def migrations(self) -> Migrations:

@@ -33,10 +33,10 @@ class ItemViewSet(ViewSet[ViewsetOptions]):
     def create_item(self, item: SomeData) -> SomeData:
         """Create an item."""
         try:
-            id = sorted(self._db.keys())[-1] + 1  # Find next key
+            item_id = sorted(self._db.keys())[-1] + 1  # Find next key
         except IndexError:  # When nothing in the db, the above raised IndexError
-            id = 1
-        self._db[id] = item
+            item_id = 1
+        self._db[item_id] = item
         return item
 
     item_id = self("{item_id}")
@@ -74,6 +74,9 @@ class ItemViewSet(ViewSet[ViewsetOptions]):
             self._deleted[item_id] = []
         self._deleted[item_id].append(item)
         del self._db[item_id]
+
+
+# ruff: noqa: SLF001
 
 
 def test_deferred_annotations():

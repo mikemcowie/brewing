@@ -132,10 +132,11 @@ extend-ignore = [
     "N818", # disagree about error naming
     "PLC0414",
     "RUF009",
+    "PT011",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = [
+"**/*test*.py" = [
     "ARG001", # pytest fixtures may cause unused function args to be valid
     "PLR2004" # magic values are reasonable in tests
     ]

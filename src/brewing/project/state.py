@@ -18,12 +18,12 @@ from brewing.project.generation import (
 logger = structlog.get_logger()
 
 
-def empty_file_content(context: ProjectConfiguration):
+def empty_file_content(context: ProjectConfiguration):  # noqa: ARG001
     """Return an empty file content."""
     return ""
 
 
-def initial_app_file(context: ProjectConfiguration):
+def initial_app_file(context: ProjectConfiguration):  # noqa: ARG001
     """Return the content of the initial app.py file."""
     return dedent(
         """
