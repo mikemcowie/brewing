@@ -10,7 +10,7 @@ from brewing.cli import CLI, CLIOptions
 from pathlib import Path
 from typer import Option
 import structlog
-from brewing.project.state import ProjectConfiguration, ProjectState
+from brewing.project.state import ProjectConfiguration, init
 
 
 logger = structlog.get_logger()
@@ -36,10 +36,9 @@ class ProjectCLI(CLI[CLIOptions]):
         ] = Path.cwd(),
     ):
         """Initialize a new brewing project."""
-        state = ProjectState(
-            ProjectConfiguration(name=name or path.name, path=path.resolve())
-        )
-        state.push()
+        config = ProjectConfiguration(name=name or path.name, path=path.resolve())
+        logger.info("generating project skeleton", config=config)
+        init(config)
 
 
 def load() -> ProjectCLI:

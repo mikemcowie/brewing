@@ -1,25 +1,20 @@
 """Project inialization functionality."""
 
 import sys
-from dataclasses import dataclass
-from pathlib import Path
 from textwrap import dedent
 import structlog
 import tomlkit
 from brewing.project import pyproject
-from pydantic import RootModel
+from pydantic import RootModel, alias_generators
+from brewing.project.generation import (
+    ProjectConfiguration,
+    Directory,
+    materialize_directory,
+    ManagedDirectory,
+)
 
 
 logger = structlog.get_logger()
-FileContentGenerator = ...
-
-
-@dataclass
-class ProjectConfiguration:
-    """Shared context for the project initialization."""
-
-    name: str
-    path: Path
 
 
 def empty_file_content(context: ProjectConfiguration):
@@ -94,40 +89,26 @@ def load_pyproject_content(context: ProjectConfiguration):
     )
 
 
-class ProjectState:
-    """Represents the current and target state of the project on the filesystem."""
+def project_name_with_underscores(context: ProjectConfiguration):
+    """Return project name in form suitable for python attributes."""
+    return alias_generators.to_snake(context.name)
 
-    def __init__(self, context: ProjectConfiguration):
-        """Initialize project state."""
-        self.context = context
-        self.files: dict[Path, FileContentGenerator] = {
-            Path("pyproject.toml"): load_pyproject_content,
-            Path("README.md"): empty_file_content,
-            Path(".gitignore"): empty_file_content,
-            Path("src", _PLACEHOLDER_PROJECT_NAME, "__init__.py"): empty_file_content,
-            Path("src", _PLACEHOLDER_PROJECT_NAME, "app.py"): initial_app_file,
-        }
 
-    def _push_file(self, file: Path, generator: FileContentGenerator):
-        file = Path(
-            *[
-                part.replace(
-                    _PLACEHOLDER_PROJECT_NAME, self.context.name.replace("-", "_")
-                )
-                for part in file.parts
-            ]
-        )
-        if file.is_absolute():
-            raise ValueError(
-                f"File path {file=!s} was provided as an absolute path, but a relative path is required."
-            )
-        out_path = self.context.path / file
-        out_path.parent.mkdir(exist_ok=True, parents=True)
-        content = generator(self.context)
-        out_path.write_text(content)
+def init_layout() -> Directory:
+    """Return the layout for project initialization."""
+    return {
+        "pyproject.toml": load_pyproject_content,
+        "README.md": empty_file_content,
+        ".gitignore": empty_file_content,
+        "src": {
+            project_name_with_underscores: {
+                "__init__.py": empty_file_content,
+                "app.py": initial_app_file,
+            }
+        },
+    }
 
-    def push(self):
-        """Push the current state back to the filesystem."""
-        logger.info(f"Initializing project with options {self.context}")
-        for file, content_generator in self.files.items():
-            self._push_file(file, content_generator)
+
+def init(context: ProjectConfiguration):
+    """Initialize the project."""
+    materialize_directory(ManagedDirectory(files=init_layout(), config=context))

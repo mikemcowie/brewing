@@ -67,8 +67,8 @@ def test_cli_commands_change_if_active_project_found(tmp_path: Path):
         out = runner.invoke(
             ["init", "--path", str(project_dir)], catch_exceptions=False
         )
-        assert "project" in out.output
-        assert "my-project" in out.output
+        assert "project" in out.output, out.output
+        assert "my-project" in out.output, out.output
 
 
 def test_project_init(tmp_path: Path):

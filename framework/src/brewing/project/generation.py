@@ -2,13 +2,20 @@
 
 from typing import Callable, MutableMapping, cast
 from dataclasses import dataclass, replace
-from brewing.project.state import ProjectConfiguration
-
+from pathlib import Path
 
 type FileContentGenerator = str | Callable[[ProjectConfiguration], str]
 type FileNameGenerator = str | Callable[[ProjectConfiguration], str]
 type Directory = MutableMapping[FileNameGenerator, File]
 type File = FileContentGenerator | str | Directory
+
+
+@dataclass
+class ProjectConfiguration:
+    """Shared context for the project initialization."""
+
+    name: str
+    path: Path
 
 
 @dataclass
