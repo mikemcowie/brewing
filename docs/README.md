@@ -2,40 +2,9 @@
 
 [![CI](https://github.com/mikemcowie/brewing/actions/workflows/ci.yaml/badge.svg)](https://github.com/mikemcowie/brewing/actions/workflows/ci.yaml)
 
-brewing is a python application framework  built to combine and enhance the best in breed packages in the python ecosystem.
-
-## The pitch
-
-```python
-from brewing_incubator import Application, BaseConfiguration, build_cli
-from brewing_incubator.http import ViewSet, collection
-from brewing_incubator.testing import TestClient
+Brewing is a python application framework designed to solve problems well, and then get out of your way.
 
 
-class Hellobrewing(ViewSet):
-
-    base_path = ("hello",)
-
-    @collection.GET()
-    def greet(self, whom:str="brewing")->str:
-        return f"hello, {whom}!"
-
-
-class Configuration(BaseConfiguration):
-    title = "Project Manager Service"
-    description = "Maintains Filesystem Projects over time"
-    version = "0.0.1"
-    cli_provider = build_cli
-
-
-application = Application[Configuration](viewsets=[Hellobrewing()])
-
-testclient = TestClient(application.app)
-result = testclient.get("/hello/?whom=eric")
-assert result.status_code == 200
-assert "hello, eric!" in result.text
-
-```
 
 ## Installation
 
@@ -44,3 +13,25 @@ Use your preferred python package manager to install brewing. The author strongl
 ```
 uv add brewing
 ```
+
+# Influences
+
+Brewing attempts to take principals from various battle-tested frameworks.
+
+## Rails
+
+1.The [rails doctrine](https://rubyonrails.org/doctrine), especially:
+   * *convention over configuration*
+   * *the menu is omakase*
+   * *provide sharp knives*
+
+## Django
+
+* The [*batteries included* ](https://docs.python.org/3/tutorial/stdlib.html#tut-batteries-included) principal
+* Basically, following much of the rails doctrine in a python context.
+* Class based views with close integration to the model/data layer.
+
+## FastAPI
+
+* Using type hints at runtime to setup HTTP endpoints.
+* Brewing's ASGI application is a subclass of fastapi.FastAPI, and its key decorators are largely maintained.

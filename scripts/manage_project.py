@@ -1,23 +1,28 @@
 """Manages certain fields in every pyproject.toml file in the repo"""
 
 # pyright: reportIndexIssue=false
+from __future__ import annotations
 import shutil
 import subprocess
 import sys
-from collections.abc import MutableMapping
 from enum import StrEnum, auto
 from functools import cached_property
+
 from pathlib import Path
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 import semver
 import structlog
 import tomlkit
 import yaml
-from brewing import CLI, CLIOptions
 from pygit2.repository import Repository
-from tomlkit.container import Container
 from typer import Argument
+
+from brewing import CLI, CLIOptions
+
+if TYPE_CHECKING:
+
+    from tomlkit.container import Container
 
 logger = structlog.get_logger()
 
