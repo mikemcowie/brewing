@@ -1,7 +1,6 @@
 """Project inialization functionality."""
 
 import sys
-from typing import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
@@ -12,6 +11,7 @@ from pydantic import RootModel
 
 
 logger = structlog.get_logger()
+FileContentGenerator = ...
 
 
 @dataclass
@@ -92,9 +92,6 @@ def load_pyproject_content(context: ProjectConfiguration):
             ),
         ).model_dump(mode="json", exclude_none=True, by_alias=True)
     )
-
-
-type FileContentGenerator = Callable[[ProjectConfiguration], str]
 
 
 class ProjectState:
