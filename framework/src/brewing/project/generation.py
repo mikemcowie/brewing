@@ -1,6 +1,6 @@
 """A content generation toolkit."""
 
-from typing import Callable, MutableMapping
+from typing import Callable, MutableMapping, cast
 from dataclasses import dataclass, replace
 from pathlib import Path
 from brewing.project.state import ProjectConfiguration
@@ -8,8 +8,8 @@ from brewing.project.state import ProjectConfiguration
 
 type FileContentGenerator = str | Callable[[ProjectConfiguration], str]
 type FileNameGenerator = str | Callable[[ProjectConfiguration], str]
-type Directory = MutableMapping[str, File]
-type File = NormalFile | Directory
+type Directory = MutableMapping[FileNameGenerator, File]
+type File = FileContentGenerator | NormalFile | Directory
 
 
 @dataclass
@@ -26,15 +26,26 @@ class ManagedDirectory:
 
     def materialize(self) -> None:
         """Ensure that the directory matches the configuration."""
-        for name, file in self.files.items():
+        for name_generator, file_generator in list(self.files.items()):
+            name = (
+                name_generator(self.config)
+                if callable(name_generator)
+                else name_generator
+            )
+            file = (
+                file_generator(self.config)
+                if callable(file_generator)
+                else file_generator
+            )
             path = self.root / name
-            if isinstance(file, NormalFile):
-                file.materialize_with(name, self.config)
+            if isinstance(file, str):
+                NormalFile(file).materialize_with(name, self.config)
                 continue
-            # Otherwise make a directory and repeat
-            # on that directory.
             path.mkdir(exist_ok=True, parents=True)
-            subdir = self.__class__(files=file, config=replace(self.config, path=path))
+            subdir = self.__class__(
+                files=cast(Directory, self.files[name_generator]),
+                config=replace(self.config, path=path),
+            )
             subdir.materialize()
 
 
@@ -42,11 +53,8 @@ class MaterializationError(RuntimeError):
     """Error raised while materializing a file."""
 
 
-@dataclass
-class NormalFile:
+class NormalFile(str):
     """Represents a file to be generated."""
-
-    content: str | FileContentGenerator
 
     def materialize_with(self, name: str, config: ProjectConfiguration) -> None:
         """Materializes the file within the given directory."""
@@ -59,17 +67,15 @@ class NormalFile:
         if not config.path.parents:
             raise ValueError("Cannot operate on the root file.")
         config.path.mkdir(exist_ok=True, parents=True)
-        (config.path / name).write_text(
-            self.content if isinstance(self.content, str) else self.content(config)
-        )
+        (config.path / name).write_text(self)
 
 
 def test_project_materializes_files_in_immediate_directory(tmp_path: Path):
     """Simplest test: 2 files in immediate directory."""
     # Given we setup test-project in an empty directory
     files: Directory = {
-        "file1": NormalFile(content="foo"),
-        "file2": NormalFile(content="bar"),
+        "file1": NormalFile("foo"),
+        "file2": NormalFile("bar"),
     }
     project = ManagedDirectory(
         files=files, config=ProjectConfiguration(name="test-project", path=tmp_path)
@@ -91,13 +97,13 @@ def test_project_materializes_subdirectories(tmp_path: Path):
     # Given a target state of several layers of files and directories.
     files: Directory = {
         "empty-dir": {},
-        "some-file0": NormalFile(content="some-file0-content"),
+        "some-file0": NormalFile("some-file0-content"),
         "dir1": {
-            "some-file1": NormalFile(content="some-file1-content"),
+            "some-file1": NormalFile("some-file1-content"),
             "dir2": {
-                "some-file2": NormalFile(content="some-file2-content"),
+                "some-file2": NormalFile("some-file2-content"),
                 "dir3": {
-                    "some-file3": NormalFile(content="some-file3-content"),
+                    "some-file3": NormalFile("some-file3-content"),
                 },
             },
         },
@@ -134,3 +140,35 @@ def test_project_materializes_subdirectories(tmp_path: Path):
     assert (
         tmp_path / "dir1" / "dir2" / "dir3" / "some-file3"
     ).read_text() == "some-file3-content"
+
+
+def test_computing(tmp_path: Path):
+    """We can use callables intead of literals both to define file names and file content."""
+
+    # Given a target state of several layers of files and directories
+    # with all of them being callables
+    def _get_dir_name(config: ProjectConfiguration):
+        return config.name
+
+    def _get_file_name(config: ProjectConfiguration):
+        return f"{config.name}-file"
+
+    def _get_file_content(config: ProjectConfiguration):
+        return f"{config.name}-file-content"
+
+    files: Directory = {
+        _get_dir_name: {_get_file_name: _get_file_content},
+    }
+
+    proj = ManagedDirectory(
+        files=files, config=ProjectConfiguration(name="test-computed", path=tmp_path)
+    )
+    proj.materialize()
+    assert set(tmp_path.glob("**")) == {
+        tmp_path,
+        tmp_path / "test-computed",
+        tmp_path / "test-computed" / "test-computed-file",
+    }
+    assert (
+        tmp_path / "test-computed" / "test-computed-file"
+    ).read_text() == "test-computed-file-content"
