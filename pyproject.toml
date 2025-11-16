@@ -1,14 +1,50 @@
 [project]
-name = "brewing-uv-workspace"
+name = "brewing"
 version = "0.0.11"
-description = "Add your description here"
+description = "A web framework built on sqlachemy and fastapi."
 readme = "docs/README.md"
-requires-python = ">=3.13"
+authors = [
+    { name = "Mike Cowie", email = "24739590+mikemcowie@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
 dependencies = [
-    "brewing",
-    "brewing-test-dependencies",
-    "structlog>=25.5.0",
-    "testing-samples",
+    "alembic>=1.16.5",
+    "fastapi>=0.118.0",
+    "frozendict>=2.4.6",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "sqlalchemy>=2.0.43",
+    "sqlalchemy-utils>=0.42.0",
+    "structlog>=25.4.0",
+    "tomlkit>=0.13.3",
+    "typer>=0.19.2",
+    "uvicorn>=0.37.0",
+    "watchfiles>=1.1.0",
+]
+
+[project.optional-dependencies]
+testing = [
+    "testcontainers>=4.12.0",
+]
+postgresql = [
+    "psycopg[binary]>=3.2.10",
+]
+mysql = [
+    "aiomysql>=0.2.0",
+    "mysqlclient>=2.2.7",
+]
+mariadb = [
+    "brewing[mysql]"
+]
+sqlite = [
+    "aiosqlite>=0.21.0",
+]
+posgresql = [
+    "psycopg>=3.2.9",
+]
+all = [
+    "brewing[mysql,mariadb,postgresql,sqlite]"
 ]
 
 [project.urls]
@@ -17,9 +53,33 @@ Documentation = "https://mikemcowie.github.io/brewing/"
 Repository = "https://github.com/mikemcowie/brewing"
 Issues = "https://github.com/mikemcowie/brewing"
 Releases = "https://github.com/mikemcowie/brewing/releases"
+
+
+[project.scripts]
+brewing = "brewing.__main__:cli"
+
+[project.entry-points.brewing]
+project = "brewing.project.cli:load"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "brewing-test-dependencies",
+    "pre-commit>=4.3.0",
+    "tenacity>=9.1.2",
+    "testing-samples",
+]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.18",
+    "mkdocstrings[python]>=0.30.0",
+]
+
 [tool.uv.workspace]
 members = [
-    "framework",
     "samples/*",
     "test-dependencies",
 ]
@@ -27,19 +87,7 @@ members = [
 [tool.uv.sources]
 brewing = { workspace = true }
 brewing-test-dependencies = { workspace = true }
-testing-samples = {workspace = true}
-
-[dependency-groups]
-dev = [
-    "brewing-test-dependencies",
-    "pre-commit>=4.3.0",
-    "tenacity>=9.1.2",
-]
-docs = [
-    "mkdocs>=1.6.1",
-    "mkdocs-material>=9.6.18",
-    "mkdocstrings[python]>=0.30.0",
-]
+testing-samples = { workspace = true }
 
 [tool.ruff]
 line-length = 88
@@ -111,7 +159,7 @@ python_files = [
     "test_*.py",
     "*_test.py",
 ]
-norecursedirs = ".venv framework/src/brewing/db/_migrationcontext"
+norecursedirs = ".venv src/brewing/db/_migrationcontext"
 asyncio_default_test_loop_scope = "session"
 asyncio_default_fixture_loop_scope = "session"
 
