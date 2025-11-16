@@ -1,6 +1,6 @@
 [project]
 name = "testing-samples"
-version = "0.0.11-rc.2"
+version = "0.0.11"
 description = "Add your description here"
 readme = "README.md"
 authors = [
