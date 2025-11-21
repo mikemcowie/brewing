@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self
 
 from brewing.cli import CLI, CLIOptions
 from brewing.db import DatabaseConnectionConfiguration
@@ -75,6 +75,8 @@ class BrewingComponentType(Protocol):
 class Brewing:
     """The top level application encapsulating related components."""
 
+    current: ContextVar[Self | None] = ContextVar("brewing-current", default=None)
+
     def __init__(self, **components: BrewingComponentType):
         self.options = BrewingOptions.current()
         self.cli = CLI(CLIOptions(name=self.options.name))
@@ -83,6 +85,7 @@ class Brewing:
         self.components: Mapping[str, BrewingComponentType] = components | {
             "db": self.database
         }
+        self._context_token: Token[Self] | None = None
         for name, component in self.components.items():
             component.register(name, self)
 
@@ -91,3 +94,17 @@ class Brewing:
             return self.components[name]
         except KeyError as error:
             raise AttributeError(f"no attribute '{name}' in object {self}.") from error
+
+    def push(self):
+        """Set the curret brewing instance as the global instance."""
+        self._token = self.__class__.current.set(self)
+        self.database.push()
+
+    def __enter__(self):
+        """Enter context where this instance is pushed to the global instance."""
+        self.push()
+
+    def __exit__(self, *_):
+        """Cleanup."""
+        if self._token:
+            self.__class__.current.reset(self._token)
