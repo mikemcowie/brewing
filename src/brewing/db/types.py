@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from contextlib import (
-    asynccontextmanager,
-)
+from contextlib import asynccontextmanager, contextmanager
 from typing import TYPE_CHECKING, ClassVar, Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import AsyncGenerator, Generator
 
     from sqlalchemy import MetaData
     from sqlalchemy.engine import URL
@@ -74,6 +72,25 @@ class DatabaseProtocol(Protocol):
         """Yield an async sqlalchemy orm session."""
         raise NotImplementedError()
         yield AsyncSession()
+
+    @asynccontextmanager
+    async def current_session(self) -> AsyncGenerator[AsyncSession]:
+        """Yield a current session in a context manager.
+
+        The same session will be returned repeatedly when called
+        within a context.
+        """
+        raise NotImplementedError()
+        yield AsyncSession()
+
+    @contextmanager
+    def __call__(self) -> Generator[None]:
+        """Set database as the global database."""
+        raise NotImplementedError()
+        yield
+
+    def push(self):
+        """Push the current database instance to the global context."""
 
 
 class DatabaseConnectionConfiguration(Protocol):

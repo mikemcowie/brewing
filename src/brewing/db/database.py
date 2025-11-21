@@ -5,11 +5,13 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
+from contextvars import ContextVar
 from datetime import UTC, datetime
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from textwrap import dedent
+from typing import TYPE_CHECKING, Any, Literal
 
 import structlog
 from sqlalchemy import MetaData, text
@@ -36,6 +38,9 @@ def _find_calling_file(stack: list[inspect.FrameInfo]):
     raise RuntimeError("Could not find calling file.")
 
 
+current: Database[Any] | None = None
+
+
 @runtime_generic
 class Database[ConfigT: DatabaseConnectionConfiguration]:
     """Object encapsulating fundamental context of a service's sql database."""
@@ -56,6 +61,9 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
         self._config: ConfigT | None = None
         self._migrations: Migrations | None = None
         self._engine: dict[asyncio.AbstractEventLoop, AsyncEngine] = {}
+        self._current_session: ContextVar[AsyncSession | None] = ContextVar(
+            "current_session", default=None
+        )
 
     def register(self, name: str, brewing: Brewing, /):
         """Register database to brewing."""
@@ -159,3 +167,51 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
         """
         async with AsyncSession(bind=self.engine, expire_on_commit=False) as session:
             yield session
+
+    @asynccontextmanager
+    async def current_session(self):
+        if session := self._current_session.get():
+            yield session
+            return
+        async with self.session() as session:
+            token = self._current_session.set(session)
+            yield session
+            self._current_session.reset(token)
+            await session.commit()
+
+    def push(self):
+        """Push the current database instance to the global context."""
+        global current  # noqa
+        current = self
+
+    @contextmanager
+    def __call__(self):
+        """Set the global database instance as "current"."""
+        # If this database is active already
+        # We yield it and change nothing
+        # As its out of our scope to set it.
+        global current  # noqa: PLW0603
+        initial = current
+        if initial == self:
+            yield
+            return
+        current = self
+        yield
+        current = initial
+
+
+class NoCurrentDatabaseContextSet(RuntimeError):
+    """Requires a global database context to be set."""
+
+
+@asynccontextmanager
+async def get_session() -> AsyncGenerator[AsyncSession]:
+    """Yield a database session from the current global database context."""
+    if not current:
+        raise NoCurrentDatabaseContextSet(
+            dedent("""Cannot provide a db session from global context as a database context has not been entered.
+            Need to instantiate an instance of brewing.db.Database and then enter it.
+            """)
+        )
+    async with current.current_session() as session:
+        yield session

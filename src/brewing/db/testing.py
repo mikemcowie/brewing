@@ -133,12 +133,11 @@ def _postgresql():
 
 @contextmanager
 def _postgresql_compose():
-    port = _find_free_port()
     with (
         env(
             {
                 "PGHOST": "127.0.0.1",
-                "PGPORT": str(port),
+                "PGPORT": "5432",
                 "PGDATABASE": "test",
                 "PGUSER": "test",
                 "PGPASSWORD": "test",
@@ -197,14 +196,13 @@ def _mysql(
 
 @contextmanager
 def _mysql_compose(image: str = "mysql:latest"):
-    port = _find_free_port()
     with (
         env(
             {
                 "MYSQL_HOST": "127.0.0.1",
                 "MYSQL_USER": "test",
                 "MYSQL_PWD": "test",
-                "MYSQL_TCP_PORT": str(port),
+                "MYSQL_TCP_PORT": "3306",
                 "MYSQL_DATABASE": "test",
                 "IMAGE": image,
             }
