@@ -18,3 +18,12 @@ def test_type_serializer():
     final = c.BaseConfig.model_validate_json(json)
     assert final.cls is Target
     assert initial == final
+
+
+def test_type_serializer_transmitted_by_environment():
+    """Affirm we can use environment variables to transmit the object"""
+    initial = c.BaseConfig(cls=Target)
+    with c.push_to_env(initial):
+        final = pull_from_env(Target)
+    assert final.cls is Target
+    assert initial == final
