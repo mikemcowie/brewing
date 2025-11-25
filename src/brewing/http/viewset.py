@@ -27,6 +27,7 @@ from brewing.http.path import (
 )
 
 if TYPE_CHECKING:
+    from enum import Enum
     from types import EllipsisType, FunctionType
 
     from starlette.routing import BaseRoute
@@ -38,10 +39,11 @@ class ViewSet:
 
     path: str = ""
     trailing_slash_policy: TrailingSlashPolicy = TrailingSlashPolicy.default()
+    tags: list[str | Enum] | None = None
 
     def __post_init__(self):
         self.annotation_adaptors = (ApplyViewSetDependency(self),)
-        self.router = APIRouter()
+        self.router = APIRouter(tags=self.tags)
         self.root_path = HTTPPath(
             self.path,
             trailing_slash_policy=self.trailing_slash_policy,
