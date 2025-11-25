@@ -3,7 +3,7 @@
 from http import HTTPMethod
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException
 
 from brewing.http import ViewSet, ViewsetOptions, self, status
 from brewing.http.path import DeferredDecoratorCall
@@ -15,9 +15,8 @@ class ItemViewSet(ViewSet[ViewsetOptions]):
     def __init__(
         self,
         options: ViewsetOptions,
-        router: APIRouter | None = None,
     ):
-        super().__init__(options, router)
+        super().__init__(options)
         # We make a rudimentary database being a simple dict
         self._db: dict[int, SomeData] = {}
         # And 2 more databases to track what has been deleted and replaced.
