@@ -41,11 +41,11 @@ class ViewSet:
 
     def __post_init__(self):
         self.annotation_adaptors = (ApplyViewSetDependency(self),)
-        self._router = APIRouter()
+        self.router = APIRouter()
         self.root_path = HTTPPath(
             self.path,
             trailing_slash_policy=self.trailing_slash_policy,
-            router=self._router,
+            router=self.router,
             annotation_pipeline=self.annotation_adaptors,
         )
         # The upper-case method names are brewing-specific
@@ -80,7 +80,7 @@ class ViewSet:
     @property
     def routes(self) -> tuple[BaseRoute, ...]:
         """Expose, immutably, the starlette routes associated with the viewset."""
-        return tuple(self._router.routes)
+        return tuple(self.router.routes)
 
     def _rewrite_fastapi_style_depends(self):
         for method in self._all_methods:

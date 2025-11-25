@@ -172,14 +172,3 @@ def test_fastapi_style_dependencies():
             return dep3
 
     assert new_client(VS()).get("/").text == '"dep1dep2dep3"'
-
-
-if __name__ == "__main__":  # pragma: no cover
-    # Can run this file as a script to debug.
-    import uvicorn
-
-    from brewing.http import BrewingHTTP
-
-    app = BrewingHTTP()
-    app.include_viewset(ItemViewSet())
-    uvicorn.run(app)

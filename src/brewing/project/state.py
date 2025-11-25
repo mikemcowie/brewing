@@ -51,7 +51,7 @@ def initial_app_file(context: ProjectConfiguration):  # noqa: ARG001
         )
     ):
         app = Brewing(
-            http=BrewingHTTP().with_viewsets(HealthCheckViewset()),
+            http=BrewingHTTP(viewsets=[HealthCheckViewset()]),
         )
 
 
