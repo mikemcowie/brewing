@@ -10,7 +10,7 @@ from brewing.app import BrewingOptions
 from brewing.db import Database, MetaData
 from brewing.db import testing as testing_db
 from brewing.db.settings import DatabaseType, SQLiteSettings
-from brewing.healthcheck.viewset import HealthCheckOptions, HealthCheckViewset
+from brewing.healthcheck.viewset import HealthCheckViewset
 from brewing.http import BrewingHTTP, status
 from brewing.http.testing import TestClient
 
@@ -32,7 +32,7 @@ def client(database: DatabaseProtocol) -> Generator[TestClient]:
     """Return a testclient that can test the viewset."""
     with BrewingOptions(name="test", database=database):
         app = BrewingHTTP()
-        app.with_viewsets(HealthCheckViewset(HealthCheckOptions()))
+        app.with_viewsets(HealthCheckViewset())
         client = TestClient(app=app)
         with client:
             yield client

@@ -1,6 +1,5 @@
 """HTTP Health check endpoints implementation."""
 
-from dataclasses import dataclass
 from typing import Protocol
 
 import structlog
@@ -8,7 +7,7 @@ from fastapi.responses import PlainTextResponse, Response
 from pydantic import BaseModel, Field
 
 from brewing.app import BrewingOptions
-from brewing.http import ViewSet, ViewsetOptions, self, status
+from brewing.http import ViewSet, self, status
 
 logger = structlog.get_logger()
 
@@ -32,17 +31,7 @@ class HealthCheckDependency(Protocol):
         ...
 
 
-@dataclass(kw_only=True)
-class HealthCheckOptions(ViewsetOptions):
-    """Options for the healthcheck viewset."""
-
-    timeout: float = 1.0
-
-    def __post_init__(self):
-        self.database = BrewingOptions.current().database
-
-
-class HealthCheckViewset(ViewSet[HealthCheckOptions]):
+class HealthCheckViewset(ViewSet):
     """
     A viewset implementing basic health checks.
 
@@ -50,12 +39,17 @@ class HealthCheckViewset(ViewSet[HealthCheckOptions]):
     to determine whether the application is ready to receive traffic.
     """
 
+    timeout: float = 1.0
     livez = self("livez")
     readyz = self("readyz")
 
+    def __post_init__(self):
+        super().__post_init__()
+        self.database = BrewingOptions.current().database
+
     async def _check(self, dependency: HealthCheckDependency):
         try:
-            await dependency.is_alive(self.viewset_options.timeout)
+            await dependency.is_alive(self.timeout)
         except Exception:
             logger.exception("dependency failure", dependency=dependency)
             return False
@@ -76,7 +70,7 @@ class HealthCheckViewset(ViewSet[HealthCheckOptions]):
     )
     async def is_ready(self, response: Response):
         """Return whether the application is ready to receive traffic."""
-        dependencies = {"database": await self._check(self.viewset_options.database)}
+        dependencies = {"database": await self._check(self.database)}
         passed = all(dependencies.values())
         response.status_code = (
             status.HTTP_200_OK if passed else status.HTTP_503_SERVICE_UNAVAILABLE

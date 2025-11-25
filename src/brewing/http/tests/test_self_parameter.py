@@ -6,32 +6,22 @@ but also can be used for functional views.
 
 from dataclasses import dataclass, field
 
-from brewing.http import ViewSet, ViewsetOptions, status
+from brewing.http import ViewSet, status
 from brewing.http.testing import new_client
 
 
-## Setup - we'll construct a subclass of viewset.
-# we won't have any class-based endpoints, but
-# the subclass will have a couple of extra attributes.
-# the first parameter of a functional endpoint, if untyped
-# or typed as the tyype of the ViewSet, will be adapted via fastapi depends mechanism
-# to be passed.
 @dataclass
-class CluckingViewsetOptions(ViewsetOptions):
+class CluckingViewSet(ViewSet):
     sound: str = field(kw_only=True)
 
 
-class CluckingViewSet(ViewSet[CluckingViewsetOptions]):
-    pass
-
-
 def test_untyped_first_parameter():
-    vs1 = CluckingViewSet(CluckingViewsetOptions(sound="cluck"))
+    vs1 = CluckingViewSet(sound="cluck")
 
     @vs1.GET()
     def make_sound(self, *, shout: bool = False) -> str:  # type: ignore
         assert isinstance(self, CluckingViewSet)
-        sound: str = self.viewset_options.sound
+        sound: str = self.sound
         if shout:
             sound = sound.upper()
         return sound
@@ -46,11 +36,11 @@ def test_untyped_first_parameter():
 
 
 def test_viewset_typed_first_parameter():
-    vs1 = CluckingViewSet(CluckingViewsetOptions(sound="cluck"))
+    vs1 = CluckingViewSet(sound="cluck")
 
     @vs1.GET()
     def make_sound(self: CluckingViewSet, *, shout: bool = False) -> str:  # type: ignore
-        sound = self.viewset_options.sound
+        sound = self.sound
         if shout:
             sound = sound.upper()
         return sound

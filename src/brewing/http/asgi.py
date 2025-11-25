@@ -96,7 +96,7 @@ class BrewingHTTP:
                 reload=False,
             )
 
-    def include_viewset(self, viewset: ViewSet[Any], **kwargs: Any):
+    def include_viewset(self, viewset: ViewSet, **kwargs: Any):
         """
         Add viewset to the application.
 
@@ -105,9 +105,9 @@ class BrewingHTTP:
             **kwargs (Any): passed directly to FastAPI.include_router
 
         """
-        self._fastapi.include_router(viewset.router, **kwargs)
+        self._fastapi.include_router(viewset._router, **kwargs)
 
-    def with_viewsets(self, *vs: ViewSet[Any]) -> Self:
+    def with_viewsets(self, *vs: ViewSet) -> Self:
         """
         _summary_.
 

@@ -4,12 +4,12 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, Response
 
-from brewing.http import ViewSet, ViewsetOptions, status
+from brewing.http import ViewSet, status
 from brewing.http.testing import new_client
 
 from .helpers import SomeData
 
-vs1 = ViewSet(ViewsetOptions())
+vs1 = ViewSet()
 items = vs1("items")
 item_id = items("{item_id}")
 
