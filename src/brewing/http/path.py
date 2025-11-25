@@ -82,6 +82,7 @@ class HTTPPathComponent:
         return self.value
 
 
+@dataclass(kw_only=True, frozen=True)
 class TrailingSlashPolicy:
     """
     Defines how to decide on whether to use a trailing slash.
@@ -89,20 +90,14 @@ class TrailingSlashPolicy:
     This is read only where no explicit value has been provided.
     """
 
-    def __init__(self, /, *, on_constant: bool, on_variable: bool):
-        self.on_constant = on_constant
-        self.on_variable = on_variable
+    on_constant: bool = True
+    on_variable: bool = False
 
     def __call__(self, path: HTTPPath | HTTPPathComponent) -> bool:
         """Evaluate the policy for the given path or component."""
         if isinstance(path, HTTPPath):
             path = path.parts[-1]
         return self.on_constant if path.is_constant else self.on_variable
-
-    @classmethod
-    def default(cls):
-        """Provide a default version of this policy."""
-        return cls(on_constant=True, on_variable=False)
 
 
 class HTTPPath:

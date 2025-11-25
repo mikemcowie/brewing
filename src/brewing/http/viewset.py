@@ -8,7 +8,7 @@ and Django Rest Framework's viewsets.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter
@@ -38,7 +38,9 @@ class ViewSet:
     """A collection of related http endpoint handlers."""
 
     path: str = ""
-    trailing_slash_policy: TrailingSlashPolicy = TrailingSlashPolicy.default()
+    trailing_slash_policy: TrailingSlashPolicy = field(
+        default_factory=TrailingSlashPolicy
+    )
     tags: list[str | Enum] | None = None
 
     def __post_init__(self):
