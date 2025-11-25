@@ -122,7 +122,7 @@ wheels = [
 
 [[package]]
 name = "brewing"
-version = "0.0.12rc1"
+version = "0.0.12rc2"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
@@ -222,7 +222,7 @@ docs = [
 
 [[package]]
 name = "brewing-test-dependencies"
-version = "0.0.12rc1"
+version = "0.0.12rc2"
 source = { editable = "test-dependencies" }
 dependencies = [
     { name = "aiosqlite" },
@@ -495,7 +495,7 @@ wheels = [
 
 [[package]]
 name = "example"
-version = "0.0.1"
+version = "0.0.12rc2"
 source = { editable = "samples/example" }
 dependencies = [
     { name = "brewing" },
@@ -1779,7 +1779,7 @@ wheels = [
 
 [[package]]
 name = "testing-samples"
-version = "0.0.12rc1"
+version = "0.0.12rc2"
 source = { editable = "samples/testing-samples" }
 dependencies = [
     { name = "sqlalchemy" },
