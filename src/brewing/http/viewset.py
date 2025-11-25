@@ -54,11 +54,10 @@ class ViewSet[OptionsT: ViewsetOptionsProtocol]:
     def __init__(
         self,
         viewset_options: OptionsT,
-        router: APIRouter | None = None,
     ):
         self.viewset_options = viewset_options
         self.annotation_adaptors = (ApplyViewSetDependency(self),)
-        self.router = router or APIRouter()
+        self.router = APIRouter()
         self.root_path = HTTPPath(
             viewset_options.root_path,
             trailing_slash_policy=viewset_options.trailing_slash_policy,
