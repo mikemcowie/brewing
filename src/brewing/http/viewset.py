@@ -9,13 +9,12 @@ and Django Rest Framework's viewsets.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter
 from fastapi.params import Depends
 
 from brewing.http.annotations import (
-    AnnotatedFunctionAdaptorPipeline,
     AnnotationState,
     ApplyViewSetDependency,
     adapt,
@@ -30,52 +29,25 @@ from brewing.http.path import (
 if TYPE_CHECKING:
     from types import EllipsisType, FunctionType
 
-
-class ViewsetOptionsProtocol(Protocol):
-    """Attributes that must be implemented for any viewset options object."""
-
-    root_path: str
-    trailing_slash_policy: TrailingSlashPolicy
+    from starlette.routing import BaseRoute
 
 
 @dataclass
-class ViewsetOptions:
-    """Minimal options class for a basic viewset."""
-
-    root_path: str = ""
-    trailing_slash_policy: TrailingSlashPolicy = TrailingSlashPolicy.default()
-
-
-class ViewSet[OptionsT: ViewsetOptionsProtocol]:
+class ViewSet:
     """A collection of related http endpoint handlers."""
 
-    annotation_adaptors: AnnotatedFunctionAdaptorPipeline
+    path: str = ""
+    trailing_slash_policy: TrailingSlashPolicy = TrailingSlashPolicy.default()
 
-    def __init__(
-        self,
-        viewset_options: OptionsT,
-    ):
-        self.viewset_options = viewset_options
+    def __post_init__(self):
         self.annotation_adaptors = (ApplyViewSetDependency(self),)
-        self.router = APIRouter()
+        self._router = APIRouter()
         self.root_path = HTTPPath(
-            viewset_options.root_path,
-            trailing_slash_policy=viewset_options.trailing_slash_policy,
-            router=self.router,
+            self.path,
+            trailing_slash_policy=self.trailing_slash_policy,
+            router=self._router,
             annotation_pipeline=self.annotation_adaptors,
         )
-        self.trailing_slash_policy = viewset_options.trailing_slash_policy
-        # All the HTTP method decorators from the router
-        # are made directly available so it can be used with
-        # exactly the same decorator syntax in a functional manner.
-        self.get = self.router.get
-        self.post = self.router.post
-        self.head = self.router.head
-        self.put = self.router.put
-        self.patch = self.router.patch
-        self.delete = self.router.delete
-        self.options = self.router.options
-        self.trace = self.router.trace
         # The upper-case method names are brewing-specific
         # Meaning they compute the path off their context
         # instead of having the path passed as an explicit positional
@@ -104,6 +76,11 @@ class ViewSet[OptionsT: ViewsetOptionsProtocol]:
         ]
         self._rewrite_fastapi_style_depends()
         self._setup_classbased_endpoints()
+
+    @property
+    def routes(self) -> tuple[BaseRoute, ...]:
+        """Expose, immutably, the starlette routes associated with the viewset."""
+        return tuple(self._router.routes)
 
     def _rewrite_fastapi_style_depends(self):
         for method in self._all_methods:

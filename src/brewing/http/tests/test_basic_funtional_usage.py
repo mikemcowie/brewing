@@ -4,12 +4,12 @@ from typing import Annotated
 
 from fastapi import Depends, Query
 
-from brewing.http import ViewSet, ViewsetOptions, status
+from brewing.http import ViewSet, status
 from brewing.http.testing import new_client
 
 from .helpers import SomeData, dependency
 
-vs2 = ViewSet(ViewsetOptions())
+vs2 = ViewSet()
 
 
 @vs2.GET(response_model=SomeData, status_code=status.HTTP_200_OK, operation_id="SomeOp")
@@ -42,7 +42,7 @@ def test_decorator_args_applied_correctly():
     assert openapi_response.json()["paths"]["/"]["get"]["operationId"] == "SomeOp"
 
 
-vs3 = ViewSet(ViewsetOptions())
+vs3 = ViewSet()
 
 
 @vs3.GET()
@@ -67,7 +67,7 @@ def test_new_decorator_simplified_usage():
     assert response.json()["data"] == "foo"
 
 
-vs4 = ViewSet(ViewsetOptions())
+vs4 = ViewSet()
 items = vs4("items")
 item_id = items("{item_id}")
 

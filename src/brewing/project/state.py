@@ -33,7 +33,7 @@ def initial_app_file(context: ProjectConfiguration):  # noqa: ARG001
     from brewing import Brewing
     from brewing.db import Database, new_base
     from brewing.db.settings import PostgresqlSettings
-    from brewing.healthcheck.viewset import HealthCheckOptions, HealthCheckViewset
+    from brewing.healthcheck.viewset import HealthCheckViewset
     from brewing.http import BrewingHTTP
     from brewing.app import BrewingOptions
 
@@ -51,7 +51,7 @@ def initial_app_file(context: ProjectConfiguration):  # noqa: ARG001
         )
     ):
         app = Brewing(
-            http=BrewingHTTP().with_viewsets(HealthCheckViewset(HealthCheckOptions())),
+            http=BrewingHTTP().with_viewsets(HealthCheckViewset()),
         )
 
 

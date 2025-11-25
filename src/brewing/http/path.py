@@ -276,7 +276,7 @@ class DeferredHTTPPath:
         """Convert to an HTTPPath in the context of a given viewset."""
         return HTTPPath(
             str(viewset.root_path) + call.path.path,
-            viewset.router,
+            viewset._router,
             viewset.trailing_slash_policy,
             viewset.annotation_adaptors,
         )
