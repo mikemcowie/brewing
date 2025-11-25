@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Self
+from typing import TYPE_CHECKING, Annotated
 
 import uvicorn
 from fastapi import FastAPI
@@ -17,6 +17,8 @@ from typer import Option
 from brewing.db import testing
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from starlette.types import Receive, Scope, Send
 
     from brewing import Brewing
@@ -47,6 +49,7 @@ class BrewingHTTP:
     brewing-specific objects.
     """
 
+    viewsets: Sequence[ViewSet]
     title: str = "A Brewing API"
     description: str | None = None
     summary: str | None = None
@@ -57,6 +60,8 @@ class BrewingHTTP:
 
     def __post_init__(self):
         self._fastapi = FastAPI(**asdict(self))
+        for v in self.viewsets:
+            self._fastapi.include_router(v.router)
         self.app_string_identifier = (
             f"{find_calling_module()}:{self._fastapi.extra.get('name', 'http')}"
         )
@@ -95,32 +100,3 @@ class BrewingHTTP:
                 port=port,
                 reload=False,
             )
-
-    def include_viewset(self, viewset: ViewSet, **kwargs: Any):
-        """
-        Add viewset to the application.
-
-        Args:
-            viewset (ViewSet): the viewset to be added
-            **kwargs (Any): passed directly to FastAPI.include_router
-
-        """
-        self._fastapi.include_router(viewset._router, **kwargs)
-
-    def with_viewsets(self, *vs: ViewSet) -> Self:
-        """
-        _summary_.
-
-        Args:
-            *vs (ViewSet): viewsets to include
-
-        Returns:
-            Self: The BrewingHTTP instance (self)
-
-        """
-        for v in vs:
-            self.include_viewset(v)
-        return self
-
-
-BrewingHTTP(title="foo")

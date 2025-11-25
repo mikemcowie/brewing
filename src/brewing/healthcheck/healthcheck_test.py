@@ -31,9 +31,7 @@ def database() -> Generator[DatabaseProtocol]:
 def client(database: DatabaseProtocol) -> Generator[TestClient]:
     """Return a testclient that can test the viewset."""
     with BrewingOptions(name="test", database=database):
-        app = BrewingHTTP()
-        app.with_viewsets(HealthCheckViewset())
-        client = TestClient(app=app)
+        client = TestClient(app=BrewingHTTP((HealthCheckViewset(),)))
         with client:
             yield client
 
