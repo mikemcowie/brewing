@@ -37,7 +37,7 @@ def test_http_path_components(
 def test_root_path():
     path = HTTPPath(
         "",
-        trailing_slash_policy=TrailingSlashPolicy.default(),
+        trailing_slash_policy=TrailingSlashPolicy(),
         router=router,
         annotation_pipeline=(),
     )
@@ -48,7 +48,7 @@ def test_root_path():
 def test_http_path_constant_one_part_trailing_slash():
     path = HTTPPath(
         "/foo/",
-        trailing_slash_policy=TrailingSlashPolicy.default(),
+        trailing_slash_policy=TrailingSlashPolicy(),
         router=router,
         annotation_pipeline=(),
     )
@@ -59,7 +59,7 @@ def test_http_path_constant_one_part_trailing_slash():
 def test_http_path_constant_one_no_trailing_slash():
     path = HTTPPath(
         "foo",
-        trailing_slash_policy=TrailingSlashPolicy.default(),
+        trailing_slash_policy=TrailingSlashPolicy(),
         router=router,
         annotation_pipeline=(),
     )
@@ -70,7 +70,7 @@ def test_http_path_constant_one_no_trailing_slash():
 def test_http_path_one_part_variable_trailing_slash():
     path = HTTPPath(
         "/{foo_id}/",
-        trailing_slash_policy=TrailingSlashPolicy.default(),
+        trailing_slash_policy=TrailingSlashPolicy(),
         router=router,
         annotation_pipeline=(),
     )
@@ -81,7 +81,7 @@ def test_http_path_one_part_variable_trailing_slash():
 def test_http_path_one_part_variable_no_trailing_slash():
     path = HTTPPath(
         "{foo_id}",
-        trailing_slash_policy=TrailingSlashPolicy.default(),
+        trailing_slash_policy=TrailingSlashPolicy(),
         router=router,
         annotation_pipeline=(),
     )
@@ -92,7 +92,7 @@ def test_http_path_one_part_variable_no_trailing_slash():
 def test_extend_http_path():
     path = HTTPPath(
         "foo/",
-        trailing_slash_policy=TrailingSlashPolicy.default(),
+        trailing_slash_policy=TrailingSlashPolicy(),
         router=router,
         annotation_pipeline=(),
     )
