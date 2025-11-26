@@ -2,43 +2,24 @@
 
 from __future__ import annotations
 
+import pickle
 from importlib.metadata import EntryPoint
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import MetaData
 
 import brewing.plugin
 from brewing import CLI, CLIOptions, plugin
-from brewing.app import Brewing, BrewingOptions, NoCurrentOptions
+from brewing.app import Brewing
+from brewing.db import Database
+from brewing.db import testing as db_testing
+from brewing.db.settings import DatabaseType, SQLiteSettings
 
 if TYPE_CHECKING:
     from pytest_subtests import SubTests
     from typer import Typer
-
-
-def new_options() -> BrewingOptions[MagicMock]:
-    """return a fake options instance."""
-    return BrewingOptions(name="test", database=MagicMock())
-
-
-def test_brewing_options_global_loaded(subtests: SubTests):
-    """Error raised if we try to retrieve the options without entering a context."""
-    with (
-        subtests.test("no-instance-created-raises"),
-        pytest.raises(NoCurrentOptions),
-    ):
-        BrewingOptions.current()
-    options = new_options()
-    with (
-        subtests.test("instance-created-not_entered_raises"),
-        pytest.raises(NoCurrentOptions),
-    ):
-        BrewingOptions.current()
-    with subtests.test("instance-entered"), options:
-        assert BrewingOptions.current() is options
-    with subtests.test("raises-after-exit"), pytest.raises(NoCurrentOptions):
-        assert BrewingOptions.current()
 
 
 # pyright: reportUnusedExpression=false
@@ -48,26 +29,18 @@ def test_brewing(subtests: SubTests):
     """Test the setup of the Brewing class."""
     comp1 = MagicMock()
     comp2 = MagicMock()
-    options = new_options()
-    with options:
-        app = Brewing(comp1=comp1, comp2=comp2)
+    db = MagicMock()
+    app = Brewing(name="test", database=db, components={"comp1": comp1, "comp2": comp2})
     with subtests.test("components-attribute"):
-        assert app.components == {
-            "comp1": comp1,
-            "comp2": comp2,
-            "db": options.database,
-        }
+        assert app.all_components == {"comp1": comp1, "comp2": comp2, "db": db}
     with subtests.test("components-registered"):
-        comp1.register.assert_called_once_with("comp1", app)
-        comp2.register.assert_called_once_with("comp2", app)
-        options.database.register.assert_called_once_with("db", app)  # type: ignore
-    with subtests.test("components-available-as-attributes"):
-        ## components are available as dynamic attributes.
-        # this allows an entrypoint module to use module-level __getattr__ to expose them.
-
-        assert app.comp1 is comp1
-        assert app.comp2 is comp2
-        assert app.db is options.database
+        comp1.register.assert_not_called()
+        comp2.register.assert_not_called()
+        db.register.assert_not_called()
+        with app:
+            comp1.register.assert_called_once_with("comp1", app)
+            comp2.register.assert_called_once_with("comp2", app)
+            db.register.assert_called_once_with("db", app)  # type: ignore
 
     with (
         subtests.test("__getattr__ fails on arbitart attr"),
@@ -112,3 +85,24 @@ def test_main_cli_brewing_entrypoints_of_current_project_added_to_root_cli():
         c.name
         for c in cast("Typer", unnamed_groups[0].typer_instance).registered_commands
     } == {"hidden", "foo-1"}
+
+
+metadata = MetaData()
+
+
+def test_brewing_with_pickle_roundtrip(subtests: SubTests):
+    """A brewing instance can be reproduced via a roundtrip through pickle."""
+
+    def round_trip(obj: Any):
+        """Return a copy of obj that has been pickled and unpickled."""
+        return pickle.loads(pickle.dumps(obj))
+
+    with db_testing.testing(DatabaseType.sqlite):
+        database = Database(metadata=metadata, config_type=SQLiteSettings)
+
+        with subtests.test("empty-case"):
+            app = Brewing(name="test", database=database, components={})
+            before = app
+            after = round_trip(app)
+            assert before is not after
+            assert before == after

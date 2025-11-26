@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from brewing.app import BrewingOptions
+from brewing import Brewing
 from brewing.db import Database, MetaData
 from brewing.db import testing as testing_db
 from brewing.db.settings import DatabaseType, SQLiteSettings
@@ -24,14 +24,19 @@ if TYPE_CHECKING:
 def database() -> Generator[DatabaseProtocol]:
     """Return a database"""
     with testing_db.testing(DatabaseType.sqlite):
-        yield Database[SQLiteSettings](metadata=MetaData())
+        yield Database(metadata=MetaData(), config_type=SQLiteSettings)
 
 
 @pytest.fixture
 def client(database: DatabaseProtocol) -> Generator[TestClient]:
     """Return a testclient that can test the viewset."""
-    with BrewingOptions(name="test", database=database):
-        client = TestClient(app=BrewingHTTP((HealthCheckViewset(),)))
+    brewing = Brewing(
+        name="test",
+        database=database,
+        components={"app": BrewingHTTP((HealthCheckViewset(),))},
+    )
+    with brewing:
+        client = TestClient(app=brewing.components["app"])
         with client:
             yield client
 
