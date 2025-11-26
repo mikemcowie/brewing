@@ -259,15 +259,11 @@ def dev(db_type: DatabaseType):
 async def upgraded(db: Database):
     """Temporarily deploys tables for given database, dropping them in cleanup phase."""
     async with db.engine.begin() as conn:
-        for metadata in db.metadata:
-            await conn.run_sync(metadata.create_all)
-            asyncio.get_running_loop().run_in_executor(
-                None, db.migrations.stamp, "head"
-            )
+        await conn.run_sync(db.metadata.create_all)
+        asyncio.get_running_loop().run_in_executor(None, db.migrations.stamp, "head")
     yield
     async with db.engine.begin() as conn:
-        for metadata in db.metadata:
-            await conn.run_sync(metadata.drop_all)
+        await conn.run_sync(db.metadata.drop_all)
     await db.engine.dispose()
 
 
