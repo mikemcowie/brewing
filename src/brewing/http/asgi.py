@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import asdict, dataclass
+from functools import cached_property
 from typing import TYPE_CHECKING, Annotated
 
 import uvicorn
@@ -58,13 +59,26 @@ class BrewingHTTP:
     docs_url: str | None = "/docs"
     redoc_url: str | None = "/redoc"
 
-    def __post_init__(self):
-        self._fastapi = FastAPI(**asdict(self))
+    def _app_string_identifier(self) -> str:
+        return f"{find_calling_module()}:{self.fastapi.extra.get('name', 'http')}"
+
+    @cached_property
+    def fastapi(self) -> FastAPI:
+        """Return fastapi instance associated with the HTTP class."""
+        app = FastAPI(**asdict(self))
         for v in self.viewsets:
-            self._fastapi.include_router(v.router)
-        self.app_string_identifier = (
-            f"{find_calling_module()}:{self._fastapi.extra.get('name', 'http')}"
-        )
+            app.include_router(v.router)
+        return app
+
+    def __getstate__(self):
+        """Overrid the attributes dumped when the object is pickled.
+
+        This is used to bypass pickling the fastapi instance, which instead
+        will be recreated as a cached property on first call after unpicking,
+        """
+        state = self.__dict__.copy()
+        state.pop("fastapi", None)
+        return state
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Call fastapi instance.
@@ -72,7 +86,7 @@ class BrewingHTTP:
         This method allows the brewing HTTP instance itself to act as an
         ASGI application and hence a direct targetf for webserver like uvicorn.
         """
-        return await self._fastapi(scope, receive, send)
+        return await self.fastapi(scope, receive, send)
 
     def register(self, name: str, brewing: Brewing, /):
         """Register http server to brewing."""
@@ -89,13 +103,13 @@ class BrewingHTTP:
                 if dev:
                     with testing.dev(brewing.database.database_type):
                         return uvicorn.run(
-                            self.app_string_identifier,
+                            self._app_string_identifier(),
                             host=host,
                             port=port,
                             reload=dev,
                         )
                 return uvicorn.run(
-                    self.app_string_identifier,
+                    self._app_string_identifier(),
                     host=host,
                     workers=workers,
                     port=port,

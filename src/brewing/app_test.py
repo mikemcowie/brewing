@@ -15,6 +15,8 @@ from brewing.app import Brewing
 from brewing.db import Database
 from brewing.db import testing as db_testing
 from brewing.db.settings import DatabaseType, SQLiteSettings
+from brewing.healthcheck.viewset import HealthCheckViewset
+from brewing.http import BrewingHTTP
 
 if TYPE_CHECKING:
     from pytest_subtests import SubTests
@@ -95,6 +97,28 @@ def test_brewing_with_pickle_roundtrip(subtests: SubTests):
 
         with subtests.test("empty-case"):
             app = Brewing(name="test", database=database, components={})
+            before = app
+            after = round_trip(app)
+            assert before is not after
+            assert before == after
+
+        with subtests.test("empty-http"):
+            app = Brewing(
+                name="test",
+                database=database,
+                components={"http": BrewingHTTP(viewsets=[])},
+            )
+            before = app
+            after = round_trip(app)
+            assert before is not after
+            assert before == after
+
+        with subtests.test("with-viewset"):
+            app = Brewing(
+                name="test",
+                database=database,
+                components={"http": BrewingHTTP(viewsets=[HealthCheckViewset()])},
+            )
             before = app
             after = round_trip(app)
             assert before is not after

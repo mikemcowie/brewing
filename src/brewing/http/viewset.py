@@ -9,7 +9,8 @@ and Django Rest Framework's viewsets.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING
+from functools import cached_property
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter
 from fastapi.params import Depends
@@ -32,6 +33,8 @@ if TYPE_CHECKING:
 
     from starlette.routing import BaseRoute
 
+# ruff: noqa: N802
+
 
 @dataclass
 class ViewSet:
@@ -44,50 +47,87 @@ class ViewSet:
     tags: list[str | Enum] | None = None
 
     def __post_init__(self):
-        self.annotation_adaptors = (ApplyViewSetDependency(self),)
-        self.router = APIRouter(tags=self.tags)
-        self.root_path = HTTPPath(
+        self._rewrite_fastapi_style_depends()
+        self._setup_classbased_endpoints()
+
+    def __getstate__(self) -> dict[str, Any]:
+        """Avoid saving unpickleable objects; we rely on them being rebuilt via cached_property."""
+        state = self.__dict__.copy()
+        for key in (
+            k
+            for k in dir(self.__class__)
+            if isinstance(getattr(self.__class__, k), cached_property)
+        ):
+            state.pop(key, None)
+        return state
+
+    @cached_property
+    def GET(self):
+        return self.root_path.GET
+
+    @cached_property
+    def POST(self):
+        return self.root_path.POST
+
+    @cached_property
+    def PUT(self):
+        return self.root_path.PUT
+
+    @cached_property
+    def PATCH(self):
+        return self.root_path.PATCH
+
+    @cached_property
+    def DELETE(self):
+        return self.root_path.DELETE
+
+    @cached_property
+    def HEAD(self):
+        return self.root_path.HEAD
+
+    @cached_property
+    def OPTIONS(self):
+        return self.root_path.OPTIONS
+
+    @cached_property
+    def TRACE(self):
+        return self.root_path.TRACE
+
+    @cached_property
+    def DEPENDS(self):
+        return self.root_path.DEPENDS
+
+    @cached_property
+    def annotation_adaptors(self):
+        return (ApplyViewSetDependency(self),)
+
+    @cached_property
+    def root_path(self):
+        return HTTPPath(
             self.path,
             trailing_slash_policy=self.trailing_slash_policy,
             router=self.router,
             annotation_pipeline=self.annotation_adaptors,
         )
-        # The upper-case method names are brewing-specific
-        # Meaning they compute the path off their context
-        # instead of having the path passed as an explicit positional
-        # parameter.
-        # They are taken off the root_path object
-        # which guarentees the same behaviour when the decorator
-        # is used from a sub-path compared to the viewset itself.
-        self.GET = self.root_path.GET
-        self.POST = self.root_path.POST
-        self.PUT = self.root_path.PUT
-        self.PATCH = self.root_path.PATCH
-        self.DELETE = self.root_path.DELETE
-        self.HEAD = self.root_path.HEAD
-        self.OPTIONS = self.root_path.OPTIONS
-        self.TRACE = self.root_path.TRACE
-        self.DEPENDS = self.root_path.DEPENDS
-        self._all_methods = [
-            getattr(self, m)
-            for m in dir(self)
-            if callable(getattr(self, m)) and m[0] != "_"
-        ]
-        self._defferred_paths = [
-            getattr(self, m)
-            for m in dir(self)
-            if isinstance(getattr(self, m), DeferredHTTPPath)
-        ]
-        self._rewrite_fastapi_style_depends()
-        self._setup_classbased_endpoints()
+
+    @cached_property
+    def router(self):
+        return APIRouter(tags=self.tags)
 
     @property
     def routes(self) -> tuple[BaseRoute, ...]:
         """Expose, immutably, the starlette routes associated with the viewset."""
         return tuple(self.router.routes)
 
+    def _all_methods(self):
+        return [
+            getattr(self, m)
+            for m in dir(self)
+            if callable(getattr(self, m)) and m[0] != "_"
+        ]
+
     def _rewrite_fastapi_style_depends(self):
-        for method in self._all_methods:
+        for method in self._all_methods():
             try:
                 annotation_state = AnnotationState(method)
             except TypeError:
@@ -100,7 +140,7 @@ class ViewSet:
                         if isinstance(
                             annotation, Depends
                         ) and annotation.dependency in [
-                            getattr(f, "__func__", ...) for f in self._all_methods
+                            getattr(f, "__func__", ...) for f in self._all_methods()
                         ]:
                             annotations_as_list.remove(annotation)
                             annotations_as_list.append(
@@ -113,7 +153,7 @@ class ViewSet:
     def _setup_classbased_endpoints(self):
         decorated_methods: list[tuple[FunctionType, list[DeferredDecoratorCall]]] = [  # type: ignore
             (m, getattr(m, DeferredHTTPPath.METADATA_KEY, None))
-            for m in self._all_methods
+            for m in self._all_methods()
             if getattr(m, DeferredHTTPPath.METADATA_KEY, None)
         ]
         for decorated_method in decorated_methods:
