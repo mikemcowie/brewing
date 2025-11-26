@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib.util
 import inspect
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
 import pytest_alembic.tests.default
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def migrations(db_type: DatabaseType, running_db: Database[Any], tmp_path: Path):
+def migrations(db_type: DatabaseType, running_db: Database, tmp_path: Path):
     migrations = Migrations(
         database=Database(
             metadata=db_sample1.Base.metadata,

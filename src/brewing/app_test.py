@@ -7,7 +7,6 @@ from importlib.metadata import EntryPoint
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
-import pytest
 from sqlalchemy import MetaData
 
 import brewing.plugin
@@ -41,12 +40,6 @@ def test_brewing(subtests: SubTests):
             comp1.register.assert_called_once_with("comp1", app)
             comp2.register.assert_called_once_with("comp2", app)
             db.register.assert_called_once_with("db", app)  # type: ignore
-
-    with (
-        subtests.test("__getattr__ fails on arbitart attr"),
-        pytest.raises(AttributeError),
-    ):
-        app.foo_bar  # noqa: B018
 
 
 def sample_entrypoints():

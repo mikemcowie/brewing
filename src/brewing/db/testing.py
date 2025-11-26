@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from testcontainers.mysql import MySqlContainer
     from testcontainers.postgres import PostgresContainer
 
-    from brewing.db.types import DatabaseProtocol
+    from brewing.db import Database
 
 
 logger = structlog.get_logger()
@@ -256,7 +256,7 @@ def dev(db_type: DatabaseType):
 
 
 @asynccontextmanager
-async def upgraded(db: DatabaseProtocol):
+async def upgraded(db: Database):
     """Temporarily deploys tables for given database, dropping them in cleanup phase."""
     async with db.engine.begin() as conn:
         for metadata in db.metadata:

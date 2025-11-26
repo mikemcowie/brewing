@@ -11,7 +11,7 @@ from sqlalchemy.orm import (
     mapped_column,
 )
 
-from brewing.db import Database, columns, mixins, new_base, settings, testing, types
+from brewing.db import Database, columns, mixins, new_base, settings, testing
 
 Base = new_base()
 
@@ -40,14 +40,14 @@ async def db(db_type: settings.DatabaseType, running_db_session: None):
 
 
 @pytest_asyncio.fixture()
-async def upgraded_db(db: Database[Any]):
+async def upgraded_db(db: Database):
     async with testing.upgraded(db):
         yield db
 
 
 @pytest.mark.asyncio
-async def test_incrementing_pk[ConfigT: types.DatabaseConnectionConfiguration](
-    upgraded_db: Database[ConfigT],
+async def test_incrementing_pk(
+    upgraded_db: Database,
 ):
     async with upgraded_db.engine.begin() as conn:
         for metadata in upgraded_db.metadata:
@@ -67,8 +67,8 @@ async def test_incrementing_pk[ConfigT: types.DatabaseConnectionConfiguration](
 
 
 @pytest.mark.asyncio
-async def test_uuid_pk[ConfigT: types.DatabaseConnectionConfiguration](
-    upgraded_db: Database[ConfigT],
+async def test_uuid_pk(
+    upgraded_db: Database,
 ):
     instances = [SomeThing(json_col={"item": n}) for n in range(20)]
     async with upgraded_db.session() as session:
@@ -82,9 +82,7 @@ async def test_uuid_pk[ConfigT: types.DatabaseConnectionConfiguration](
 
 
 @pytest.mark.asyncio
-async def test_created_updated_field_match_after_create[
-    ConfigT: types.DatabaseConnectionConfiguration
-](upgraded_db: Database[ConfigT]):
+async def test_created_updated_field_match_after_create(upgraded_db: Database):
     instance = SomeThing(json_col={"item": 1})
     async with upgraded_db.session() as session:
         session.add(instance)
@@ -102,9 +100,9 @@ async def test_created_updated_field_match_after_create[
 
 
 @pytest.mark.asyncio
-async def test_created_updated_field_changed_after_record_updated[
-    ConfigT: types.DatabaseConnectionConfiguration
-](upgraded_db: Database[ConfigT]):
+async def test_created_updated_field_changed_after_record_updated(
+    upgraded_db: Database,
+):
     instance = SomeThing(json_col={"item": 1})
     async with upgraded_db.session() as session:
         session.add(instance)

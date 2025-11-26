@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
     from brewing import Brewing
-    from brewing.db.types import DatabaseProtocol
+    from brewing.db import Database
 
 ## The actual contextvars are private here:
 _CURRENT_APP: ContextVar[Brewing | None] = ContextVar("current_app", default=None)
@@ -39,7 +39,7 @@ def push_app(app: Brewing):
     _CURRENT_APP.reset(token)
 
 
-def current_database() -> DatabaseProtocol:
+def current_database() -> Database:
     """Return the database of the currently active brewing app."""
     return current_app().database
 

@@ -15,7 +15,7 @@ from alembic.config import Config as AlembicConfig
 if TYPE_CHECKING:
     from sqlalchemy.engine import Connection
 
-    from brewing.db.types import DatabaseProtocol
+    from brewing.db import Database
 
 MIGRATIONS_CONTEXT_DIRECTORY = Path(__file__).parent / "_migrationcontext"
 
@@ -39,7 +39,7 @@ class Migrations:
 
     def __init__(
         self,
-        database: DatabaseProtocol,
+        database: Database,
         revisions_dir: Path,
     ):
         self._database = database
@@ -55,7 +55,7 @@ class Migrations:
         self._alembic.set_main_option("file_template", "rev_%%(rev)s_%%(slug)s")
 
     @property
-    def database(self) -> DatabaseProtocol:
+    def database(self) -> Database:
         """The database instance used by the migrations."""
         return self._database
 
