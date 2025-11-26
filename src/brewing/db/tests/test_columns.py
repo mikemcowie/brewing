@@ -50,8 +50,7 @@ async def test_incrementing_pk(
     upgraded_db: Database,
 ):
     async with upgraded_db.engine.begin() as conn:
-        for metadata in upgraded_db.metadata:
-            await conn.run_sync(metadata.create_all)
+        await conn.run_sync(upgraded_db.metadata.create_all)
     instances = [HasIncrementingPrimaryKey() for _ in range(20)]
     assert {instance.id for instance in instances} == {None}
     async with upgraded_db.session() as session:

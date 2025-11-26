@@ -44,21 +44,14 @@ class Database:
     """Object encapsulating fundamental context of a service's sql database."""
 
     config_type: type[DatabaseConnectionConfiguration]
-    metadata: MetaData | tuple[MetaData, ...] = field(
+    metadata: MetaData = field(
         compare=False
     )  # Exclude Metadata from equality operation as it doesn't have a sane equality method.
-    revisions_directory: Path | None = None
+    revisions_directory: Path = field(
+        default_factory=lambda: _find_calling_file(inspect.stack()).parent / "revisions"
+    )
 
     def __post_init__(self):
-        self.metadata = (
-            (self.metadata,)
-            if isinstance(self.metadata, MetaData)
-            else tuple(self.metadata)
-        )
-        self.revisions_directory = (
-            self.revisions_directory
-            or _find_calling_file(inspect.stack()).parent / "revisions"
-        )
         self._config: DatabaseConnectionConfiguration | None = None
         self._migrations: Migrations | None = None
         self._engine: dict[asyncio.AbstractEventLoop, AsyncEngine] = {}
