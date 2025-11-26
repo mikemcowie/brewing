@@ -10,7 +10,7 @@ from brewing.cli import CLI, CLIOptions
 from brewing.context import push_app
 
 if TYPE_CHECKING:
-    from brewing.db.types import DatabaseProtocol
+    from brewing.db import Database
 
 type CLIUnionType = CLI[Any] | Brewing
 
@@ -41,8 +41,8 @@ class Brewing:
     """The top level application encapsulating related components."""
 
     name: str
-    database: DatabaseProtocol
-    components: dict[str, BrewingComponentType | DatabaseProtocol]
+    database: Database
+    components: dict[str, BrewingComponentType | Database]
 
     @cached_property
     def cli(self):

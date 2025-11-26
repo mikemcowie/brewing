@@ -29,9 +29,7 @@ from sqlalchemy.orm import (
 )
 
 if TYPE_CHECKING:
-    from brewing.db.types import DatabaseProtocol
-
-    pass
+    from brewing.db import Database
 
 
 class Base(DeclarativeBase):
@@ -82,7 +80,7 @@ class OrderItem(MappedAsDataclass, Base, kw_only=True, init=False):
     item: Mapped[Item] = relationship(lazy="joined")
 
 
-async def run_sample(db: DatabaseProtocol):
+async def run_sample(db: Database):
     async with db.session() as session:
         # create catalog
         tshirt, mug, hat, crowbar = (

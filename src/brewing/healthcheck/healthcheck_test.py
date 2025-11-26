@@ -17,26 +17,25 @@ from brewing.http.testing import TestClient
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from brewing.db.types import DatabaseProtocol
-
 
 @pytest.fixture
-def database() -> Generator[DatabaseProtocol]:
+def database() -> Generator[Database]:
     """Return a database"""
     with testing_db.testing(DatabaseType.sqlite):
         yield Database(metadata=MetaData(), config_type=SQLiteSettings)
 
 
 @pytest.fixture
-def client(database: DatabaseProtocol) -> Generator[TestClient]:
+def client(database: Database) -> Generator[TestClient]:
     """Return a testclient that can test the viewset."""
+    app = BrewingHTTP(viewsets=(HealthCheckViewset(),))
     brewing = Brewing(
         name="test",
         database=database,
-        components={"app": BrewingHTTP((HealthCheckViewset(),))},
+        components={"app": app},
     )
     with brewing:
-        client = TestClient(app=brewing.components["app"])
+        client = TestClient(app=app)
         with client:
             yield client
 
@@ -52,7 +51,7 @@ def test_readyz(client: TestClient):
 
 
 def test_readyz_fail_when_database_down(
-    client: TestClient, database: DatabaseProtocol, capsys: pytest.CaptureFixture[str]
+    client: TestClient, database: Database, capsys: pytest.CaptureFixture[str]
 ):
     def fail(*_, **__):
         raise RuntimeError("The database failed somehow.")
