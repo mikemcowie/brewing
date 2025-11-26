@@ -35,7 +35,6 @@ def initial_app_file(context: ProjectConfiguration):  # noqa: ARG001
     from brewing.db.settings import PostgresqlSettings
     from brewing.healthcheck.viewset import HealthCheckViewset
     from brewing.http import BrewingHTTP
-    from brewing.app import BrewingOptions
 
     # register database models by inheriting from this base.
     # brewing will automatically scan for modules inheriting from this
@@ -43,18 +42,17 @@ def initial_app_file(context: ProjectConfiguration):  # noqa: ARG001
     Base = new_base()
 
     # construct the application by providing the settings and components that make up the app.
-    with BrewingOptions(
+    app = Brewing(
         name="generated-project",
-        database=Database[PostgresqlSettings](
+        database=Database(
             metadata=Base.metadata,
             revisions_directory=Path(__file__).parent / "db_revisions",
-        )
-    ):
-        app = Brewing(
-            http=BrewingHTTP(viewsets=[HealthCheckViewset()]),
-        )
+            config_type=PostgresqlSettings,
+        ),
+        components={"http":BrewingHTTP(viewsets=[HealthCheckViewset()])}
+    )
 
-
+    ## TODO: can we remove this???
     def __getattr__(name:str):
         return getattr(app, name)
 

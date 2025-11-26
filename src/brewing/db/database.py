@@ -6,6 +6,7 @@ import asyncio
 import functools
 import inspect
 from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from functools import cached_property
 from pathlib import Path
@@ -18,10 +19,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from brewing.cli import CLI, CLIOptions
 from brewing.db.migrate import Migrations
 from brewing.db.types import DatabaseConnectionConfiguration
-from brewing.generic import runtime_generic
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Iterable
+    from collections.abc import AsyncGenerator
 
     from brewing import Brewing
 
@@ -31,26 +31,32 @@ logger = structlog.get_logger()
 
 def _find_calling_file(stack: list[inspect.FrameInfo]):
     for frameinfo in stack:
-        if frameinfo.filename not in (__file__, functools.__file__):
+        if (
+            frameinfo.filename not in (__file__, functools.__file__)
+            and ".py" in frameinfo.filename
+        ):
             return Path(frameinfo.filename)
     raise RuntimeError("Could not find calling file.")
 
 
-@runtime_generic
+@dataclass
 class Database[ConfigT: DatabaseConnectionConfiguration]:
     """Object encapsulating fundamental context of a service's sql database."""
 
     config_type: type[ConfigT]
+    metadata: MetaData | tuple[MetaData, ...] = field(
+        compare=False
+    )  # Exclude Metadata from equality operation as it doesn't have a sane equality method.
+    revisions_directory: Path | None = None
 
-    def __init__(
-        self,
-        metadata: MetaData | Iterable[MetaData],
-        revisions_directory: Path | None = None,
-    ):
-        metadata = (metadata,) if isinstance(metadata, MetaData) else tuple(metadata)
-        self._metadata = metadata
-        self._revisions_directory = (
-            revisions_directory
+    def __post_init__(self):
+        self.metadata = (
+            (self.metadata,)
+            if isinstance(self.metadata, MetaData)
+            else tuple(self.metadata)
+        )
+        self.revisions_directory = (
+            self.revisions_directory
             or _find_calling_file(inspect.stack()).parent / "revisions"
         )
         self._config: ConfigT | None = None
@@ -70,11 +76,6 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
             help="Manage the database and its migrations.",
         )
 
-    @property
-    def metadata(self) -> tuple[MetaData, ...]:
-        """Tuple of sqlalchemy metadata."""
-        return self._metadata
-
     async def is_alive(self, timeout: float = 1.0) -> Literal[True]:
         """
         Return True when the database can be connected to.
@@ -93,13 +94,13 @@ class Database[ConfigT: DatabaseConnectionConfiguration]:
                 else:
                     return True
 
-    @property
+    @cached_property
     def migrations(self) -> Migrations:
         """Database migrations provider."""
         if not self._migrations:
             self._migrations = Migrations(
                 database=self,
-                revisions_dir=self._revisions_directory,
+                revisions_dir=self.revisions_directory,
             )
         return self._migrations
 

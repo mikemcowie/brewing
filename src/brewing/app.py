@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from contextvars import ContextVar, Token
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from dataclasses import dataclass
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, Protocol
 
 from brewing.cli import CLI, CLIOptions
-from brewing.db import DatabaseConnectionConfiguration
+from brewing.context import push_app
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
     from brewing.db.types import DatabaseProtocol
 
 type CLIUnionType = CLI[Any] | Brewing
@@ -19,40 +17,6 @@ type CLIUnionType = CLI[Any] | Brewing
 
 class NoCurrentOptions(LookupError):
     """No settings object has been pushed."""
-
-
-@dataclass
-class BrewingOptions[DBConnT: DatabaseConnectionConfiguration]:
-    """Application level settings."""
-
-    name: str
-    database: DatabaseProtocol
-    current_options: ClassVar[ContextVar[BrewingOptions[Any]]] = ContextVar(
-        "current_settings"
-    )
-    current_options_token: Token[BrewingOptions[Any]] | None = field(
-        default=None, init=False
-    )
-
-    def __enter__(self):
-        self.current_options_token = self.current_options.set(self)
-        return self
-
-    def __exit__(self, *_):
-        if self.current_options_token:  # pragma: no branch
-            self.current_options.reset(self.current_options_token)
-
-    @classmethod
-    def current(cls):
-        """Return the current settings instance."""
-        try:
-            return cls.current_options.get()
-        except LookupError as error:
-            raise NoCurrentOptions(
-                "No current options available. "
-                "Push settings by constucting a BrewingOptions instance, i.e. "
-                "with BrewingOptions(...):"
-            ) from error
 
 
 class BrewingComponentType(Protocol):
@@ -72,22 +36,31 @@ class BrewingComponentType(Protocol):
         ...
 
 
+@dataclass
 class Brewing:
     """The top level application encapsulating related components."""
 
-    def __init__(self, **components: BrewingComponentType):
-        self.options = BrewingOptions.current()
-        self.cli = CLI(CLIOptions(name=self.options.name))
-        self.typer = self.cli.typer
-        self.database = self.options.database
-        self.components: Mapping[str, BrewingComponentType] = components | {
-            "db": self.database
-        }
-        for name, component in self.components.items():
-            component.register(name, self)
+    name: str
+    database: DatabaseProtocol
+    components: dict[str, BrewingComponentType | DatabaseProtocol]
 
-    def __getattr__(self, name: str):
-        try:
-            return self.components[name]
-        except KeyError as error:
-            raise AttributeError(f"no attribute '{name}' in object {self}.") from error
+    @cached_property
+    def cli(self):
+        return CLI(CLIOptions(name=self.name))
+
+    @property
+    def typer(self):
+        return self.cli.typer
+
+    @cached_property
+    def all_components(self):
+        return self.components | {"db": self.database}
+
+    def __enter__(self):
+        for name, component in self.all_components.items():
+            component.register(name, self)
+        self._push = push_app(self)
+        self._push.__enter__()
+
+    def __exit__(self, *args: Any):
+        self._push.__exit__(*args)

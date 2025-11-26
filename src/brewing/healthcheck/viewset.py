@@ -6,7 +6,7 @@ import structlog
 from fastapi.responses import PlainTextResponse, Response
 from pydantic import BaseModel, Field
 
-from brewing.app import BrewingOptions
+from brewing import current_database
 from brewing.http import ViewSet, self, status
 
 logger = structlog.get_logger()
@@ -43,10 +43,6 @@ class HealthCheckViewset(ViewSet):
     livez = self("livez")
     readyz = self("readyz")
 
-    def __post_init__(self):
-        super().__post_init__()
-        self.database = BrewingOptions.current().database
-
     async def _check(self, dependency: HealthCheckDependency):
         try:
             await dependency.is_alive(self.timeout)
@@ -70,7 +66,7 @@ class HealthCheckViewset(ViewSet):
     )
     async def is_ready(self, response: Response):
         """Return whether the application is ready to receive traffic."""
-        dependencies = {"database": await self._check(self.database)}
+        dependencies = {"database": await self._check(current_database())}
         passed = all(dependencies.values())
         response.status_code = (
             status.HTTP_200_OK if passed else status.HTTP_503_SERVICE_UNAVAILABLE

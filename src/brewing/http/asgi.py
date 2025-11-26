@@ -85,18 +85,19 @@ class BrewingHTTP:
             port: int = 8000,
         ):
             """Run the HTTP server."""
-            if dev:
-                with testing.dev(brewing.database.database_type):
-                    return uvicorn.run(
-                        self.app_string_identifier,
-                        host=host,
-                        port=port,
-                        reload=dev,
-                    )
-            return uvicorn.run(
-                self.app_string_identifier,
-                host=host,
-                workers=workers,
-                port=port,
-                reload=False,
-            )
+            with brewing:
+                if dev:
+                    with testing.dev(brewing.database.database_type):
+                        return uvicorn.run(
+                            self.app_string_identifier,
+                            host=host,
+                            port=port,
+                            reload=dev,
+                        )
+                return uvicorn.run(
+                    self.app_string_identifier,
+                    host=host,
+                    workers=workers,
+                    port=port,
+                    reload=False,
+                )
