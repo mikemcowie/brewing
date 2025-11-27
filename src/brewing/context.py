@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import base64
+import os
+import pickle
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, MutableMapping
+
     from sqlalchemy.ext.asyncio import AsyncSession
 
     from brewing import Brewing
@@ -17,6 +22,7 @@ _CURRENT_APP: ContextVar[Brewing | None] = ContextVar("current_app", default=Non
 _CURRENT_DB_SESSION: ContextVar[AsyncSession | None] = ContextVar(
     "current_session", default=None
 )
+CURRENT_APP_BYTES_ENV = "CURRENT_APP_BYTES"
 
 
 class ContextNotAvailable(LookupError):
@@ -25,17 +31,22 @@ class ContextNotAvailable(LookupError):
 
 def current_app() -> Brewing:
     """Get the current active brewing instance."""
-    app = _CURRENT_APP.get()
-    if not app:
+    if app := _CURRENT_APP.get():
+        return app
+    if app_bytes := os.environ.get(CURRENT_APP_BYTES_ENV):
+        app = pickle.loads(base64.b64decode(app_bytes.encode()))
+        _CURRENT_APP.set(app)
+        return app
+    else:
         raise ContextNotAvailable("No current active brewing app.")
-    return app
 
 
 @contextmanager
 def push_app(app: Brewing):
     """Set the given app as current, yielding and unsetting it when closed."""
     token = _CURRENT_APP.set(app)
-    yield
+    with env({CURRENT_APP_BYTES_ENV: base64.b64encode(pickle.dumps(app)).decode()}):
+        yield
     _CURRENT_APP.reset(token)
 
 
@@ -55,3 +66,22 @@ async def db_session():  ### TODO - make sure all db access is through this.
         yield session
         _CURRENT_DB_SESSION.reset(token)
         await session.commit()
+
+
+@contextmanager
+def env(
+    new_env: MutableMapping[str, str], environ: MutableMapping[str, str] = os.environ
+) -> Generator[None]:
+    """Temporarily modify environment (or other provided mapping), restore original values on cleanup."""
+    orig: dict[str, str | None] = {}
+    for key, value in new_env.items():
+        orig[key] = environ.get(key)
+        environ[key] = value
+    yield
+    # Cleanup - restore the original values
+    # or delete if they weren't set.
+    for key, value in orig.items():
+        if value is None:
+            del environ[key]
+        else:
+            environ[key] = value

@@ -53,8 +53,18 @@ class Database:
 
     def __post_init__(self):
         self._config: DatabaseConnectionConfiguration | None = None
-        self._migrations: Migrations | None = None
         self._engine: dict[asyncio.AbstractEventLoop, AsyncEngine] = {}
+
+    def __getstate__(self):
+        """Override the attributes dumped when the object is pickled.
+
+        This is used to bypass pickling the fastapi instance, which instead
+        will be recreated as a cached property on first call after unpicking,
+        """
+        state = self.__dict__.copy()
+        state.pop("migrations", None)
+        state.pop("cli", None)
+        return state
 
     def register(self, name: str, brewing: Brewing, /):
         """Register database to brewing."""
@@ -90,12 +100,10 @@ class Database:
     @cached_property
     def migrations(self) -> Migrations:
         """Database migrations provider."""
-        if not self._migrations:
-            self._migrations = Migrations(
-                database=self,
-                revisions_dir=self.revisions_directory,
-            )
-        return self._migrations
+        return Migrations(
+            database=self,
+            revisions_dir=self.revisions_directory,
+        )
 
     @property
     def config(self) -> DatabaseConnectionConfiguration:

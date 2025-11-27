@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import socket
 from contextlib import AbstractContextManager, asynccontextmanager, contextmanager
 from contextvars import ContextVar
@@ -17,10 +16,11 @@ from typing import TYPE_CHECKING, Protocol
 import structlog
 from sqlalchemy_utils import create_database, database_exists
 
+from brewing.context import env
 from brewing.db.settings import DatabaseType
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, MutableMapping
+    from collections.abc import Generator
 
     from testcontainers.mysql import MySqlContainer
     from testcontainers.postgres import PostgresContainer
@@ -60,25 +60,6 @@ def persistent_volume(base_path: Path, name: str | None = None):
         yield None
         return
     yield base_path / name
-
-
-@contextmanager
-def env(
-    new_env: dict[str, str], environ: MutableMapping[str, str] = os.environ
-) -> Generator[None]:
-    """Temporarily modify environment (or other provided mapping), restore original values on cleanup."""
-    orig: dict[str, str | None] = {}
-    for key, value in new_env.items():
-        orig[key] = environ.get(key)
-        environ[key] = value
-    yield
-    # Cleanup - restore the original values
-    # or delete if they weren't set.
-    for key, value in orig.items():
-        if value is None:
-            del environ[key]
-        else:
-            environ[key] = value
 
 
 class TestingDatabase(Protocol):

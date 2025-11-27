@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from brewing.cli import CLI, CLIOptions
 from brewing.context import push_app
+from brewing.serialization import ExcludeCachedProperty
 
 if TYPE_CHECKING:
     from brewing.db import Database
@@ -37,18 +38,22 @@ class BrewingComponentType(Protocol):
 
 
 @dataclass
-class Brewing:
+class Brewing(ExcludeCachedProperty):
     """The top level application encapsulating related components."""
 
     name: str
     database: Database
     components: dict[str, BrewingComponentType | Database]
 
+    def __post_init__(self):
+        for name, component in self.all_components.items():
+            component.register(name, self)
+
     @cached_property
     def cli(self):
         return CLI(CLIOptions(name=self.name))
 
-    @property
+    @cached_property
     def typer(self):
         return self.cli.typer
 
@@ -56,9 +61,12 @@ class Brewing:
     def all_components(self):
         return self.components | {"db": self.database}
 
+    def __getstate__(self) -> dict[str, Any]:
+        state = super().__getstate__()
+        state.pop("_push", None)
+        return state
+
     def __enter__(self):
-        for name, component in self.all_components.items():
-            component.register(name, self)
         self._push = push_app(self)
         self._push.__enter__()
 

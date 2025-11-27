@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from functools import cached_property
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter
 from fastapi.params import Depends
@@ -26,6 +26,7 @@ from brewing.http.path import (
     HTTPPath,
     TrailingSlashPolicy,
 )
+from brewing.serialization import ExcludeCachedProperty
 
 if TYPE_CHECKING:
     from enum import Enum
@@ -37,7 +38,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class ViewSet:
+class ViewSet(ExcludeCachedProperty):
     """A collection of related http endpoint handlers."""
 
     path: str = ""
@@ -49,17 +50,6 @@ class ViewSet:
     def __post_init__(self):
         self._rewrite_fastapi_style_depends()
         self._setup_classbased_endpoints()
-
-    def __getstate__(self) -> dict[str, Any]:
-        """Avoid saving unpickleable objects; we rely on them being rebuilt via cached_property."""
-        state = self.__dict__.copy()
-        for key in (
-            k
-            for k in dir(self.__class__)
-            if isinstance(getattr(self.__class__, k), cached_property)
-        ):
-            state.pop(key, None)
-        return state
 
     @cached_property
     def GET(self):
