@@ -28,33 +28,36 @@ def initial_app_file(context: ProjectConfiguration):  # noqa: ARG001
     return dedent(
         """
 
-    from pathlib import Path
+        # ruff: noqa: PLC0415
+        from pathlib import Path
 
-    from brewing import Brewing
-    from brewing.db import Database, new_base
-    from brewing.db.settings import PostgresqlSettings
-    from brewing.healthcheck.viewset import HealthCheckViewset
-    from brewing.http import BrewingHTTP
+        from brewing import Brewing
+        from brewing.db import Database, new_base
+        from brewing.db.settings import PostgresqlSettings
+        from brewing.http import BrewingHTTP
 
-    # register database models by inheriting from this base.
-    # brewing will automatically scan for modules inheriting from this
-    # while starting up, to ensure consistent database metadadta.
-    Base = new_base()
+        # register database models by inheriting from this base.
+        # brewing will automatically scan for modules inheriting from this
+        # while starting up, to ensure consistent database metadadta.
+        Base = new_base()
 
-    # construct the application by providing the settings and components that make up the app.
-    app = Brewing(
-        name="generated-project",
-        database=Database(
-            metadata=Base.metadata,
-            revisions_directory=Path(__file__).parent / "db_revisions",
-            config_type=PostgresqlSettings,
-        ),
-        components={"http":BrewingHTTP(viewsets=[HealthCheckViewset()])}
-    )
+        def app():
+            "Application loading callable."
+            # Add your own imports here.
+            # Imports in functiom scope will be needed if you
+            # Have any models inheriting from Base outside of this file.
+            from brewing.healthcheck.viewset import HealthCheckViewset
 
-    ## TODO: can we remove this???
-    def __getattr__(name:str):
-        return getattr(app, name)
+            return Brewing(
+            name="generated-project",
+            database=Database(
+                metadata=Base.metadata,
+                revisions_directory=Path(__file__).parent / "db_revisions",
+                config_type=PostgresqlSettings,
+            ),
+            components={"http": BrewingHTTP(viewsets=[HealthCheckViewset()])},
+        )
+
 
     """
     )

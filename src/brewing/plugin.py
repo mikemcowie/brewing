@@ -32,7 +32,7 @@ def load_entrypoint(
     if not callable(obj):
         raise error
     obj = obj()
-    if isinstance(obj, CLI):
+    if isinstance(obj, (CLI, Brewing)):
         return obj  # pyright: ignore[reportUnknownVariableType]
     raise error
 

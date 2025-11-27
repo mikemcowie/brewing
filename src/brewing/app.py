@@ -44,6 +44,7 @@ class Brewing(ExcludeCachedProperty):
     name: str
     database: Database
     components: dict[str, BrewingComponentType | Database]
+    current_component: BrewingComponentType | None = None
 
     def __post_init__(self):
         for name, component in self.all_components.items():

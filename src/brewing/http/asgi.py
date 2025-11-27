@@ -15,7 +15,9 @@ import uvicorn
 from fastapi import FastAPI
 from typer import Option
 
+from brewing.context import current_app
 from brewing.db import testing
+from brewing.serialization import ExcludeCachedProperty
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -42,14 +44,17 @@ def find_calling_module():
 
 
 def _app_factory():
-    pass
+    current_component = current_app().current_component
+    if not isinstance(current_component, BrewingHTTP):
+        raise TypeError("Current component has not been set to a BrewingHTTP instance")
+    return current_component.fastapi
 
 
 _APP_FACTORY_NAME = f"{__name__}:{_app_factory.__name__}"
 
 
 @dataclass
-class BrewingHTTP:
+class BrewingHTTP(ExcludeCachedProperty):
     """
     The brewing application.
 
@@ -71,11 +76,12 @@ class BrewingHTTP:
         """Return fastapi instance associated with the HTTP class."""
         app = FastAPI(**asdict(self))
         for v in self.viewsets:
+            v.__post_init__()
             app.include_router(v.router)
         return app
 
     def __getstate__(self):
-        """Overrid the attributes dumped when the object is pickled.
+        """Override the attributes dumped when the object is pickled.
 
         This is used to bypass pickling the fastapi instance, which instead
         will be recreated as a cached property on first call after unpicking,
@@ -94,6 +100,7 @@ class BrewingHTTP:
 
     def register(self, name: str, brewing: Brewing, /):
         """Register http server to brewing."""
+        brewing.current_component = self
 
         @brewing.cli.typer.command(name)
         def run(
@@ -111,6 +118,7 @@ class BrewingHTTP:
                             host=host,
                             port=port,
                             reload=dev,
+                            factory=True,
                         )
                 return uvicorn.run(
                     _APP_FACTORY_NAME,
@@ -118,4 +126,5 @@ class BrewingHTTP:
                     workers=workers,
                     port=port,
                     reload=False,
+                    factory=True,
                 )
