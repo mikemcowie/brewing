@@ -35,13 +35,9 @@ def test_brewing(subtests: SubTests):
     with subtests.test("components-attribute"):
         assert app.all_components == {"comp1": comp1, "comp2": comp2, "db": db}
     with subtests.test("components-registered"):
-        comp1.register.assert_not_called()
-        comp2.register.assert_not_called()
-        db.register.assert_not_called()
-        with app:
-            comp1.register.assert_called_once_with("comp1", app)
-            comp2.register.assert_called_once_with("comp2", app)
-            db.register.assert_called_once_with("db", app)  # type: ignore
+        comp1.register.assert_called_once_with("comp1", app)
+        comp2.register.assert_called_once_with("comp2", app)
+        db.register.assert_called_once_with("db", app)  # type: ignore
 
 
 def sample_entrypoints():

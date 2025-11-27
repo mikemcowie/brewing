@@ -41,6 +41,13 @@ def find_calling_module():
             return mod_name
 
 
+def _app_factory():
+    pass
+
+
+_APP_FACTORY_NAME = f"{__name__}:{_app_factory.__name__}"
+
+
 @dataclass
 class BrewingHTTP:
     """
@@ -58,9 +65,6 @@ class BrewingHTTP:
     openapi_url: str | None = "/openapi.json"
     docs_url: str | None = "/docs"
     redoc_url: str | None = "/redoc"
-
-    def _app_string_identifier(self) -> str:
-        return f"{find_calling_module()}:{self.fastapi.extra.get('name', 'http')}"
 
     @cached_property
     def fastapi(self) -> FastAPI:
@@ -103,13 +107,13 @@ class BrewingHTTP:
                 if dev:
                     with testing.dev(brewing.database.database_type):
                         return uvicorn.run(
-                            self._app_string_identifier(),
+                            _APP_FACTORY_NAME,
                             host=host,
                             port=port,
                             reload=dev,
                         )
                 return uvicorn.run(
-                    self._app_string_identifier(),
+                    _APP_FACTORY_NAME,
                     host=host,
                     workers=workers,
                     port=port,
