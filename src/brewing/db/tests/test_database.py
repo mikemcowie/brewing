@@ -69,4 +69,4 @@ def test_default_migrations_revisions_directory(
 @pytest.mark.asyncio
 async def test_sample1(database_sample_1: Database):
     async with testing.upgraded(database_sample_1):
-        await db_sample1.run_sample(database_sample_1)
+        await db_sample1.run_sample()

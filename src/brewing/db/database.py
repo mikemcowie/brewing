@@ -5,18 +5,21 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import structlog
 from sqlalchemy import MetaData, text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from brewing.cli import CLI, CLIOptions
+from brewing.context import current_database
 from brewing.db.migrate import Migrations
 from brewing.db.settings import DatabaseType, load_db_config
 
@@ -28,6 +31,10 @@ if TYPE_CHECKING:
 
 
 logger = structlog.get_logger()
+
+_CURRENT_DB_SESSION: ContextVar[AsyncSession | None] = ContextVar(
+    "current_session", default=None
+)
 
 
 def _find_calling_file(stack: list[inspect.FrameInfo]):
@@ -64,6 +71,10 @@ class Database:
         state = self.__dict__.copy()
         state.pop("migrations", None)
         state.pop("cli", None)
+        state.pop("metadata", None)
+        _engine: dict[str, Any] | None = state.get("_engine")
+        if _engine:
+            _engine.clear()
         return state
 
     def register(self, name: str, brewing: Brewing, /):
@@ -86,10 +97,10 @@ class Database:
         Retry until timeout has elapsed.
         """
         start = datetime.now(UTC)
-        async with self.session() as session:
+        async with self.engine.begin() as conn:
             while True:
                 try:
-                    await session.execute(text("SELECT 1"))
+                    await conn.execute(text("SELECT 1"))
                 except Exception:
                     if (datetime.now(UTC) - start).total_seconds() > timeout:
                         raise
@@ -140,17 +151,15 @@ class Database:
             await self.engine.dispose()
         self.force_clear_engine()
 
-    @asynccontextmanager
-    async def session(self) -> AsyncGenerator[AsyncSession]:
-        """
-        Provide an async orm session for the database.
 
-        Returns:
-            AsyncGenerator[AsyncSession]: _description_
-
-        Yields:
-            Iterator[AsyncGenerator[AsyncSession]]: _description_
-
-        """
-        async with AsyncSession(bind=self.engine, expire_on_commit=False) as session:
-            yield session
+@asynccontextmanager
+async def db_session() -> AsyncGenerator[AsyncSession]:
+    db = current_database()
+    if session := _CURRENT_DB_SESSION.get():
+        yield session
+        return
+    async with AsyncSession(bind=db.engine, expire_on_commit=False) as session:
+        token = _CURRENT_DB_SESSION.set(session)
+        yield session
+        _CURRENT_DB_SESSION.reset(token)
+        await session.commit()

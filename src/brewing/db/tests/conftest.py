@@ -2,6 +2,7 @@ import pytest
 import pytest_asyncio
 from testing_samples import db_sample1
 
+from brewing import Brewing
 from brewing.db import Database, settings, testing
 
 
@@ -28,5 +29,7 @@ async def database_sample_1(running_db: None):
     db = Database(
         metadata=db_sample1.Base.metadata,
     )
-    yield db
+    app = Brewing(name="test", database=db, components={})
+    with app:
+        yield db
     await db.engine.dispose()

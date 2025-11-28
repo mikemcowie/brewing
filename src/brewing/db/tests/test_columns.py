@@ -11,7 +11,17 @@ from sqlalchemy.orm import (
     mapped_column,
 )
 
-from brewing.db import Database, columns, mixins, new_base, settings, testing
+from brewing import Brewing
+from brewing.context import push_app
+from brewing.db import (
+    Database,
+    columns,
+    mixins,
+    new_base,
+    settings,
+    testing,
+)
+from brewing.db.database import db_session
 
 Base = new_base()
 
@@ -34,7 +44,10 @@ def test_server_generated_uuid_pk():
 
 @pytest_asyncio.fixture
 async def db(db_type: settings.DatabaseType, running_db_session: None):
-    yield Database(metadata=Base.metadata)
+    db = Database(metadata=Base.metadata)
+    app = Brewing(name="test", database=db, components={})
+    with push_app(app):
+        yield db
 
 
 @pytest_asyncio.fixture()
@@ -51,10 +64,10 @@ async def test_incrementing_pk(
         await conn.run_sync(upgraded_db.metadata.create_all)
     instances = [HasIncrementingPrimaryKey() for _ in range(20)]
     assert {instance.id for instance in instances} == {None}
-    async with upgraded_db.session() as session:
+    async with db_session() as session:
         session.add_all(instances)
         await session.commit()
-    async with upgraded_db.session() as session:
+    async with db_session() as session:
         read_instances = (
             (await session.execute(sa.select(HasIncrementingPrimaryKey)))
             .scalars()
@@ -68,10 +81,10 @@ async def test_uuid_pk(
     upgraded_db: Database,
 ):
     instances = [SomeThing(json_col={"item": n}) for n in range(20)]
-    async with upgraded_db.session() as session:
+    async with db_session() as session:
         session.add_all(instances)
         await session.commit()
-    async with upgraded_db.session() as session:
+    async with db_session() as session:
         read_instances = (await session.execute(sa.select(SomeThing))).scalars().all()
     assert sorted([str(item.json_col) for item in read_instances]) == sorted(
         [str({"item": n}) for n in range(20)]
@@ -81,10 +94,10 @@ async def test_uuid_pk(
 @pytest.mark.asyncio
 async def test_created_updated_field_match_after_create(upgraded_db: Database):
     instance = SomeThing(json_col={"item": 1})
-    async with upgraded_db.session() as session:
+    async with db_session() as session:
         session.add(instance)
         await session.commit()
-    async with upgraded_db.session() as session:
+    async with db_session() as session:
         read_instance = (await session.execute(sa.select(SomeThing))).scalars().one()
         assert read_instance.created_at
         assert read_instance.updated_at
@@ -101,11 +114,11 @@ async def test_created_updated_field_changed_after_record_updated(
     upgraded_db: Database,
 ):
     instance = SomeThing(json_col={"item": 1})
-    async with upgraded_db.session() as session:
+    async with db_session() as session:
         session.add(instance)
         await session.commit()
     time.sleep(1.01)
-    async with upgraded_db.session() as session:
+    async with db_session() as session:
         read_instance = (await session.execute(sa.select(SomeThing))).scalars().one()
         assert read_instance.created_at
         assert read_instance.updated_at
@@ -119,7 +132,7 @@ async def test_created_updated_field_changed_after_record_updated(
         await session.execute(query)
         await session.commit()
 
-    async with upgraded_db.session() as session:
+    async with db_session() as session:
         read_instance = (await session.execute(sa.select(SomeThing))).scalars().one()
         assert read_instance.created_at
         assert read_instance.updated_at

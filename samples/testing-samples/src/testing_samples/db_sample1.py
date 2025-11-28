@@ -17,7 +17,6 @@ of "items", with a particular price paid associated with each "item".
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String, select
 from sqlalchemy.orm import (
@@ -28,8 +27,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-if TYPE_CHECKING:
-    from brewing.db import Database
+from brewing.db.database import db_session
 
 
 class Base(DeclarativeBase):
@@ -80,8 +78,8 @@ class OrderItem(MappedAsDataclass, Base, kw_only=True, init=False):
     item: Mapped[Item] = relationship(lazy="joined")
 
 
-async def run_sample(db: Database):
-    async with db.session() as session:
+async def run_sample():
+    async with db_session() as session:
         # create catalog
         tshirt, mug, hat, crowbar = (
             Item("SA T-Shirt", 10.99),
