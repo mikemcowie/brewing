@@ -51,7 +51,7 @@ def initial_app_file(context: ProjectConfiguration):
         return Brewing(
             name="generated-project",
             database=Database(
-                metadata=Base.metadata,
+                base=Base,
                 revisions_directory=Path(__file__).parent / "db_revisions",
                 db_type=DatabaseType.{context.db_type.value},
             ),

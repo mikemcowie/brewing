@@ -4,14 +4,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
-from sqlalchemy import MetaData, text
+from sqlalchemy import text
 from testing_samples import db_sample1
 
-from brewing.db import Database, testing
+from brewing.db import Database, new_base, testing
 from brewing.db.settings import DatabaseType, DBConfigurationError
 
 if TYPE_CHECKING:
     from pytest_subtests import SubTests
+
+Base = new_base()
 
 
 def test_database_initializing_without_specifying_database_type(
@@ -19,7 +21,7 @@ def test_database_initializing_without_specifying_database_type(
 ):
     # Given the db type in the environment
     # If we initialize a database
-    db = Database(metadata=MetaData())
+    db = Database(base=Base)
     # We can get a configuration of the expect type
     assert db.config.database_type is db_type
 
@@ -28,7 +30,7 @@ def test_database_initializing_with_specifying_database_type(
     db_type: DatabaseType, running_db: None, subtests: SubTests
 ):
     with subtests.test("right-type"):
-        db = Database(metadata=MetaData(), db_type=db_type)
+        db = Database(base=Base, db_type=db_type)
         assert db.config.database_type is db_type
     other_db_types = [t for t in DatabaseType if t is not db_type]
     for other_db_type in other_db_types:
@@ -37,7 +39,7 @@ def test_database_initializing_with_specifying_database_type(
             # that the environment variahles can connect to the other.
             continue
         with subtests.test(f"wromg-type-{other_db_type}"):
-            db = Database(metadata=MetaData(), db_type=other_db_type)
+            db = Database(base=Base, db_type=other_db_type)
             with pytest.raises(DBConfigurationError):
                 _ = db.config
 
@@ -45,7 +47,7 @@ def test_database_initializing_with_specifying_database_type(
 @pytest.mark.asyncio
 async def test_engine_cached(db_type: DatabaseType, running_db: None):
     dialect = db_type.dialect()
-    db = Database(metadata=MetaData())
+    db = Database(base=Base)
     assert db.engine is db.engine
     assert db.engine.url.drivername == f"{db_type.value}+{dialect.dialect_name}"
 
@@ -60,7 +62,7 @@ async def test_connect_with_engine(database_sample_1: Database):
 def test_default_migrations_revisions_directory(
     db_type: DatabaseType, running_db: None
 ):
-    db = Database(metadata=MetaData())
+    db = Database(base=Base)
     assert (
         db.migrations.revisions_dir == (Path(__file__).parent / "revisions").resolve()
     )

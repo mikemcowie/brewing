@@ -7,12 +7,10 @@ from importlib.metadata import EntryPoint
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
-from sqlalchemy import MetaData
-
 import brewing.plugin
 from brewing import CLI, CLIOptions, plugin
 from brewing.app import Brewing
-from brewing.db import Database
+from brewing.db import Database, new_base
 from brewing.db import testing as db_testing
 from brewing.db.settings import DatabaseType
 from brewing.healthcheck.viewset import HealthCheckViewset
@@ -78,7 +76,7 @@ def test_main_cli_brewing_entrypoints_of_current_project_added_to_root_cli():
     } == {"hidden", "foo-1"}
 
 
-metadata = MetaData()
+Base = new_base()
 
 
 def test_brewing_with_pickle_roundtrip(subtests: SubTests):
@@ -89,7 +87,7 @@ def test_brewing_with_pickle_roundtrip(subtests: SubTests):
         return pickle.loads(pickle.dumps(obj))
 
     with db_testing.testing(DatabaseType.sqlite):
-        database = Database(metadata=metadata)
+        database = Database(base=Base)
 
         with subtests.test("empty-case"):
             app = Brewing(name="test", database=database, components={})

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 def migrations(db_type: DatabaseType, running_db: Database, tmp_path: Path):
     migrations = Migrations(
         database=Database(
-            metadata=db_sample1.Base.metadata,
+            base=db_sample1.Base,
         ),
         revisions_dir=tmp_path / "revisions",
     )

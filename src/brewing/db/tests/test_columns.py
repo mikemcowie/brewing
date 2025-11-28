@@ -44,7 +44,7 @@ def test_server_generated_uuid_pk():
 
 @pytest_asyncio.fixture
 async def db(db_type: settings.DatabaseType, running_db_session: None):
-    db = Database(metadata=Base.metadata)
+    db = Database(base=Base)
     app = Brewing(name="test", database=db, components={})
     with push_app(app):
         yield db

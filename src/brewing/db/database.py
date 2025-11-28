@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import asyncio
-import functools
+import importlib
 import inspect
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from datetime import UTC, datetime
 from functools import cached_property
 from pathlib import Path
@@ -22,9 +22,12 @@ from brewing.cli import CLI, CLIOptions
 from brewing.context import current_database
 from brewing.db.migrate import Migrations
 from brewing.db.settings import DatabaseType, load_db_config
+from brewing.db.utilities import find_calling_frame
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
+
+    from sqlalchemy.orm import DeclarativeBase
 
     from brewing import Brewing
     from brewing.db.types import DatabaseConnectionConfiguration
@@ -37,29 +40,29 @@ _CURRENT_DB_SESSION: ContextVar[AsyncSession | None] = ContextVar(
 )
 
 
-def _find_calling_file(stack: list[inspect.FrameInfo]):
-    for frameinfo in stack:
-        if (
-            frameinfo.filename not in (__file__, functools.__file__)
-            and ".py" in frameinfo.filename
-        ):
-            return Path(frameinfo.filename)
-    raise RuntimeError("Could not find calling file.")
-
-
 @dataclass
 class Database:
     """Object encapsulating fundamental context of a service's sql database."""
 
-    metadata: MetaData = field(
-        compare=False
-    )  # Exclude Metadata from equality operation as it doesn't have a sane equality method.
+    # We go to significant lengths to make the declarative base live through pickling.
+    # even if its metadata references something unpickleable.
+    # we don't directly attach the base to the class, instead we pass it as ab initvar,
+    # store only a string reference to it in __post_init__, and recover the Base via importlib
+    # as a cached property.
+    base: InitVar[type[DeclarativeBase]] = field()  # pyright: ignore[reportRedeclaration]
     revisions_directory: Path = field(
-        default_factory=lambda: _find_calling_file(inspect.stack()).parent / "revisions"
+        default_factory=lambda: Path(
+            find_calling_frame(inspect.stack(), __file__).filename
+        ).parent
+        / "revisions"
     )
     db_type: DatabaseType | None = None
 
-    def __post_init__(self):
+    def __post_init__(self, base: type[DeclarativeBase]):  # pyright: ignore[reportGeneralTypeIssues]
+        self._base_ref = base.__module__, base.__name__
+        mod, attr = self._base_ref
+        if getattr(importlib.import_module(mod), attr) is not base:
+            raise TypeError(f"{base} must match the {attr} attribute of module {mod}")
         self._engine: dict[asyncio.AbstractEventLoop, AsyncEngine] = {}
 
     def __getstate__(self):
@@ -72,6 +75,7 @@ class Database:
         state.pop("migrations", None)
         state.pop("cli", None)
         state.pop("metadata", None)
+        state.pop("base_", None)
         _engine: dict[str, Any] | None = state.get("_engine")
         if _engine:
             _engine.clear()
@@ -80,6 +84,17 @@ class Database:
     def register(self, name: str, brewing: Brewing, /):
         """Register database to brewing."""
         brewing.cli.typer.add_typer(self.cli.typer, name=name)
+
+    @cached_property
+    def base_(self) -> type[DeclarativeBase]:
+        """Return the declarative base being used for this db."""
+        mod, attr = self._base_ref
+        return getattr(importlib.import_module(mod), attr)
+
+    @cached_property
+    def metadata(self) -> MetaData:
+        """The sqlalchemy metadata associated with the declarative base."""
+        return self.base_.metadata
 
     @cached_property
     def cli(self) -> CLI[CLIOptions]:
