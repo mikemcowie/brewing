@@ -100,7 +100,7 @@ class Migrations:
         from brewing.db import testing  # noqa: PLC0415
 
         with (
-            testing.testing(self._database.database_type),
+            testing.testing(self._database.config.database_type),
             self,
         ):
             command.upgrade(self.alembic, "head")
@@ -117,7 +117,7 @@ class Migrations:
         from brewing.db import testing  # noqa: PLC0415
 
         context = testing.dev if dev else testing.noop  # type: ignore
-        with context(self._database.database_type):
+        with context(self._database.config.database_type):
             yield
 
     def upgrade(self, revision: str = "head", dev: bool = False):

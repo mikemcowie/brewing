@@ -9,7 +9,7 @@ import pytest
 from brewing import Brewing
 from brewing.db import Database, MetaData
 from brewing.db import testing as testing_db
-from brewing.db.settings import DatabaseType, SQLiteSettings
+from brewing.db.settings import DatabaseType
 from brewing.healthcheck.viewset import HealthCheckViewset
 from brewing.http import BrewingHTTP, status
 from brewing.http.testing import TestClient
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 def database() -> Generator[Database]:
     """Return a database"""
     with testing_db.testing(DatabaseType.sqlite):
-        yield Database(metadata=MetaData(), config_type=SQLiteSettings)
+        yield Database(metadata=MetaData())
 
 
 @pytest.fixture

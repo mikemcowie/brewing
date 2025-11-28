@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 @pytest.mark.asyncio
 async def test_engine_cached(db_type: DatabaseType, running_db: None):
     dialect = db_type.dialect()
-    db = Database(metadata=MetaData(), config_type=dialect.connection_config_type)
+    db = Database(metadata=MetaData())
     assert db.engine is db.engine
     assert db.engine.url.drivername == f"{db_type.value}+{dialect.dialect_name}"
 
@@ -31,8 +31,7 @@ async def test_connect_with_engine(database_sample_1: Database):
 def test_default_migrations_revisions_directory(
     db_type: DatabaseType, running_db: None
 ):
-    dialect = db_type.dialect()
-    db = Database(metadata=MetaData(), config_type=dialect.connection_config_type)
+    db = Database(metadata=MetaData())
     assert (
         db.migrations.revisions_dir == (Path(__file__).parent / "revisions").resolve()
     )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from enum import StrEnum, auto
 from typing import TYPE_CHECKING, ClassVar
@@ -101,7 +102,6 @@ class PostgresqlSettings(OurBaseSettings):
             return None
 
     model_config = SettingsConfigDict(frozen=True)
-
     database_type: ClassVar = DatabaseType.postgresql
     PGHOST: str
     PGPORT: int
@@ -125,7 +125,6 @@ class PostgresqlSettings(OurBaseSettings):
 class MySQLSettings(OurBaseSettings):
     """Connection settings for mysql."""
 
-    dialect: ClassVar = DatabaseType.mysql
     if TYPE_CHECKING:
 
         def __init__(self):
@@ -138,10 +137,10 @@ class MySQLSettings(OurBaseSettings):
     MYSQL_TCP_PORT: int
     MYSQL_DATABASE: str
 
-    def url(self):
+    def url(self) -> URL:
         """Provide url for instance."""
         return load_url(
-            self.dialect,
+            self.database_type,
             username=self.MYSQL_USER,
             password=self.MYSQL_PWD,
             host=self.MYSQL_HOST,
@@ -154,7 +153,6 @@ class MySQLSettings(OurBaseSettings):
 class MariaDBSettings(MySQLSettings):
     """Connection settings for mariadb."""
 
-    dialect: ClassVar = DatabaseType.mariadb
     database_type: ClassVar = DatabaseType.mariadb
     if TYPE_CHECKING:
 
@@ -162,6 +160,7 @@ class MariaDBSettings(MySQLSettings):
             return None
 
 
+DB_TYPE_ENV = "DB_TYPE"
 # fmt: off
 _DATABASE_TYPE_TO_DIALECT = {
 DatabaseType.sqlite:     Dialect( DatabaseType.sqlite,     "aiosqlite", "aiosqlite", SQLiteSettings     ),
@@ -169,4 +168,21 @@ DatabaseType.postgresql: Dialect( DatabaseType.postgresql, "psycopg",   "psycopg
 DatabaseType.mysql:      Dialect( DatabaseType.mysql,      "aiomysql",  "aiomysql",  MySQLSettings      ),
 DatabaseType.mariadb:    Dialect( DatabaseType.mariadb,    "aiomysql",  "aiomysql",  MariaDBSettings    ),
 }
+_DATABASE_TYPE_STR_TO_DIALECT = {k.value:v for k,v in _DATABASE_TYPE_TO_DIALECT.items()}
 # fmt: on
+
+
+class DBConfigurationError(RuntimeError):
+    """Error with database configuration"""
+
+
+def load_db_config() -> DatabaseConnectionConfiguration:
+    """Load database configuration"""
+    db_type = os.environ.get(DB_TYPE_ENV)
+    if not db_type:
+        raise DBConfigurationError(f"Environment variable {DB_TYPE_ENV} is not set")
+    if db_type not in DatabaseType:
+        raise DBConfigurationError(
+            f"{DB_TYPE_ENV}={db_type} is not in valid values {[opt.value for opt in DatabaseType]}"
+        )
+    return _DATABASE_TYPE_STR_TO_DIALECT[db_type].connection_config_type()
