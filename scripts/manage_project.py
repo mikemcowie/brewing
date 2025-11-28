@@ -156,8 +156,7 @@ class ProjectManager(CLI[CLIOptions]):
     def release(self):
         version = self._read_version()
         dist_dir = self._clean_dist_dir()
-        for project in self._published_packages():
-            self._run("uv", "build", str(project), "--out-dir", str(dist_dir))
+        self._run("uv", "build", "--out-dir", str(dist_dir))
         release_cmd = [
             "gh",
             "release",
