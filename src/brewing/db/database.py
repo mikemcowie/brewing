@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 
 from brewing.cli import CLI, CLIOptions
 from brewing.db.migrate import Migrations
-from brewing.db.settings import load_db_config
+from brewing.db.settings import DatabaseType, load_db_config
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -50,6 +50,7 @@ class Database:
     revisions_directory: Path = field(
         default_factory=lambda: _find_calling_file(inspect.stack()).parent / "revisions"
     )
+    db_type: DatabaseType | None = None
 
     def __post_init__(self):
         self._engine: dict[asyncio.AbstractEventLoop, AsyncEngine] = {}
@@ -107,7 +108,7 @@ class Database:
     @cached_property
     def config(self) -> DatabaseConnectionConfiguration:
         """Database configuration object."""
-        return load_db_config()
+        return load_db_config(self.db_type.value if self.db_type else None)
 
     @property
     def engine(self):

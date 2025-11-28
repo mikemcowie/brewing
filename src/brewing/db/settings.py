@@ -8,6 +8,7 @@ from enum import StrEnum, auto
 from typing import TYPE_CHECKING, ClassVar
 
 from frozendict import frozendict
+from pydantic import ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL
 
@@ -176,13 +177,18 @@ class DBConfigurationError(RuntimeError):
     """Error with database configuration"""
 
 
-def load_db_config() -> DatabaseConnectionConfiguration:
+def load_db_config(db_type: str | None) -> DatabaseConnectionConfiguration:
     """Load database configuration"""
-    db_type = os.environ.get(DB_TYPE_ENV)
+    db_type = db_type or os.environ.get(DB_TYPE_ENV)
     if not db_type:
         raise DBConfigurationError(f"Environment variable {DB_TYPE_ENV} is not set")
     if db_type not in DatabaseType:
         raise DBConfigurationError(
-            f"{DB_TYPE_ENV}={db_type} is not in valid values {[opt.value for opt in DatabaseType]}"
+            f"{db_type} is not in valid values {[opt.value for opt in DatabaseType]}"
         )
-    return _DATABASE_TYPE_STR_TO_DIALECT[db_type].connection_config_type()
+    try:
+        return _DATABASE_TYPE_STR_TO_DIALECT[db_type].connection_config_type()
+    except ValidationError as error:
+        raise DBConfigurationError(
+            "Failed to load database config from environment variables"
+        ) from error
