@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from brewing.db import DatabaseType
+
 type FileContentGenerator = str | Callable[[ProjectConfiguration], str]
 type FileNameGenerator = str | Callable[[ProjectConfiguration], str]
 type Directory = MutableMapping[FileNameGenerator, File]
@@ -18,6 +20,7 @@ class ProjectConfiguration:
     """Shared context for the project initialization."""
 
     name: str
+    db_type: DatabaseType
     path: Path
 
 

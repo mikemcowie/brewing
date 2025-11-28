@@ -59,4 +59,7 @@ class PyprojectTomlData(BaseModel):
 
     project: Project
     build_system: BuildSystem = Field(default=..., serialization_alias="build-system")
+    dependency_groups: RootModel[dict[str, list[str]]] | None = Field(
+        default=None, serialization_alias="dependency-groups"
+    )
     tool: RootModel[dict[str, Any]] | None = None

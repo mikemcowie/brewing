@@ -3,7 +3,7 @@ from pathlib import Path
 
 from brewing import Brewing
 from brewing.db import Database, new_base
-from brewing.db.settings import PostgresqlSettings
+from brewing.db.settings import DatabaseType
 from brewing.http import BrewingHTTP
 
 # register database models by inheriting from this base.
@@ -23,7 +23,9 @@ def app():
         database=Database(
             metadata=Base.metadata,
             revisions_directory=Path(__file__).parent / "db_revisions",
-            config_type=PostgresqlSettings,
+            db_type=DatabaseType.sqlite,
         ),
-        components={"http": BrewingHTTP(viewsets=[HealthCheckViewset()])},
+        components={
+            "http": BrewingHTTP(viewsets=[HealthCheckViewset(tags=["health"])])
+        },
     )
