@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from brewing.db import DatabaseType
 from brewing.project.generation import (
     Directory,
     ManagedDirectory,
@@ -23,7 +24,10 @@ def test_project_materializes_files_in_immediate_directory(tmp_path: Path):
         "file2": "bar",
     }
     directory = ManagedDirectory(
-        files=files, config=ProjectConfiguration(name="test-project", path=tmp_path)
+        files=files,
+        config=ProjectConfiguration(
+            name="test-project", path=tmp_path, db_type=DatabaseType.sqlite
+        ),
     )
     assert not list(tmp_path.iterdir())
     # If we materialize the project.
@@ -54,7 +58,10 @@ def test_project_materializes_subdirectories(tmp_path: Path):
         },
     }
     directory = ManagedDirectory(
-        files=files, config=ProjectConfiguration(name="test", path=tmp_path)
+        files=files,
+        config=ProjectConfiguration(
+            name="test", path=tmp_path, db_type=DatabaseType.sqlite
+        ),
     )
     # If we materialize
     materialize_directory(directory)
@@ -106,7 +113,10 @@ def test_computing(tmp_path: Path):
     }
 
     directory = ManagedDirectory(
-        files=files, config=ProjectConfiguration(name="test-computed", path=tmp_path)
+        files=files,
+        config=ProjectConfiguration(
+            name="test-computed", path=tmp_path, db_type=DatabaseType.sqlite
+        ),
     )
     materialize_directory(directory)
     assert set(tmp_path.glob("**")) == {

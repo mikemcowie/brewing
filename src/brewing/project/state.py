@@ -23,43 +23,43 @@ def empty_file_content(context: ProjectConfiguration):  # noqa: ARG001
     return ""
 
 
-def initial_app_file(context: ProjectConfiguration):  # noqa: ARG001
+def initial_app_file(context: ProjectConfiguration):
     """Return the content of the initial app.py file."""
     return dedent(
-        """
+        f'''
 
-        # ruff: noqa: PLC0415
-        from pathlib import Path
+    # ruff: noqa: PLC0415
+    from pathlib import Path
 
-        from brewing import Brewing
-        from brewing.db import Database, new_base
-        from brewing.db.settings import PostgresqlSettings
-        from brewing.http import BrewingHTTP
+    from brewing import Brewing
+    from brewing.db import Database, new_base
+    from brewing.db.settings import DatabaseType
+    from brewing.http import BrewingHTTP
 
-        # register database models by inheriting from this base.
-        # brewing will automatically scan for modules inheriting from this
-        # while starting up, to ensure consistent database metadadta.
-        Base = new_base()
+    # register database models by inheriting from this base.
+    # brewing will automatically scan for modules inheriting from this
+    # while starting up, to ensure consistent database metadadta.
+    Base = new_base()
 
-        def app():
-            "Application loading callable."
-            # Add your own imports here.
-            # Imports in functiom scope will be needed if you
-            # Have any models inheriting from Base outside of this file.
-            from brewing.healthcheck.viewset import HealthCheckViewset
 
-            return Brewing(
+    def app():
+        """Application loading callable."""
+        # You are likely to need to delay imports until inside this function
+        # To avoid circular imports of models inheriting from Base .
+        from brewing.healthcheck.viewset import HealthCheckViewset
+
+        return Brewing(
             name="generated-project",
             database=Database(
                 metadata=Base.metadata,
                 revisions_directory=Path(__file__).parent / "db_revisions",
-                config_type=PostgresqlSettings,
+                db_type=DatabaseType.{context.db_type.value},
             ),
-            components={"http": BrewingHTTP(viewsets=[HealthCheckViewset()])},
+            components={{"http": BrewingHTTP(viewsets=[HealthCheckViewset(tags=["health"])])}},
         )
 
 
-    """
+    '''
     )
 
 
@@ -74,7 +74,7 @@ def load_pyproject_content(context: ProjectConfiguration):
                 name=context.name,
                 version="0.0.1",
                 requires_python=f">={sys.version_info.major}.{sys.version_info.minor}",
-                dependencies=["brewing", "psycopg[binary]"],
+                dependencies=[f"brewing[{context.db_type.value}]"],
                 readme="README.md",
                 entry_points=RootModel(
                     root={
@@ -87,6 +87,7 @@ def load_pyproject_content(context: ProjectConfiguration):
             build_system=pyproject.BuildSystem(
                 requires=["hatchling"], build_backend="hatchling.build"
             ),
+            dependency_groups=RootModel(root={"dev": ["brewing[testing]", "pytest"]}),
         ).model_dump(mode="json", exclude_none=True, by_alias=True)
     )
 

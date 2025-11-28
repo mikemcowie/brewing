@@ -71,32 +71,38 @@ def test_cli_commands_change_if_active_project_found(tmp_path: Path):
 
         # If I run init in the directory
         runner = cli_runner()
-        runner.invoke(["init", "--path", str(project_dir)], catch_exceptions=False)
+        runner.invoke(
+            ["init", "--path", str(project_dir), "--db-type", "sqlite"],
+            catch_exceptions=False,
+        )
         # Then the command names are different with the existing commands moved
         out = runner.invoke(
-            ["init", "--path", str(project_dir)], catch_exceptions=False
+            ["init", "--path", str(project_dir), "--db-type", "sqlite"],
+            catch_exceptions=False,
         )
         assert "project" in out.output, out.output
         assert "my-project" in out.output, out.output
 
 
-def test_project_init(tmp_path: Path):
+@pytest.mark.parametrize("db_type", DatabaseType, ids=[t.value for t in DatabaseType])
+def test_project_init(tmp_path: Path, db_type: DatabaseType):
     """CLI allows project initialization."""
     # Given an empty directory
     project_dir = tmp_path / "my-project"
     project_dir.mkdir()
     # If I run init in the directory
     runner = cli_runner()
-    runner.invoke(["init", "--path", str(project_dir)], catch_exceptions=False)
+    runner.invoke(
+        ["init", "--path", str(project_dir), "--db-type", db_type.value],
+        catch_exceptions=False,
+    )
     subprocess.run([uv.find_uv_bin(), "sync"], check=True, cwd=project_dir)
     # Change install of brewing to local install
     subprocess.run(
         [
             uv.find_uv_bin(),
             "add",
-            str(
-                Path(brewing.__file__).parents[2].relative_to(project_dir, walk_up=True)
-            ),
+            f"{Path(brewing.__file__).parents[2].relative_to(project_dir, walk_up=True)!s}[{db_type.value}]",
         ],
         check=True,
         cwd=project_dir,
@@ -130,6 +136,7 @@ def test_project_init(tmp_path: Path):
             "run",
             "brewing",
             "http",
+            "--dev",
             readiness_callback=readiness_callback,
             cwd=project_dir,
         ),

@@ -112,7 +112,12 @@ class BrewingHTTP(ExcludeCachedProperty):
             """Run the HTTP server."""
             with brewing:
                 if dev:
-                    with testing.dev(brewing.database.database_type):
+                    context = (
+                        testing.dev(brewing.database.db_type)
+                        if brewing.database.db_type
+                        else testing.noop()
+                    )  # pyright: ignore[reportUnknownMemberType]
+                    with context:
                         return uvicorn.run(
                             _APP_FACTORY_NAME,
                             host=host,

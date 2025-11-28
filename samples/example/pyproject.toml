@@ -2,7 +2,9 @@
 name = "example"
 readme = "README.md"
 version = "0.0.1"
-dependencies = ["brewing", "psycopg[binary]"]
+dependencies = [
+    "brewing[mariadb,sqlite]",
+]
 requires-python = ">=3.14"
 
 [project.entry-points.brewing]
@@ -11,3 +13,9 @@ example = "example.app:app"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["brewing[testing]", "pytest"]
+
+[tool.uv.sources]
+brewing = { workspace = true }

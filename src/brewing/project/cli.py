@@ -6,7 +6,7 @@ to the rails CLI for rails or manage.py for django.
 """
 
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import structlog
 from typer import Option
@@ -14,6 +14,9 @@ from typer import Option
 from brewing.cli import CLI, CLIOptions
 from brewing.project.generation import ProjectConfiguration
 from brewing.project.state import init
+
+if TYPE_CHECKING:
+    from brewing.db import DatabaseType
 
 logger = structlog.get_logger()
 
@@ -27,6 +30,9 @@ class ProjectCLI(CLI[CLIOptions]):
 
     def init(
         self,
+        db_type: Annotated[
+            DatabaseType, Option(help="database type to initialize for.")
+        ],
         name: Annotated[
             str | None,
             Option(
@@ -39,7 +45,9 @@ class ProjectCLI(CLI[CLIOptions]):
     ):
         """Initialize a new brewing project."""
         path = path or Path.cwd()
-        config = ProjectConfiguration(name=name or path.name, path=path.resolve())
+        config = ProjectConfiguration(
+            name=name or path.name, path=path.resolve(), db_type=db_type
+        )
         logger.info("generating project skeleton", config=config)
         init(config)
 
