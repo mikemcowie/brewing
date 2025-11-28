@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from brewing import Brewing
-from brewing.db import Database, MetaData
+from brewing.db import Database, new_base
 from brewing.db import testing as testing_db
 from brewing.db.settings import DatabaseType
 from brewing.healthcheck.viewset import HealthCheckViewset
@@ -17,12 +17,14 @@ from brewing.http.testing import TestClient
 if TYPE_CHECKING:
     from collections.abc import Generator
 
+Base = new_base()
+
 
 @pytest.fixture
 def database() -> Generator[Database]:
     """Return a database"""
     with testing_db.testing(DatabaseType.sqlite):
-        yield Database(metadata=MetaData())
+        yield Database(base=Base)
 
 
 @pytest.fixture

@@ -21,9 +21,9 @@ def app():
     return Brewing(
         name="generated-project",
         database=Database(
-            metadata=Base.metadata,
+            base=Base,
             revisions_directory=Path(__file__).parent / "db_revisions",
-            db_type=DatabaseType.sqlite,
+            db_type=DatabaseType.postgresql,
         ),
         components={
             "http": BrewingHTTP(viewsets=[HealthCheckViewset(tags=["health"])])

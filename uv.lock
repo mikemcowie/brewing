@@ -516,7 +516,7 @@ name = "example"
 version = "0.0.1"
 source = { editable = "samples/example" }
 dependencies = [
-    { name = "brewing", extra = ["mariadb", "sqlite"] },
+    { name = "brewing", extra = ["postgresql"] },
 ]
 
 [package.dev-dependencies]
@@ -526,7 +526,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "brewing", extras = ["mariadb", "sqlite"], editable = "." }]
+requires-dist = [{ name = "brewing", extras = ["postgresql"], editable = "." }]
 
 [package.metadata.requires-dev]
 dev = [

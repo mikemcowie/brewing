@@ -26,9 +26,7 @@ def running_db(running_db_session: None, db_type: settings.DatabaseType):
 
 @pytest_asyncio.fixture
 async def database_sample_1(running_db: None):
-    db = Database(
-        metadata=db_sample1.Base.metadata,
-    )
+    db = Database(base=db_sample1.Base)
     app = Brewing(name="test", database=db, components={})
     with app:
         yield db
