@@ -14,7 +14,7 @@ from brewing import CLI, CLIOptions, plugin
 from brewing.app import Brewing
 from brewing.db import Database
 from brewing.db import testing as db_testing
-from brewing.db.settings import DatabaseType, SQLiteSettings
+from brewing.db.settings import DatabaseType
 from brewing.healthcheck.viewset import HealthCheckViewset
 from brewing.http import BrewingHTTP
 
@@ -89,7 +89,7 @@ def test_brewing_with_pickle_roundtrip(subtests: SubTests):
         return pickle.loads(pickle.dumps(obj))
 
     with db_testing.testing(DatabaseType.sqlite):
-        database = Database(metadata=metadata, config_type=SQLiteSettings)
+        database = Database(metadata=metadata)
 
         with subtests.test("empty-case"):
             app = Brewing(name="test", database=database, components={})

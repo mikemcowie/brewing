@@ -34,9 +34,7 @@ def test_server_generated_uuid_pk():
 
 @pytest_asyncio.fixture
 async def db(db_type: settings.DatabaseType, running_db_session: None):
-    yield Database(
-        metadata=Base.metadata, config_type=db_type.dialect().connection_config_type
-    )
+    yield Database(metadata=Base.metadata)
 
 
 @pytest_asyncio.fixture()

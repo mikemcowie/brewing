@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 
 from brewing.cli import CLI, CLIOptions
 from brewing.db.migrate import Migrations
+from brewing.db.settings import load_db_config
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -43,7 +44,6 @@ def _find_calling_file(stack: list[inspect.FrameInfo]):
 class Database:
     """Object encapsulating fundamental context of a service's sql database."""
 
-    config_type: type[DatabaseConnectionConfiguration]
     metadata: MetaData = field(
         compare=False
     )  # Exclude Metadata from equality operation as it doesn't have a sane equality method.
@@ -52,7 +52,6 @@ class Database:
     )
 
     def __post_init__(self):
-        self._config: DatabaseConnectionConfiguration | None = None
         self._engine: dict[asyncio.AbstractEventLoop, AsyncEngine] = {}
 
     def __getstate__(self):
@@ -105,17 +104,10 @@ class Database:
             revisions_dir=self.revisions_directory,
         )
 
-    @property
+    @cached_property
     def config(self) -> DatabaseConnectionConfiguration:
         """Database configuration object."""
-        if not self._config:
-            self._config = self.config_type()
-        return self._config
-
-    @property
-    def database_type(self):
-        """The database type."""
-        return self.config_type.database_type
+        return load_db_config()
 
     @property
     def engine(self):

@@ -100,6 +100,7 @@ def _postgresql():
             create_database(url)
         with env(
             {
+                "DB_TYPE": "postgresql",
                 "PGUSER": pg.username,
                 "PGPASSWORD": pg.password,
                 "PGPORT": str(port),
@@ -118,6 +119,7 @@ def _postgresql_compose():
     with (
         env(
             {
+                "DB_TYPE": "postgresql",
                 "PGHOST": "127.0.0.1",
                 "PGPORT": str(port),
                 "PGDATABASE": "test",
@@ -137,7 +139,12 @@ def _postgresql_compose():
 def _sqlite():
     with (
         TemporaryDirectory(delete=False) as db_dir,
-        env({"SQLITE_DATABASE": str(Path(db_dir) / "db.sqlite")}),
+        env(
+            {
+                "DB_TYPE": DatabaseType.sqlite.value,
+                "SQLITE_DATABASE": str(Path(db_dir) / "db.sqlite"),
+            }
+        ),
     ):
         yield
 
@@ -164,6 +171,7 @@ def _mysql(
             create_database(url)
         with env(
             {
+                "DB_TYPE": "mariadb" if "mariadb" in image else "mysql",
                 "MYSQL_HOST": "127.0.0.1",
                 "MYSQL_USER": "root",
                 "MYSQL_PWD": mysql.root_password,
@@ -182,6 +190,7 @@ def _mysql_compose(image: str = "mysql:latest"):
     with (
         env(
             {
+                "DB_TYPE": "mariadb" if "mariadb" in image else "mysql",
                 "MYSQL_HOST": "127.0.0.1",
                 "MYSQL_USER": "test",
                 "MYSQL_PWD": "test",
