@@ -8,9 +8,38 @@ from sqlalchemy import MetaData, text
 from testing_samples import db_sample1
 
 from brewing.db import Database, testing
+from brewing.db.settings import DatabaseType, DBConfigurationError
 
 if TYPE_CHECKING:
-    from brewing.db.settings import DatabaseType
+    from pytest_subtests import SubTests
+
+
+def test_database_initializing_without_specifying_database_type(
+    db_type: DatabaseType, running_db: None
+):
+    # Given the db type in the environment
+    # If we initialize a database
+    db = Database(metadata=MetaData())
+    # We can get a configuration of the expect type
+    assert db.config.database_type is db_type
+
+
+def test_database_initializing_with_specifying_database_type(
+    db_type: DatabaseType, running_db: None, subtests: SubTests
+):
+    with subtests.test("right-type"):
+        db = Database(metadata=MetaData(), db_type=db_type)
+        assert db.config.database_type is db_type
+    other_db_types = [t for t in DatabaseType if t is not db_type]
+    for other_db_type in other_db_types:
+        if {db_type, other_db_type} == {DatabaseType.mariadb, DatabaseType.mysql}:
+            # Skip this check for mariadb and mysql which are close enough
+            # that the environment variahles can connect to the other.
+            continue
+        with subtests.test(f"wromg-type-{other_db_type}"):
+            db = Database(metadata=MetaData(), db_type=other_db_type)
+            with pytest.raises(DBConfigurationError):
+                _ = db.config
 
 
 @pytest.mark.asyncio
