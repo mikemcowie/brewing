@@ -6,17 +6,15 @@ to the rails CLI for rails or manage.py for django.
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 import structlog
 from typer import Option
 
 from brewing.cli import CLI, CLIOptions
+from brewing.db import DatabaseType  # noqa: TC001
 from brewing.project.generation import ProjectConfiguration
 from brewing.project.state import init
-
-if TYPE_CHECKING:
-    from brewing.db import DatabaseType
 
 logger = structlog.get_logger()
 

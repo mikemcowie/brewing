@@ -5,23 +5,19 @@ from __future__ import annotations
 import base64
 import os
 import pickle
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Generator, MutableMapping
 
-    from sqlalchemy.ext.asyncio import AsyncSession
-
     from brewing import Brewing
     from brewing.db import Database
 
-## The actual contextvars are private here:
+
 _CURRENT_APP: ContextVar[Brewing | None] = ContextVar("current_app", default=None)
-_CURRENT_DB_SESSION: ContextVar[AsyncSession | None] = ContextVar(
-    "current_session", default=None
-)
+
 CURRENT_APP_BYTES_ENV = "CURRENT_APP_BYTES"
 
 
@@ -53,19 +49,6 @@ def push_app(app: Brewing):
 def current_database() -> Database:
     """Return the database of the currently active brewing app."""
     return current_app().database
-
-
-@asynccontextmanager
-async def db_session():  ### TODO - make sure all db access is through this.
-    db = current_database()
-    if session := _CURRENT_DB_SESSION.get():
-        yield session
-        return
-    async with db.session() as session:
-        token = _CURRENT_DB_SESSION.set(session)
-        yield session
-        _CURRENT_DB_SESSION.reset(token)
-        await session.commit()
 
 
 @contextmanager
