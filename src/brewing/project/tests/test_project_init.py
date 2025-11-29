@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import os
 import signal
+import socket
 import subprocess
 import sys
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -23,6 +25,13 @@ from brewing.project import cli
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+
+def find_free_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(("", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
 
 
 @contextmanager
@@ -121,24 +130,25 @@ def test_project_init(tmp_path: Path, db_type: DatabaseType):
         project_dir / ".gitignore",
     }
 
-    @retry(wait=wait_exponential_jitter(initial=0.1, max=2), stop=stop_after_delay(10))
-    def readiness_callback():
-        live_status = httpx.get("http://127.0.0.1:8000/livez")
+    @retry(wait=wait_exponential_jitter(initial=0.1, max=2), stop=stop_after_delay(15))
+    def readiness_callback(port: int):
+        live_status = httpx.get(f"http://127.0.0.1:{port}/livez")
         live_status.raise_for_status()
-        ready_status = httpx.get("http://127.0.0.1:8000/readyz")
+        ready_status = httpx.get(f"http://127.0.0.1:{port}/readyz")
         ready_status.raise_for_status()
 
     # start the dev server (in another thread)
-    with (
-        db_testing.dev(DatabaseType.postgresql),
-        run(
+    with db_testing.dev(db_type):
+        port = find_free_port()
+        with run(
             "uv",
             "run",
             "brewing",
             "http",
             "--dev",
-            readiness_callback=readiness_callback,
+            "--port",
+            str(port),
+            readiness_callback=partial(readiness_callback, port),
             cwd=project_dir,
-        ),
-    ):
-        pass  # The test is all in the contextmanager
+        ):
+            pass  # The test is all in the contextmanager
