@@ -5,7 +5,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException
 
-from brewing.http import ViewSet, self, status
+from brewing.http import ViewSet, base_path, status
 from brewing.http.path import DeferredDecoratorCall
 from brewing.http.testing import new_client
 from brewing.http.tests.helpers import SomeData
@@ -22,12 +22,12 @@ class ItemViewSet(ViewSet):
         self._deleted: dict[int, list[SomeData]] = {}
         self._replaced: dict[int, list[SomeData]] = {}
 
-    @self.GET()
+    @base_path.GET()
     def list_items(self) -> list[SomeData]:
         """List all the items."""
         return list(self._db.values())
 
-    @self.POST(status_code=status.HTTP_201_CREATED)
+    @base_path.POST(status_code=status.HTTP_201_CREATED)
     def create_item(self, item: SomeData) -> SomeData:
         """Create an item."""
         try:
@@ -37,7 +37,7 @@ class ItemViewSet(ViewSet):
         self._db[item_id] = item
         return item
 
-    item_id = self("{item_id}")
+    item_id = base_path("{item_id}")
 
     @item_id.DEPENDS()
     def item(self, item_id: int) -> SomeData:
@@ -80,11 +80,11 @@ class ItemViewSet(ViewSet):
 def test_deferred_annotations():
     assert ItemViewSet.item_id.path == "/{item_id}"
     assert ItemViewSet.list_items._deferred_decorations == [  # type: ignore[reportFunctionMemberAccess]
-        DeferredDecoratorCall(self, HTTPMethod.GET, args=(), kwargs={})
+        DeferredDecoratorCall(base_path, HTTPMethod.GET, args=(), kwargs={})
     ]
     assert ItemViewSet.create_item._deferred_decorations == [  # type: ignore[reportFunctionMemberAccess]
         DeferredDecoratorCall(
-            self, HTTPMethod.POST, args=(), kwargs={"status_code": 201}
+            base_path, HTTPMethod.POST, args=(), kwargs={"status_code": 201}
         )
     ]
     assert ItemViewSet.get_item._deferred_decorations == [  # type: ignore[reportFunctionMemberAccess]
@@ -139,7 +139,7 @@ def test_self_refers_to_correct_viewset():
     class VS1(ViewSet):
         value = "v1"
 
-        @self.GET()
+        @base_path.GET()
         def read_value(self):
             return self.value
 
@@ -167,7 +167,7 @@ def test_fastapi_style_dependencies():
         def dep3(self, dep2: Annotated[str, Depends(dep2)]):
             return dep2 + "dep3"
 
-        @self.GET()
+        @base_path.GET()
         def read_value(self, dep3: Annotated[str, Depends(dep3)]):
             return dep3
 

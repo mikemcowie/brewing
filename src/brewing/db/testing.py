@@ -251,6 +251,8 @@ async def upgraded(db: Database):
     async with db.engine.begin() as conn:
         await conn.run_sync(db.metadata.create_all)
         asyncio.get_running_loop().run_in_executor(None, db.migrations.stamp, "head")
+        await conn.commit()
+        await conn.close()
     yield
     async with db.engine.begin() as conn:
         await conn.run_sync(db.metadata.drop_all)

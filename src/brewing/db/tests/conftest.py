@@ -1,6 +1,6 @@
 import pytest
 import pytest_asyncio
-from testing_samples import db_sample1
+from testing_samples import sample1
 
 from brewing import Brewing
 from brewing.db import Database, settings, testing
@@ -18,16 +18,18 @@ def running_db_session(db_type: settings.DatabaseType):
         yield
 
 
-@pytest.fixture
-def running_db(running_db_session: None, db_type: settings.DatabaseType):
-    with testing.testing(db_type):
-        yield
-
-
 @pytest_asyncio.fixture
-async def database_sample_1(running_db: None):
-    db = Database(base=db_sample1.Base)
+async def db_sample_1(db_type: settings.DatabaseType):
+    db = Database(base=sample1.Base, db_type=db_type)
     app = Brewing(name="test", database=db, components={})
-    with app:
+    with testing.testing(db_type), app:
         yield db
     await db.engine.dispose()
+
+
+@pytest.fixture
+def running_db(
+    db_sample_1: Database, running_db_session: None, db_type: settings.DatabaseType
+):
+    with testing.testing(db_type):
+        yield

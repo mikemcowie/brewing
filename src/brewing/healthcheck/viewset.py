@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse, Response
 from pydantic import BaseModel, Field
 
 from brewing import current_database
-from brewing.http import ViewSet, self, status
+from brewing.http import ViewSet, base_path, status
 
 logger = structlog.get_logger()
 
@@ -40,8 +40,8 @@ class HealthCheckViewset(ViewSet):
     """
 
     timeout: float = 1.0
-    livez = self("livez")
-    readyz = self("readyz")
+    livez = base_path("livez")
+    readyz = base_path("readyz")
 
     async def _check(self, dependency: HealthCheckDependency):
         try:
