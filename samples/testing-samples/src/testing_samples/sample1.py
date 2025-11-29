@@ -20,83 +20,75 @@ from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, ForeignKey, String, select
 from sqlalchemy.orm import (
-    DeclarativeBase,
     Mapped,
     MappedAsDataclass,
     mapped_column,
     relationship,
 )
 
-from brewing.db.database import db_session
+from brewing.db import db_session, new_base
+
+Base = new_base()
 
 
-class Base(DeclarativeBase):
-    pass
-
-
-class Order(MappedAsDataclass, Base, kw_only=True, init=False):
-    __tablename__ = "order"
-
-    order_id: Mapped[int] = mapped_column(primary_key=True)
-    customer_name: Mapped[str] = mapped_column(String(30))
-    order_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    order_items: Mapped[list[OrderItem]] = relationship(
-        cascade="all, delete-orphan", backref="order"
-    )
-
-    def __init__(self, customer_name: str) -> None:
-        self.customer_name = customer_name
-        self.order_date = datetime.now(UTC)
-
-
-class Item(MappedAsDataclass, Base, kw_only=True, init=False):
-    __tablename__ = "item"
-    item_id: Mapped[int] = mapped_column(primary_key=True)
-    description: Mapped[str] = mapped_column(String(30))
-    price: Mapped[float]
-
-    def __init__(self, description: str, price: float) -> None:
-        self.description = description
-        self.price = price
-
-    def __repr__(self) -> str:
-        return f"Item({self.description!r}, {self.price!r})"
-
-
-class OrderItem(MappedAsDataclass, Base, kw_only=True, init=False):
-    __tablename__ = "orderitem"
+class Order(Base):
     order_id: Mapped[int] = mapped_column(
-        ForeignKey("order.order_id"), primary_key=True
+        primary_key=True, init=False, autoincrement=True
     )
-    item_id: Mapped[int] = mapped_column(ForeignKey("item.item_id"), primary_key=True)
-    price: Mapped[float]
+    customer_name: Mapped[str] = mapped_column(String(30))
+    order_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), init=False, default_factory=lambda: datetime.now(UTC)
+    )
+    order_items: Mapped[list[OrderItem]] = relationship(
+        cascade="all, delete-orphan", backref="order", init=False
+    )
 
-    def __init__(self, item: Item, price: float | None = None) -> None:
-        self.item = item
-        self.price = price or item.price
 
+class Item(Base):
+    item_id: Mapped[int] = mapped_column(
+        primary_key=True, init=False, autoincrement=True
+    )
+    description: Mapped[str] = mapped_column(String(30), init=True)
+    price: Mapped[float] = mapped_column(init=True)
+
+
+_PRICE_UNDEFINED = -1  # Sentinel for price not being explicitelyd defined
+
+
+class OrderItem(Base, MappedAsDataclass, kw_only=True):
+    order_id: Mapped[int] = mapped_column(
+        ForeignKey("order.order_id"), primary_key=True, init=False
+    )
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("item.item_id"), primary_key=True, init=False
+    )
+    price: Mapped[float] = mapped_column(default=_PRICE_UNDEFINED)
     item: Mapped[Item] = relationship(lazy="joined")
+
+    def __post_init__(self):
+        if self.price is _PRICE_UNDEFINED:
+            self.price = self.item.price
 
 
 async def run_sample():
     async with db_session() as session:
         # create catalog
         tshirt, mug, hat, crowbar = (
-            Item("SA T-Shirt", 10.99),
-            Item("SA Mug", 6.50),
-            Item("SA Hat", 8.99),
-            Item("MySQL Crowbar", 16.99),
+            Item(description="SA T-Shirt", price=10.99),
+            Item(description="SA Mug", price=6.50),
+            Item(description="SA Hat", price=8.99),
+            Item(description="MySQL Crowbar", price=16.99),
         )
         session.add_all([tshirt, mug, hat, crowbar])
         await session.commit()
 
         # create an order
-        order = Order("john smith")
+        order = Order(customer_name="john smith")
 
         # add three OrderItem associations to the Order and save
-        order.order_items.append(OrderItem(mug))
-        order.order_items.append(OrderItem(crowbar, 10.99))
-        order.order_items.append(OrderItem(hat))
+        order.order_items.append(OrderItem(item=mug))
+        order.order_items.append(OrderItem(item=crowbar, price=10.99))
+        order.order_items.append(OrderItem(item=hat))
         session.add(order)
         await session.commit()
 

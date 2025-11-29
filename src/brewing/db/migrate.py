@@ -99,8 +99,9 @@ class Migrations:
         # late import as libraries involved may not be installed.
         from brewing.db import testing  # noqa: PLC0415
 
+        assert self._database.db_type, self._database
         with (
-            testing.testing(self._database.config.database_type),
+            testing.testing(self._database.db_type),
             self,
         ):
             command.upgrade(self.alembic, "head")

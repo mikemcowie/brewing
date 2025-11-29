@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from sqlalchemy import text
-from testing_samples import db_sample1
+from testing_samples import sample1
 
 from brewing.db import Database, new_base, testing
 from brewing.db.settings import DatabaseType, DBConfigurationError
@@ -53,8 +53,8 @@ async def test_engine_cached(db_type: DatabaseType, running_db: None):
 
 
 @pytest.mark.asyncio
-async def test_connect_with_engine(database_sample_1: Database):
-    async with database_sample_1.engine.connect() as conn:
+async def test_connect_with_engine(db_sample_1: Database):
+    async with db_sample_1.engine.connect() as conn:
         result = await conn.execute(text("SELECT 1"))
     assert len(list(result)) == 1
 
@@ -69,6 +69,6 @@ def test_default_migrations_revisions_directory(
 
 
 @pytest.mark.asyncio
-async def test_sample1(database_sample_1: Database):
-    async with testing.upgraded(database_sample_1):
-        await db_sample1.run_sample()
+async def test_sample1(db_sample_1: Database):
+    async with testing.upgraded(db_sample_1):
+        await sample1.run_sample()
