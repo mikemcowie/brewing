@@ -277,4 +277,4 @@ class DeferredHTTPPath:
         )
 
 
-self = DeferredHTTPPath()
+base_path = DeferredHTTPPath()

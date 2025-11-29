@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 from fastapi import APIRouter
 from fastapi.params import Depends
 
+from brewing.http.path import base_path
 from brewing.http.annotations import (
     AnnotationState,
     ApplyViewSetDependency,
@@ -27,12 +28,14 @@ from brewing.http.path import (
     TrailingSlashPolicy,
 )
 from brewing.serialization import ExcludeCachedProperty
+from brewing.db.repo import Repository
 
 if TYPE_CHECKING:
     from enum import Enum
     from types import EllipsisType, FunctionType
 
     from starlette.routing import BaseRoute
+    from  sqlalchemy.orm import DeclarativeBase
 
 # ruff: noqa: N802
 
@@ -160,3 +163,48 @@ class ViewSet(ExcludeCachedProperty):
     ) -> HTTPPath:
         """Create an HTTP path based on the root HTTPPath of the viewset."""
         return self.root_path(path, trailing_slash=trailing_slash)
+
+
+class BaseModelViewset[ModelT:DeclarativeBase, LookupT]:
+    """A base model viewset with no endpoints implemented."""
+    model:type[ModelT]
+    lookup_type:type[LookupT]
+
+    def __post_init__(self):
+        self.repo = Repository[self.model, self.lookup_type]()
+
+
+UpdateType = ... ## TODO - make a sentinel update model type hint mechanism
+
+class ModelViewSet[ModelT:DeclarativeBase, LookupT](BaseModelViewset[ModelT, LookupT]):
+    """A viewset with basic CRUD methods based on a model."""
+
+
+    instance_path = base_path("{model_var_placeholder}")
+
+    @base_path.POST()
+    async def create(self, item:ModelT):
+        return await self.repo.create(item)
+
+    @base_path.GET()
+    async def query(self):
+        return await self.repo.execute(self.repo.query())
+
+    async def get_item(self, item_id:LookupT):
+        return await self.repo.get(item_id)
+
+    @instance_path.GET()
+    async def get_one(self, item_id:LookupT):
+        return await self.get_item(item_id)
+
+    @instance_path.PUT()
+    async def update_one(self, item_id:LookupT, **update:UpdateType):
+        return await self.repo.update(await self.get_item(item_id), **update)
+
+    @instance_path.PATCH()
+    async def update_one_partial(self, item_id:LookupT, **update:PartialUpdateType):
+        return await self.repo.update(await self.get_item(item_id), **update)
+
+    @instance_path.DELETE()
+    async def delete_one(self, item_id:LookupT):
+        return await self.repo.delete(await self.get_item(item_id))
