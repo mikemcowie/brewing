@@ -8,13 +8,12 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self
-
-import pytest
-from fastapi import HTTPException, status
+from typing import TYPE_CHECKING, ClassVar, Protocol, Self
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
+
+    from brewing.http.serialization.negotiation import Negotiator
 
 
 @dataclass
@@ -24,6 +23,13 @@ class Processors[InputT, InternalT, OutputT]:
     negotiator: Negotiator
     loader: Loader[InputT, InternalT]
     renderer: Iterable[Renderer[InternalT, OutputT]]
+
+    def __post_init__(self):
+        if len(set(self.renderer)) < len(list(self.renderer)):
+            raise RuntimeError(
+                "Invalid renderers: 2 were provided with same content type.",
+                {"renderers": self.renderer},
+            )
 
     def load(self, obj: InputT, /) -> InternalT:
         return self.loader(obj)
@@ -54,46 +60,3 @@ class Renderer[InternalT, OutputT](Protocol):
     def __call__(self, obj: InternalT, /) -> OutputT:
         """Convert object from internal form output form.."""
         ...
-
-
-class NotAcceptable(HTTPException):
-    """Content negotiation has failed."""
-
-    status_code = status.HTTP_406_NOT_ACCEPTABLE
-
-    def __init__(
-        self,
-        status_code: int | None = None,
-        detail: Any = None,
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        self.status_code = status_code or self.status_code
-        super().__init__(self.status_code, detail, headers)
-
-
-class Negotiator(Protocol):
-    """Determine the renderer to use among an available set."""
-
-    @abstractmethod
-    def select(
-        self, accepts: str, renderers: Iterable[Renderer[Any, Any]]
-    ) -> Renderer[Any, Any]: ...
-
-
-class TestNegotiation:
-    def renderer_caller(self):
-        def _func(obj: object):
-            return obj
-
-        return _func
-
-    def renderer_factory(self, content_type: str):
-        type(
-            "Renderer",
-            (Renderer,),
-            {"content_type": content_type, "__call__": self.renderer_caller},
-        )
-
-    def test_negotiation_fails_if_no_renderer(self):
-        with pytest.raises(NotAcceptable):
-            Negotiator()
