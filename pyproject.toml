@@ -155,7 +155,7 @@ extend-ignore = [
     ]
 
 [tool.pytest.ini_options]
-addopts = "--import-mode=importlib --cov-report=html --cov-report=term --cov=. --cov-fail-under=90 --cov-context=test --cov-branch --html=testreport/index.html --markdown-docs"
+addopts = "--import-mode=importlib --cov-report=html --cov-report=term --cov=src --cov-fail-under=90 --cov-context=test --cov-branch --html=testreport/index.html --markdown-docs"
 filterwarnings = [
     "error",
     # testcontainers internal warnings https://github.com/testcontainers/testcontainers-python/issues/715
@@ -179,7 +179,6 @@ asyncio_default_fixture_loop_scope = "session"
 
 [tool.coverage.run]
 concurrency = ["thread", "greenlet"]
-
 
 [tool.coverage.report]
 exclude_also = [
