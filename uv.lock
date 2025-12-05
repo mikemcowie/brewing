@@ -126,6 +126,7 @@ version = "0.0.12rc3"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "content-negotiation" },
     { name = "fastapi" },
     { name = "frozendict" },
     { name = "httpx" },
@@ -191,6 +192,7 @@ requires-dist = [
     { name = "aiosqlite", marker = "extra == 'sqlite'", specifier = ">=0.21.0" },
     { name = "alembic", specifier = ">=1.16.5" },
     { name = "brewing", extras = ["mysql", "mariadb", "postgresql", "sqlite"], marker = "extra == 'all'", editable = "." },
+    { name = "content-negotiation", specifier = "==1.1.2" },
     { name = "cryptography", marker = "extra == 'mariadb'", specifier = ">=46.0.3" },
     { name = "cryptography", marker = "extra == 'mysql'", specifier = ">=46.0.3" },
     { name = "fastapi", specifier = ">=0.118.0" },
@@ -386,6 +388,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44", size = 27697, upload-time = "2022-10-25T02:36:22.414Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6", size = 25335, upload-time = "2022-10-25T02:36:20.889Z" },
+]
+
+[[package]]
+name = "content-negotiation"
+version = "1.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/03/f7de5b932ca2b4ccb5f500f26f24931539679c8fce10a6d85198d8f037e3/content-negotiation-1.1.2.tar.gz", hash = "sha256:561ed5cae065b3754dc686c71a8721a2d4ca704b9ce7fdc876f8048a5db1a70f", size = 10418, upload-time = "2023-05-08T08:07:13.684Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4f/c5/d20eb43e7336af49502f41734b6533cd9f2a0cc82246c1f7afc40869ad91/content_negotiation-1.1.2-py3-none-any.whl", hash = "sha256:b7afdcf385ee82444ff44be5a73f724990a02477844a54b722fdb7787ed13635", size = 11353, upload-time = "2023-05-08T08:07:14.902Z" },
 ]
 
 [[package]]
