@@ -82,6 +82,14 @@ docs = [
     "mkdocstrings[python]>=0.30.0",
 ]
 
+[tool.hatch.build.targets.wheel]
+exclude = [
+    "**/*_test.py",
+    "**/tests/*.py",
+    "**/test_*.py",
+    "**/conftest.py"
+]
+
 [tool.uv.workspace]
 members = [
     "samples/*",
