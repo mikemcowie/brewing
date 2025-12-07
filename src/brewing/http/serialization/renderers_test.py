@@ -143,3 +143,16 @@ class TestSQLAlchemyORMRenderer:
             renderer.create_model().model_json_schema()
             == SerMod4Schema.model_json_schema()
         )
+
+    def test_explicitely_configured_attributes_as_fields(self):
+        class SerMod1Schema(BaseModel):
+            f1: str
+            f3: datetime
+
+        renderer = SQLAlchemyORMRenderer(
+            SerMod1, lambda t: f"{t.__name__}Schema", fields=["f1", "f3"]
+        )
+        assert (
+            renderer.create_model().model_json_schema()
+            == SerMod1Schema.model_json_schema()
+        )
