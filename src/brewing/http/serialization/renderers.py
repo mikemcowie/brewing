@@ -13,7 +13,7 @@ from sqlalchemy.orm import DeclarativeBase
 from brewing.http.serialization.base import Renderer
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Generator, Iterable, Sequence
 
     from pydantic.config import ExtraValues
 
@@ -100,6 +100,7 @@ class SQLAlchemyORMRenderer[InternalT: DeclarativeBase](
         schema_name: str | Callable[[type[Any]], str],
         load_relationshps: bool = True,
         /,
+        fields: Sequence[Any] | None = None,
         **validate_args: Unpack[PydanticValidateArgs],
     ) -> None:
         self.internal_t = internal_t
@@ -110,8 +111,31 @@ class SQLAlchemyORMRenderer[InternalT: DeclarativeBase](
         else:
             self.child_schema_name_callable = None
             self.schema_name = schema_name
-
+        self.attributes = cast(
+            "dict[str, Any]",
+            {
+                name: self._load_attribute(cast("str", name))
+                for name in ChainMap(*(t.__dict__ for t in self.internal_t.__mro__))  # pyright: ignore[reportArgumentType, reportUnknownVariableType]
+            },
+        )
+        for k, v in list(self.attributes.items()):
+            if v is None:
+                self.attributes.pop(k)
+        self.fields = tuple(self._load_fields(fields or list(self.attributes.keys())))
         super().__init__(**validate_args)
+
+    def _load_fields(self, fields: Sequence[Any]) -> Generator[str]:
+        for field in fields:
+            if isinstance(field, str):
+                if hasattr(self.internal_t, field):
+                    yield field
+                    continue
+                raise TypeError(f"No field {field} in {self.internal_t}")
+            for key, value in self.attributes.items():
+                if value is field:
+                    yield key
+                    continue
+            raise TypeError(f"object {field} is not an attribute of {self.internal_t}")
 
     def _attribute_loaders(self) -> Iterable[_AttributeLoaderProtocol]:
         return (
@@ -156,13 +180,7 @@ class SQLAlchemyORMRenderer[InternalT: DeclarativeBase](
                 pass
 
     def create_model(self) -> type[BaseModel]:
-        attributes = cast(
-            "dict[str, Any]",
-            {
-                name: self._load_attribute(cast("str", name))
-                for name in ChainMap(*(t.__dict__ for t in self.internal_t.__mro__))  # pyright: ignore[reportArgumentType, reportUnknownVariableType]
-            },
-        )
         return create_model(
-            self.schema_name, **{k: v for k, v in attributes.items() if v}
+            self.schema_name,
+            **{f: self.attributes[f] for f in self.attributes if f in self.fields},
         )
