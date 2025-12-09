@@ -13,15 +13,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-class Loader[InputT, InternalT](ABC):
-    """Convert an object from the form fastapi loaded from the request, into the form annotated on the endpoint."""
-
-    @abstractmethod
-    def __call__(self, obj: InputT, /) -> InternalT:
-        """Convert object from fastapi-received form to internal form."""
-        ...
-
-
 class Renderer[InternalT, OutputT](ABC):
     """Convert the application's internal representation of a resource to the form fastapi will return."""
 
