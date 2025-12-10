@@ -5,8 +5,8 @@ from __future__ import annotations
 import inspect
 from abc import ABC, abstractmethod
 from functools import cached_property
-from types import FunctionType
-from typing import TYPE_CHECKING, get_type_hints
+from types import FunctionType, MethodType
+from typing import TYPE_CHECKING, Any, Self, get_type_hints
 
 from pydantic import BaseModel, create_model
 from sqlalchemy.orm import DeclarativeBase
@@ -36,7 +36,7 @@ class TypeLoader[InternalT](Loader[BaseModel, InternalT]):
         return _internal_t, _factory
 
     @staticmethod
-    def _load_from_callable(internal_t: FunctionType):
+    def _load_from_function(internal_t: FunctionType):
         try:
             return_annotation = get_type_hints(internal_t)["return"]
         except KeyError as error:
@@ -46,6 +46,21 @@ class TypeLoader[InternalT](Loader[BaseModel, InternalT]):
         if not isinstance(return_annotation, type):
             raise TypeError(
                 f"return annotation of {internal_t}, {return_annotation} is not a type"
+            )
+        return return_annotation, internal_t
+
+    @staticmethod
+    def _load_from_classmethod(internal_t: MethodType):
+        return_annotation = get_type_hints(internal_t).get("return")
+        if return_annotation is not Self and not isinstance(return_annotation, type):  # pyright: ignore[reportGeneralTypeIssues]
+            raise TypeError(
+                "Cannot use a classmethod to find the type unless it is annotated with return type Self."
+            )
+        if return_annotation is Self:  # pyright: ignore[reportGeneralTypeIssues]
+            return_annotation = internal_t.__self__
+        if not isinstance(return_annotation, type):
+            raise TypeError(
+                f"method {internal_t.__name__} cannot be used unless it is a classmethod."
             )
         return return_annotation, internal_t
 
@@ -95,18 +110,30 @@ class TypeLoader[InternalT](Loader[BaseModel, InternalT]):
 
     def _load_type_and_factory(
         self, internal_t: Callable[..., InternalT]
-    ) -> tuple[type, FunctionType]:
+    ) -> tuple[type, FunctionType | MethodType]:
         if isinstance(internal_t, type):
             return self._load_from_type(internal_t)
         elif isinstance(internal_t, FunctionType):
-            return self._load_from_callable(internal_t)
+            return self._load_from_function(internal_t)
+        # We can also use a classmethod annotated with return type "Self".
+        elif isinstance(internal_t, MethodType):
+            return self._load_from_classmethod(internal_t)
         else:
             raise TypeError(
                 f"{internal_t} is neither a class nor a function and hence cannot be used in this context."
             )
 
-    def __init__(self, internal_t: Callable[..., InternalT]) -> None:
+    def __init__(
+        self,
+        internal_t: Callable[..., InternalT],
+        schema_name: str | Callable[[type[Any]], str],
+    ) -> None:
         self._internal_t, self._factory = self._load_type_and_factory(internal_t)
+        self._schema_name = (
+            schema_name
+            if isinstance(schema_name, str)
+            else schema_name(self._internal_t)
+        )
         self._signature = inspect.signature(self._factory)
         self._type_hints = self._load_type_hints()
         self._validate_untyped_params()
@@ -114,7 +141,9 @@ class TypeLoader[InternalT](Loader[BaseModel, InternalT]):
     @cached_property
     def model(self) -> type[BaseModel]:
         """The pydantic model generated based on the internal model."""
-        return create_model("", **{})
+        type_hints = self._type_hints.copy()
+        type_hints.pop("return", None)
+        return create_model(self._schema_name, **type_hints)
 
     def load(self, obj: BaseModel) -> InternalT:
         return self._internal_t(**obj.model_dump())

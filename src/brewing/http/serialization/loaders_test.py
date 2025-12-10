@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Self
+from typing import Any, Self
 
 import pytest
 from fastapi import FastAPI
@@ -12,6 +12,11 @@ from pydantic import BaseModel
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from brewing.http.serialization.loaders import TypeLoader
+
+
+def _load_schema_name(cls: type[Any]) -> str:
+    return f"{cls.__name__}Schema"
+
 
 ## Sqlalchemy models to be used in tests
 
@@ -133,7 +138,7 @@ class TestFastAPI:
 class TestTypeLoader:
     def test_type_loader_on_sqlalchemy_model_with_no_init(self):
         with pytest.raises(TypeError) as error:
-            TypeLoader(StandardDecModel)
+            TypeLoader(StandardDecModel, schema_name=_load_schema_name)
 
         assert (
             "function must accept at least 1 named keyword argument"
@@ -144,7 +149,7 @@ class TestTypeLoader:
             f1: str
             f2: str
 
-        loader = TypeLoader(CustomInitModel)
+        loader = TypeLoader(CustomInitModel, schema_name=_load_schema_name)
         assert (
             loader.model.model_json_schema()
             == CustomInitModelSchema.model_json_schema()
@@ -155,7 +160,7 @@ class TestTypeLoader:
             f1: str
             f2: str
 
-        loader = TypeLoader(DataclassMappedModel)
+        loader = TypeLoader(DataclassMappedModel, schema_name=_load_schema_name)
         assert (
             loader.model.model_json_schema()
             == DataclassMappedModelSchema.model_json_schema()
@@ -167,9 +172,9 @@ class TestTypeLoader:
             f2: str
 
         with pytest.raises(TypeError) as error:
-            TypeLoader(SomeClass)
+            TypeLoader(SomeClass, schema_name=_load_schema_name)
 
-        assert "no __init__ method" in error.exconly()
+        assert "does not have an __init__ method" in error.exconly()
 
     def test_type_loader_with_standard_dataclass(self):
         @dataclass
@@ -181,7 +186,7 @@ class TestTypeLoader:
             f1: str
             f2: str
 
-        loader = TypeLoader(SomeClass)
+        loader = TypeLoader(SomeClass, schema_name=_load_schema_name)
         assert loader.model.model_json_schema() == SomeClassSchema.model_json_schema()
 
     def test_type_loader_with_arbitary_python_class_with_untyped_init(self):
@@ -191,9 +196,9 @@ class TestTypeLoader:
                 self.f2 = f2
 
         with pytest.raises(TypeError) as error:
-            TypeLoader(SomeClass)
+            TypeLoader(SomeClass, schema_name=_load_schema_name)
 
-        assert "missing type annotation" in error.exconly()
+        assert "TypeError: Missing type parameters for" in error.exconly()
 
     def test_type_loader_with_factory_function(self):
         def make_instance(f1: str, f2: str) -> StandardDecModel:
@@ -203,26 +208,31 @@ class TestTypeLoader:
             f1: str
             f2: str
 
-        loader = TypeLoader(make_instance)
+        loader = TypeLoader(make_instance, schema_name=_load_schema_name)
         assert (
             loader.model.model_json_schema()
             == StandardDecModelSchema.model_json_schema()
         )
 
     def test_type_loader_with_factory_function_lacking_return_annotation(self):
-        def make_instance(f1: str, f2: str) -> StandardDecModel:
+        def make_instance(f1: str, f2: str):
             return StandardDecModel(f1=f1, f2=f2)
 
         with pytest.raises(TypeError) as error:
-            TypeLoader(make_instance)
-        assert "No return annotation" in error.exconly()
+            TypeLoader(make_instance, schema_name=_load_schema_name)
+        assert (
+            "does not have a return annotation and hence cannot be used in this context"
+            in error.exconly()
+        )
 
     def test_type_loader_with_classmethod(self):
         class StandardDecModelSchema(BaseModel):
             f1: str
             f2: str
 
-        loader = TypeLoader(StandardDecModel.load_with_exact_annotation)
+        loader = TypeLoader(
+            StandardDecModel.load_with_exact_annotation, schema_name=_load_schema_name
+        )
         assert (
             loader.model.model_json_schema()
             == StandardDecModelSchema.model_json_schema()
@@ -233,7 +243,9 @@ class TestTypeLoader:
             f1: str
             f2: str
 
-        loader = TypeLoader(StandardDecModel.load_with_self_annotation)
+        loader = TypeLoader(
+            StandardDecModel.load_with_self_annotation, schema_name=_load_schema_name
+        )
         assert (
             loader.model.model_json_schema()
             == StandardDecModelSchema.model_json_schema()
@@ -241,4 +253,6 @@ class TestTypeLoader:
 
     def test_type_loader_with_no_annotation(self):
         with pytest.raises(TypeError):
-            TypeLoader(StandardDecModel.load_with_self_annotation)
+            TypeLoader(
+                StandardDecModel.load_with_no_annotation, schema_name=_load_schema_name
+            )
