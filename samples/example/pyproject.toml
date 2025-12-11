@@ -1,13 +1,20 @@
 [project]
 name = "example"
 readme = "README.md"
-version = "0.0.1"
+version = "0.0.12-rc.4"
 dependencies = ["brewing[postgresql]"]
 requires-python = ">=3.14"
 
 [project.entry-points.brewing]
 example = "example.app:app"
 
+
+[project.urls]
+Homepage = "https://mikemcowie.github.io/brewing/"
+Documentation = "https://mikemcowie.github.io/brewing/"
+Repository = "https://github.com/mikemcowie/brewing"
+Issues = "https://github.com/mikemcowie/brewing"
+Releases = "https://github.com/mikemcowie/brewing/releases"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
