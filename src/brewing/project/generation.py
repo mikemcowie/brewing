@@ -1,5 +1,7 @@
 """A content generation toolkit."""
 
+from __future__ import annotations
+
 from collections.abc import Callable, MutableMapping
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, cast
