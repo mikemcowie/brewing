@@ -18,6 +18,7 @@ from fastapi.params import Depends
 from brewing.http.annotations import (
     AnnotationState,
     ApplyViewSetDependency,
+    WrapCustomSerializers,
     adapt,
 )
 from brewing.http.path import (
@@ -89,7 +90,7 @@ class ViewSet(ExcludeCachedProperty):
 
     @cached_property
     def annotation_adaptors(self):
-        return (ApplyViewSetDependency(self),)
+        return (ApplyViewSetDependency(self), WrapCustomSerializers(self))
 
     @cached_property
     def root_path(self):
@@ -148,12 +149,16 @@ class ViewSet(ExcludeCachedProperty):
         ]
         for decorated_method in decorated_methods:
             endpoint_func, calls = decorated_method
-            adapt(endpoint_func.__func__, self.annotation_adaptors)  # type: ignore
+            func = adapt(endpoint_func.__func__, self.annotation_adaptors)  # type: ignore
             for call in calls:
                 http_path = call.path.apply(self, call)
                 decorator_factory = getattr(http_path, call.method)
                 decorator = decorator_factory(*call.args, **call.kwargs)
-                decorator(endpoint_func.__func__)  # type: ignore
+                # Fastapi looks at the __wrapped__ attribute for type hints
+                # if it exists
+                if wrapped := getattr(func, "__wrapped__", None):
+                    wrapped.__annotations__ = func.__annotations__
+                decorator(func)  # type: ignore
 
     def __call__(
         self, path: str, trailing_slash: bool | EllipsisType = ...

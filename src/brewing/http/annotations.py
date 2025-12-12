@@ -7,9 +7,12 @@ import inspect
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from functools import wraps
 from typing import TYPE_CHECKING, Annotated, Any, Protocol, get_type_hints
 
 from fastapi import Depends
+
+from brewing.http.serialization.loaders import Loader
 
 if TYPE_CHECKING:
     from types import FunctionType
@@ -62,7 +65,7 @@ class AnnotationState:
 
     def __init__(
         self,
-        func: FunctionType,
+        func: Callable[..., Any],
         /,
     ):
         self.func = func
@@ -79,6 +82,9 @@ class AnnotationState:
         for name in inspect_params:
             if name not in self.hints:
                 self.hints[name] = Annotation(inspect.Parameter.empty, None)
+        self.hint_annotations = {
+            key: annotation.annotated or () for key, annotation in self.hints.items()
+        }
 
     def abandon_pending(self):
         """Abandon/reset any changes and reset to the current state of the function's annotations."""
@@ -175,4 +181,44 @@ class ApplyViewSetDependency(AnnotatedFunctionAdaptor):
             ):
                 state.hints[key] = annotation
 
+        return state
+
+
+@adaptor
+class WrapCustomSerializers(AnnotatedFunctionAdaptor):
+    """wraps function in a parent function that applies prior annotations."""
+
+    def __init__(self, viewset: ViewSet):
+        self.viewset = viewset
+
+    def __call__(self, state: AnnotationState) -> AnnotationState:
+        """Wrap callable in parent with adapted type hint."""
+        parent_func = state.func
+        loaders = {
+            k: tuple(a for a in annotation if isinstance(a, Loader))
+            for k, annotation in state.hint_annotations.items()
+        }
+        for key, value in list(loaders.items()):
+            if not value:
+                del loaders[key]
+        if not loaders:
+            # No loaders to apply, so no need to wrap the function
+            return state
+        if len(loaders) > 1:
+            raise RuntimeError(
+                "Multiple parameters annotated as loaders are not allowed."
+            )
+        if len(loaders[next(iter(loaders))]) > 1:
+            raise RuntimeError(
+                "Cannot have multiple loader annotations on a parameter."
+            )
+        loader_key, loader = next(iter(loaders.items()))
+
+        @wraps(parent_func)
+        def wrapper(*args: Any, **kwargs: Any):
+            kwargs[loader_key] = loader[0].load(kwargs[loader_key])
+            return parent_func(*args, **kwargs)
+
+        state.func = wrapper
+        state.hints[loader_key] = Annotation(type_=loader[0].model, annotated=None)
         return state

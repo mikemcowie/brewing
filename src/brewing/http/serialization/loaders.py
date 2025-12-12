@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import inspect
 from abc import ABC, abstractmethod
-from functools import cached_property
 from types import FunctionType, MethodType
 from typing import TYPE_CHECKING, Any, Self, get_type_hints
 
@@ -18,10 +17,15 @@ if TYPE_CHECKING:
 class Loader[InputT, InternalT](ABC):
     """Convert an object from the form fastapi loaded from the request, into the form annotated on the endpoint."""
 
+    model: type[InputT]
+
     @abstractmethod
     def load(self, obj: InputT) -> InternalT:
         """Load given input model instance to interal representation."""
         ...
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}()"
 
 
 class TypeLoader[InternalT](Loader[BaseModel, InternalT]):
@@ -126,7 +130,7 @@ class TypeLoader[InternalT](Loader[BaseModel, InternalT]):
     def __init__(
         self,
         internal_t: Callable[..., InternalT],
-        schema_name: str | Callable[[type[Any]], str],
+        schema_name: str | Callable[[type[Any]], str] = lambda n: n.__name__,
     ) -> None:
         self._internal_t, self._factory = self._load_type_and_factory(internal_t)
         self._schema_name = (
@@ -137,13 +141,14 @@ class TypeLoader[InternalT](Loader[BaseModel, InternalT]):
         self._signature = inspect.signature(self._factory)
         self._type_hints = self._load_type_hints()
         self._validate_untyped_params()
+        self.model = self._create_model()
 
-    @cached_property
-    def model(self) -> type[BaseModel]:
+    def _create_model(self) -> type[BaseModel]:
         """The pydantic model generated based on the internal model."""
         type_hints = self._type_hints.copy()
         type_hints.pop("return", None)
         return create_model(self._schema_name, **type_hints)
 
     def load(self, obj: BaseModel) -> InternalT:
-        return self._internal_t(**obj.model_dump())
+        data = obj.model_dump()
+        return self._internal_t(**data)
