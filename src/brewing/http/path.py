@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable as Callable  # noqa: TC003
 from dataclasses import dataclass
 from functools import partial
 from http import HTTPMethod
@@ -11,7 +12,6 @@ from typing import TYPE_CHECKING, Any, Literal
 from brewing.http.endpoint_decorator import DependencyDecorator, EndpointDecorator
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from types import EllipsisType
 
     from fastapi import APIRouter

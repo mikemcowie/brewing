@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import TYPE_CHECKING, Annotated, Self
 
@@ -116,8 +118,10 @@ class TestFastAPI:
 class TestLoader:
     def test_basic_declartive_model_as_annotation(self, subtests: SubTests):
         class TestViewset(ViewSet):
-            @root.POST()
-            def create_standard_dev_model(
+            test1 = root("test1")
+
+            @test1.POST()
+            def create_standard_sql_model_with_custom_init(
                 self, item: Annotated[CustomInitModel, TypeLoader(CustomInitModel)]
             ):  # -> CustomInitModel:
                 assert isinstance(item, CustomInitModel), type(item).__mro__
@@ -125,13 +129,13 @@ class TestLoader:
 
         client = new_client(TestViewset())
 
-        with subtests.test("happy-path"):
-            result = client.post("/", json={"f1": "foo", "f2": "bar"})
+        with subtests.test("happy-path-basic-init-sqlalchemy"):
+            result = client.post("/test1", json={"f1": "foo", "f2": "bar"})
             assert result.status_code == status.HTTP_200_OK, result.json()
             assert result.json()["f1"] == "foo"
             assert result.json()["f2"] == "bar"
             assert list(result.json().keys()) == ["f1", "f2"]
 
-        with subtests.test("invalid-request"):
-            result = client.post("/", json={"f1": "foo"})
+        with subtests.test("invalid-basic-init-sqlalchemy"):
+            result = client.post("/test1", json={"f1": "foo"})
             assert result.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
