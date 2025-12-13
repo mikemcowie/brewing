@@ -2,20 +2,38 @@
 
 from __future__ import annotations
 
+import os
+import random
+import string
 import sys
 from abc import abstractmethod
 from collections import ChainMap
-from typing import TYPE_CHECKING, Any, Protocol, TypedDict, Unpack, cast, get_type_hints
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Protocol,
+    TypedDict,
+    Unpack,
+    cast,
+    get_type_hints,
+)
 
 from pydantic import BaseModel, create_model
 from sqlalchemy.orm import DeclarativeBase
+from starlette import responses
 
+from brewing.http import ViewSet, root, status, testing
 from brewing.http.serialization.base import Renderer
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterable, Sequence
+    from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 
     from pydantic.config import ExtraValues
+    from starlette.background import BackgroundTask
+    from starlette.datastructures import URL
+    from starlette.types import Receive, Scope, Send
 
 
 class NoopRenderer[T](Renderer[T, T]):
@@ -184,3 +202,193 @@ class SQLAlchemyORMRenderer[InternalT: DeclarativeBase](
             self.schema_name,
             **{f: self.attributes[f] for f in self.attributes if f in self.fields},
         )
+
+
+class BrewingResponse[InternalT: Any, WrapsT: responses.Response](responses.Response):
+    """Brewing's wrapper around starlette Response classes.
+
+    It inherits from and offers the same API as a starlette response,
+    just with additional static generic type parameters.
+    """
+
+    wraps: type[WrapsT]
+    internal_t: type[InternalT]
+
+    def __init__(
+        self,
+        content: InternalT = None,
+        status_code: int = 200,
+        headers: Mapping[str, str] | None = None,
+        media_type: str | None = None,
+        background: BackgroundTask | None = None,
+    ) -> None:
+        self._wrapped = self.wraps(
+            content=content,
+            status_code=status_code,
+            headers=headers,
+            media_type=media_type or self.wraps.media_type,
+            background=background,
+        )
+
+    def __getattr__(self, name: Any):
+        return getattr(self._wrapped, name)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        return await self._wrapped(scope, receive, send)
+
+
+class PlainTextResponse(BrewingResponse[str, responses.PlainTextResponse]):
+    wraps = responses.PlainTextResponse
+
+
+type JSONCompatible = (
+    dict[str, float | str | None | list[JSONCompatible]] | list[JSONCompatible]
+)
+
+
+class JSONResponse(BrewingResponse[JSONCompatible, responses.JSONResponse]):
+    wraps = responses.JSONResponse
+
+
+class HTMLResponse(BrewingResponse[str, responses.HTMLResponse]):
+    wraps = responses.HTMLResponse
+
+
+class RedirectResponse(BrewingResponse[str, responses.RedirectResponse]):
+    wraps = responses.RedirectResponse
+
+    def __init__(
+        self,
+        url: str | URL,
+        status_code: int = 307,
+        headers: Mapping[str, str] | None = None,
+        background: BackgroundTask | None = None,
+    ):
+        self._wrapped = self.wraps(
+            url=url,
+            status_code=status_code,
+            headers=headers,
+            background=background,
+        )
+
+
+class StreamingResponse[InternalT: Any](
+    BrewingResponse[InternalT, responses.StreamingResponse]
+):
+    wraps = responses.StreamingResponse
+
+
+class FileResponse(BrewingResponse[os.PathLike[str], responses.FileResponse]):
+    wraps = responses.FileResponse
+
+    def __init__(  # noqa: PLR0913
+        self,
+        path: str | os.PathLike[str],
+        status_code: int = 200,
+        headers: Mapping[str, str] | None = None,
+        media_type: str | None = None,
+        background: BackgroundTask | None = None,
+        filename: str | None = None,
+        stat_result: os.stat_result | None = None,
+        method: str | None = None,
+        content_disposition_type: str = "attachment",
+    ):
+        self._wrapped = self.wraps(
+            path=path,
+            status_code=status_code,
+            headers=headers,
+            media_type=media_type,
+            background=background,
+            filename=filename,
+            stat_result=stat_result,
+            method=method,
+            content_disposition_type=content_disposition_type,
+        )
+
+
+class TestBrewingResponse:
+    class ResponseTypeTestViews(ViewSet):
+        # Random bytes to test the streaming response with.
+        random_bytes = random.randbytes(1024)
+        random_string = "".join(random.choice(string.ascii_letters) for _ in range(100))
+
+        @root("text").GET()
+        async def text(self):
+            return PlainTextResponse(content="foo")
+
+        @root("json").GET()
+        async def json(self):
+            return JSONResponse(content={"foo": "bar"})
+
+        @root("html").GET()
+        async def html(self):
+            return HTMLResponse(content="<html></html>")
+
+        @root("redirect").GET()
+        async def redirect(self):
+            return RedirectResponse("/html")
+
+        @root("stream").GET()
+        def stream(self):
+            def iterbytes():
+                with TemporaryDirectory(delete=False) as temp:
+                    source_file = Path(temp) / "file"
+                    source_file.write_bytes(self.random_bytes)
+                    with source_file.open("br") as f:
+                        yield from f
+
+            iterator = iterbytes()
+            return StreamingResponse(iterator)
+
+        @root("file").GET()
+        def file(self):
+            with TemporaryDirectory(delete=False) as temp:
+                source_file = Path(temp) / "file"
+                source_file.write_text(self.random_string)
+
+            return FileResponse(source_file)
+
+    def client(self):
+        return testing.new_client(self.ResponseTypeTestViews())
+
+    def test_plain(self):
+        result = self.client().get("/text")
+        assert result.status_code == status.HTTP_200_OK
+        assert result.text == "foo"
+        assert result.headers.get("content-type") == "text/plain; charset=utf-8"
+
+    def test_json(self):
+        result = self.client().get("/json")
+        assert result.status_code == status.HTTP_200_OK
+        assert result.json() == {"foo": "bar"}
+        assert result.headers.get("content-type") == "application/json"
+
+    def test_html(self):
+        result = self.client().get("/html")
+        assert result.status_code == status.HTTP_200_OK
+        assert result.text == "<html></html>"
+        assert result.headers.get("content-type") == "text/html; charset=utf-8"
+
+    def test_redirect(self):
+        result = self.client().get("/redirect", follow_redirects=False)
+        assert result.status_code == status.HTTP_307_TEMPORARY_REDIRECT
+        assert result.headers.get("location") == "/html"
+        result_following_redirect = self.client().get(
+            "/redirect", follow_redirects=True
+        )
+        assert result_following_redirect.status_code == status.HTTP_200_OK
+        assert result_following_redirect.text == "<html></html>"
+        assert (
+            result_following_redirect.headers.get("content-type")
+            == "text/html; charset=utf-8"
+        )
+
+    def test_stream(self):
+        with self.client().stream("GET", "/stream") as stream:
+            result = stream.read()
+        assert result == self.ResponseTypeTestViews.random_bytes
+
+    def test_file(self):
+        result = self.client().get("/file")
+        assert result.status_code == status.HTTP_200_OK
+        assert result.text == self.ResponseTypeTestViews.random_string
