@@ -195,3 +195,15 @@ class TestTypeLoader:
             TypeLoader(
                 StandardDecModel.load_with_no_annotation, schema_name=_load_schema_name
             )
+
+    def test_dataclass_declarative_model(self):
+        class DataclassMappedModelSchema(BaseModel):
+            f1: str
+            f2: str
+
+        assert (
+            TypeLoader(
+                DataclassMappedModel, schema_name=_load_schema_name
+            ).model.model_json_schema()
+            == DataclassMappedModelSchema.model_json_schema()
+        )
