@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Annotated, Self
+from functools import cached_property
+from typing import Annotated, Self
+from uuid import uuid7
 
 import pytest
 from fastapi import FastAPI
@@ -12,9 +14,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 from brewing.http import ViewSet, root, status
 from brewing.http.serialization.loaders import TypeLoader
 from brewing.http.testing import new_client
-
-if TYPE_CHECKING:
-    from pytest_subtests import SubTests
 
 ## Sqlalchemy models to be used in tests
 
@@ -51,7 +50,9 @@ class CustomInitModel(Base):
 
 class DataclassMappedModel(MappedAsDataclass, Base):
     __tablename__ = "ser_dataclass_dec_model"
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, init=False)
+    id: Mapped[int] = mapped_column(
+        primary_key=True, autoincrement=True, init=False, default_factory=uuid7
+    )
     f1: Mapped[str] = mapped_column()
     f2: Mapped[str] = mapped_column()
     f3: Mapped[datetime] = mapped_column(init=False)
@@ -109,33 +110,99 @@ class TestFastAPI:
             app.openapi()["components"]["schemas"]["DataclassMappedModel"][
                 "properties"
             ].keys()
-        ) == ["f1", "f2"]
+        ) == ["id", "f1", "f2"]
         client = TestClient(app)
         with pytest.raises(AttributeError):
             client.post("/mapped_dataclass", json={"f1": "foo", "f2": "bar"})
 
 
-class TestLoader:
-    def test_basic_declartive_model_as_annotation(self, subtests: SubTests):
+class TestDeclaratieWithInit:
+    @cached_property
+    def viewset(self):
         class TestViewset(ViewSet):
             test1 = root("test1")
 
             @test1.POST()
-            def create_standard_sql_model_with_custom_init(
+            def create(
                 self, item: Annotated[CustomInitModel, TypeLoader(CustomInitModel)]
             ):  # -> CustomInitModel:
                 assert isinstance(item, CustomInitModel), type(item).__mro__
                 return item
 
-        client = new_client(TestViewset())
+        return TestViewset()
 
-        with subtests.test("happy-path-basic-init-sqlalchemy"):
-            result = client.post("/test1", json={"f1": "foo", "f2": "bar"})
-            assert result.status_code == status.HTTP_200_OK, result.json()
-            assert result.json()["f1"] == "foo"
-            assert result.json()["f2"] == "bar"
-            assert list(result.json().keys()) == ["f1", "f2"]
+    @cached_property
+    def client(self):
+        return new_client(self.viewset)
 
-        with subtests.test("invalid-basic-init-sqlalchemy"):
-            result = client.post("/test1", json={"f1": "foo"})
-            assert result.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+    def test_loader(self):
+        result = self.client.post("/test1", json={"f1": "foo", "f2": "bar"})
+        assert result.status_code == status.HTTP_200_OK, result.json()
+        assert result.json()["f1"] == "foo"
+        assert result.json()["f2"] == "bar"
+        assert list(result.json().keys()) == ["f1", "f2"]
+
+    def test_invalid_payload(self):
+        result = self.client.post("/test1", json={"f1": "foo"})
+        assert result.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+class TestNoInit:
+    @cached_property
+    def viewset(self):
+        class TestViewset(ViewSet):
+            test1 = root("test1")
+
+            @test1.POST()
+            def create(
+                self, item: Annotated[StandardDecModel, TypeLoader(StandardDecModel)]
+            ):  # -> CustomInitModel:
+                assert isinstance(item, StandardDecModel), type(item).__mro__
+                return item
+
+        return TestViewset()
+
+    @cached_property
+    def client(self):
+        return new_client(self.viewset)
+
+    def test_basic_loader(self):
+        with pytest.raises(TypeError) as error:
+            _ = self.viewset
+
+        assert (
+            " function must accept at least 1 named keyword argument (not **kwargs) in  __init__"
+            in error.exconly()
+        )
+
+
+class TestMappedAsDataclass:
+    @cached_property
+    def viewset(self):
+        class TestViewset(ViewSet):
+            test1 = root("test1")
+
+            @test1.POST()
+            def create(
+                self,
+                item: Annotated[DataclassMappedModel, TypeLoader(DataclassMappedModel)],
+            ):  # -> CustomInitModel:
+                assert isinstance(item, DataclassMappedModel), type(item).__mro__
+                return item
+
+        return TestViewset()
+
+    @cached_property
+    def client(self):
+        return new_client(self.viewset)
+
+    def test_basic_load(self):
+        result = self.client.post("/test1", json={"f1": "foo", "f2": "bar"})
+        assert result.status_code == status.HTTP_200_OK, result.json()
+        assert result.json()["f1"] == "foo"
+        assert result.json()["f2"] == "bar"
+        assert list(result.json().keys()) == ["id", "f1", "f2", "f3"]
+
+    def test_load_invalid(self):
+        result = self.client.post("/test1", json={"f1": "foo"})
+        assert result.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
