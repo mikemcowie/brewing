@@ -8,7 +8,7 @@ from abc import abstractmethod
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Annotated, Any, Protocol, get_type_hints
+from typing import TYPE_CHECKING, Annotated, Any, Protocol, cast, get_type_hints
 
 from fastapi import Depends
 from sqlalchemy.orm import DeclarativeBase
@@ -198,11 +198,9 @@ class WrapCustomSerializers(AnnotatedFunctionAdaptor):
             return (TypeLoader(type_),)
         return ()
 
-    def __call__(self, state: AnnotationState) -> AnnotationState:
-        """Wrap callable in parent with adapted type hint."""
-        parent_func = state.func
-        loaders: dict[str, tuple[Loader[Any, Any], ...]] = {
-            k: tuple(a for a in annotation if isinstance(a, Loader))  # type: ignore
+    def _get_loader(self, state: AnnotationState):
+        loaders: dict[str, tuple[Loader[Any, Any] | Callable[..., Any], ...]] = {
+            k: tuple(a for a in annotation if (isinstance(a, Loader)) or callable(a))  # type: ignore
             for k, annotation in state.hint_annotations.items()
         }
         for key, value in loaders.items():
@@ -213,7 +211,8 @@ class WrapCustomSerializers(AnnotatedFunctionAdaptor):
                 del loaders[key]
         if not loaders:
             # No loaders to apply, so no need to wrap the function
-            return state
+            return None
+
         if len(loaders) > 1:
             raise RuntimeError(
                 "Multiple parameters annotated as loaders are not allowed."
@@ -223,6 +222,20 @@ class WrapCustomSerializers(AnnotatedFunctionAdaptor):
                 "Cannot have multiple loader annotations on a parameter."
             )
         loader_key, loader = next(iter(loaders.items()))
+        if not isinstance(loader[0], Loader):
+            loader = (TypeLoader(loader[0]),)
+
+        if TYPE_CHECKING:
+            loader = cast("tuple[Loader[Any, Any], ...]", loader)
+        return loader_key, loader
+
+    def __call__(self, state: AnnotationState) -> AnnotationState:
+        """Wrap callable in parent with adapted type hint."""
+        parent_func = state.func
+        query = self._get_loader(state)
+        if not query:
+            return state
+        loader_key, loader = query
 
         @wraps(parent_func)
         def wrapper(*args: Any, **kwargs: Any):

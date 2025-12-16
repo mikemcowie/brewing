@@ -35,6 +35,14 @@ class StandardDecModel(Base):
     def load(cls, f1: str, f2: str) -> Self:
         return cls(f1=f1, f2=f2)
 
+    @classmethod
+    def load_no_annotation(cls, f1: str, f2: str):
+        return cls(f1=f1, f2=f2)
+
+
+def bare_function_load(f1: str, f2: str) -> StandardDecModel:
+    return StandardDecModel(f1=f1, f2=f2)
+
 
 class CustomInitModel(Base):
     __tablename__ = "ser_custom_init_model"
@@ -235,3 +243,47 @@ class TestMappedAsDataclass:
     def test_load_invalid(self):
         result = self.client.post("/test1", json={"f1": "foo"})
         assert result.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+class TestFunctionLoaders:
+    @cached_property
+    def viewset(self):
+        class TestViewset(ViewSet):
+            test1 = root("test1")
+            test2 = root("test2")
+
+            @test1.POST()
+            def create_by_classmethod(
+                self,
+                item: Annotated[StandardDecModel, StandardDecModel.load],
+            ):  # -> CustomInitModel:
+                assert isinstance(item, StandardDecModel), type(item).__mro__
+                return item
+
+            @test2.POST()
+            def create_bare_function(
+                self,
+                item: Annotated[StandardDecModel, bare_function_load],
+            ):  # -> CustomInitModel:
+                assert isinstance(item, StandardDecModel), type(item).__mro__
+                return item
+
+        return TestViewset()
+
+    @cached_property
+    def client(self):
+        return new_client(self.viewset)
+
+    def test_classmethod_annotation(self):
+        result = self.client.post("/test1", json={"f1": "foo", "f2": "bar"})
+        assert result.status_code == status.HTTP_200_OK, result.json()
+        assert result.json()["f1"] == "foo"
+        assert result.json()["f2"] == "bar"
+        assert list(result.json().keys()) == ["f1", "f2"]
+
+    def test_bare_function_annotation(self):
+        result = self.client.post("/test2", json={"f1": "foo", "f2": "bar"})
+        assert result.status_code == status.HTTP_200_OK, result.json()
+        assert result.json()["f1"] == "foo"
+        assert result.json()["f2"] == "bar"
+        assert list(result.json().keys()) == ["f1", "f2"]
