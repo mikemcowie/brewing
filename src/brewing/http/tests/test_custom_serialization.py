@@ -116,16 +116,22 @@ class TestFastAPI:
             client.post("/mapped_dataclass", json={"f1": "foo", "f2": "bar"})
 
 
-class TestDeclaratieWithInit:
+class TestDeclarativeWithInit:
     @cached_property
     def viewset(self):
         class TestViewset(ViewSet):
             test1 = root("test1")
+            test2 = root("test2")
 
             @test1.POST()
             def create(
                 self, item: Annotated[CustomInitModel, TypeLoader(CustomInitModel)]
             ):  # -> CustomInitModel:
+                assert isinstance(item, CustomInitModel), type(item).__mro__
+                return item
+
+            @test2.POST()
+            def create_implicit(self, item: CustomInitModel):  # -> CustomInitModel:
                 assert isinstance(item, CustomInitModel), type(item).__mro__
                 return item
 
@@ -137,6 +143,13 @@ class TestDeclaratieWithInit:
 
     def test_loader(self):
         result = self.client.post("/test1", json={"f1": "foo", "f2": "bar"})
+        assert result.status_code == status.HTTP_200_OK, result.json()
+        assert result.json()["f1"] == "foo"
+        assert result.json()["f2"] == "bar"
+        assert list(result.json().keys()) == ["f1", "f2"]
+
+    def test_loader_implicit(self):
+        result = self.client.post("/test2", json={"f1": "foo", "f2": "bar"})
         assert result.status_code == status.HTTP_200_OK, result.json()
         assert result.json()["f1"] == "foo"
         assert result.json()["f2"] == "bar"
@@ -181,11 +194,20 @@ class TestMappedAsDataclass:
     def viewset(self):
         class TestViewset(ViewSet):
             test1 = root("test1")
+            test2 = root("test2")
 
             @test1.POST()
             def create(
                 self,
                 item: Annotated[DataclassMappedModel, TypeLoader(DataclassMappedModel)],
+            ):  # -> CustomInitModel:
+                assert isinstance(item, DataclassMappedModel), type(item).__mro__
+                return item
+
+            @test2.POST()
+            def create_implicit(
+                self,
+                item: DataclassMappedModel,
             ):  # -> CustomInitModel:
                 assert isinstance(item, DataclassMappedModel), type(item).__mro__
                 return item
@@ -198,6 +220,13 @@ class TestMappedAsDataclass:
 
     def test_basic_load(self):
         result = self.client.post("/test1", json={"f1": "foo", "f2": "bar"})
+        assert result.status_code == status.HTTP_200_OK, result.json()
+        assert result.json()["f1"] == "foo"
+        assert result.json()["f2"] == "bar"
+        assert list(result.json().keys()) == ["id", "f1", "f2", "f3"]
+
+    def test_basic_load_implicit(self):
+        result = self.client.post("/test2", json={"f1": "foo", "f2": "bar"})
         assert result.status_code == status.HTTP_200_OK, result.json()
         assert result.json()["f1"] == "foo"
         assert result.json()["f2"] == "bar"

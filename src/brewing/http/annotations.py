@@ -11,8 +11,9 @@ from functools import wraps
 from typing import TYPE_CHECKING, Annotated, Any, Protocol, get_type_hints
 
 from fastapi import Depends
+from sqlalchemy.orm import DeclarativeBase
 
-from brewing.http.serialization.loaders import Loader
+from brewing.http.serialization.loaders import Loader, TypeLoader
 
 if TYPE_CHECKING:
     from types import FunctionType
@@ -191,13 +192,22 @@ class WrapCustomSerializers(AnnotatedFunctionAdaptor):
     def __init__(self, viewset: ViewSet):
         self.viewset = viewset
 
+    def _implicit_annotation(self, state: AnnotationState, key: str):
+        type_ = state.hints[key].type_
+        if issubclass(type_, DeclarativeBase):
+            return (TypeLoader(type_),)
+        return ()
+
     def __call__(self, state: AnnotationState) -> AnnotationState:
         """Wrap callable in parent with adapted type hint."""
         parent_func = state.func
-        loaders = {
-            k: tuple(a for a in annotation if isinstance(a, Loader))
+        loaders: dict[str, tuple[Loader[Any, Any], ...]] = {
+            k: tuple(a for a in annotation if isinstance(a, Loader))  # type: ignore
             for k, annotation in state.hint_annotations.items()
         }
+        for key, value in loaders.items():
+            if not value:
+                loaders[key] = self._implicit_annotation(state, key) or ()
         for key, value in list(loaders.items()):
             if not value:
                 del loaders[key]
