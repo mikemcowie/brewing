@@ -287,3 +287,36 @@ class TestFunctionLoaders:
         assert result.json()["f1"] == "foo"
         assert result.json()["f2"] == "bar"
         assert list(result.json().keys()) == ["f1", "f2"]
+
+
+class TestTypeVarAnnoation:
+    @cached_property
+    def viewset(self):
+        class TestViewset[T: DeclarativeBase](ViewSet):
+            model: type[T]
+
+            def __init__(self, model: type[T]):
+                self.model = model
+                super().__init__()
+
+            test1 = root("test1")
+
+            @test1.POST()
+            def create(
+                self,
+                item: T,
+            ):  # -> CustomInitModel:
+                return item.__class__.__name__
+
+        return TestViewset
+
+    def client(self, model: type[DeclarativeBase]):
+        return new_client(self.viewset(model=model))
+
+    @pytest.mark.parametrize("model", [DataclassMappedModel, CustomInitModel])
+    def test_generic_annotation_processed(self, model: type[DeclarativeBase]):
+        result = self.client(model=model).post(
+            "/test1", json={"f1": "foo", "f2": "bar"}
+        )
+        assert result.status_code == status.HTTP_200_OK, result.json()
+        assert result.text == f'"{model.__class__.__name__}"'

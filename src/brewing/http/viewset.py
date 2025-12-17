@@ -10,7 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from functools import cached_property
-from typing import TYPE_CHECKING
+from types import EllipsisType, FunctionType, MethodType
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from fastapi import APIRouter
 from fastapi.params import Depends
@@ -30,8 +31,8 @@ from brewing.http.path import (
 from brewing.serialization import ExcludeCachedProperty
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from enum import Enum
-    from types import EllipsisType, FunctionType
 
     from starlette.routing import BaseRoute
 
@@ -48,9 +49,31 @@ class ViewSet(ExcludeCachedProperty):
     )
     tags: list[str | Enum] | None = None
 
+    _original_annotations: ClassVar[dict[Callable[..., Any], dict[str, Any]]] = {}
+
     def __post_init__(self):
-        self._rewrite_fastapi_style_depends()
-        self._setup_classbased_endpoints()
+        self._methods = [
+            method
+            for method in (
+                getattr(self, m, None)
+                for m in dir(self)
+                if m[0] != "_" and m not in dir(ViewSet)
+            )
+            if isinstance(method, MethodType)
+        ]
+        if not self._original_annotations:
+            for method in self._methods:
+                self._original_annotations[method] = method.__annotations__.copy()
+        for method in self._methods:
+            self._rewrite_fastapi_style_depends(method)
+        func: FunctionType
+        calls: list[DeferredDecoratorCall]
+        for func, calls in [  # type: ignore
+            (m, getattr(m, DeferredHTTPPath.METADATA_KEY, None))
+            for m in self._methods
+            if getattr(m, DeferredHTTPPath.METADATA_KEY, None)
+        ]:
+            self._setup_classbased_endpoints(func, calls)
 
     @cached_property
     def GET(self):
@@ -110,55 +133,40 @@ class ViewSet(ExcludeCachedProperty):
         """Expose, immutably, the starlette routes associated with the viewset."""
         return tuple(self.router.routes)
 
-    def _all_methods(self):
-        return [
-            getattr(self, m)
-            for m in dir(self)
-            if callable(getattr(self, m)) and m[0] != "_"
-        ]
+    def _rewrite_fastapi_style_depends(self, method: MethodType):
+        try:
+            annotation_state = AnnotationState(method)
+        except TypeError:
+            # Just indicates its not an item we need to handle
+            return
+        for key, value in annotation_state.hints.items():
+            if value.annotated:
+                annotations_as_list = list(value.annotated)
+                for annotation in value.annotated:
+                    if isinstance(annotation, Depends) and annotation.dependency in [
+                        getattr(f, "__func__", ...) for f in self._methods
+                    ]:
+                        annotations_as_list.remove(annotation)
+                        annotations_as_list.append(
+                            Depends(getattr(self, annotation.dependency.__name__))  # type: ignore
+                        )
+                value = replace(value, annotated=tuple(annotations_as_list))  # noqa: PLW2901
+            annotation_state.hints[key] = value
+        annotation_state.apply_pending()
 
-    def _rewrite_fastapi_style_depends(self):
-        for method in self._all_methods():
-            try:
-                annotation_state = AnnotationState(method)
-            except TypeError:
-                # Just indicates its not an item we need to handle
-                continue
-            for key, value in annotation_state.hints.items():
-                if value.annotated:
-                    annotations_as_list = list(value.annotated)
-                    for annotation in value.annotated:
-                        if isinstance(
-                            annotation, Depends
-                        ) and annotation.dependency in [
-                            getattr(f, "__func__", ...) for f in self._all_methods()
-                        ]:
-                            annotations_as_list.remove(annotation)
-                            annotations_as_list.append(
-                                Depends(getattr(self, annotation.dependency.__name__))  # type: ignore
-                            )
-                    value = replace(value, annotated=tuple(annotations_as_list))  # noqa: PLW2901
-                annotation_state.hints[key] = value
-            annotation_state.apply_pending()
-
-    def _setup_classbased_endpoints(self):
-        decorated_methods: list[tuple[FunctionType, list[DeferredDecoratorCall]]] = [  # type: ignore
-            (m, getattr(m, DeferredHTTPPath.METADATA_KEY, None))
-            for m in self._all_methods()
-            if getattr(m, DeferredHTTPPath.METADATA_KEY, None)
-        ]
-        for decorated_method in decorated_methods:
-            endpoint_func, calls = decorated_method
-            func = adapt(endpoint_func.__func__, self.annotation_adaptors)  # type: ignore
-            for call in calls:
-                http_path = call.path.apply(self, call)
-                decorator_factory = getattr(http_path, call.method)
-                decorator = decorator_factory(*call.args, **call.kwargs)
-                # Fastapi looks at the __wrapped__ attribute for type hints
-                # if it exists
-                if wrapped := getattr(func, "__wrapped__", None):
-                    wrapped.__annotations__ = func.__annotations__
-                decorator(func)  # type: ignore
+    def _setup_classbased_endpoints(
+        self, endpoint_func: FunctionType, calls: list[DeferredDecoratorCall]
+    ):
+        func = adapt(endpoint_func.__func__, self.annotation_adaptors)  # type: ignore
+        for call in calls:
+            http_path = call.path.apply(self, call)
+            decorator_factory = getattr(http_path, call.method)
+            decorator = decorator_factory(*call.args, **call.kwargs)
+            # Fastapi looks at the __wrapped__ attribute for type hints
+            # if it exists
+            if wrapped := getattr(func, "__wrapped__", None):
+                wrapped.__annotations__ = func.__annotations__
+            decorator(func)  # type: ignore
 
     def __call__(
         self, path: str, trailing_slash: bool | EllipsisType = ...

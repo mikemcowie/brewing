@@ -194,8 +194,11 @@ class WrapCustomSerializers(AnnotatedFunctionAdaptor):
 
     def _implicit_annotation(self, state: AnnotationState, key: str):
         type_ = state.hints[key].type_
-        if issubclass(type_, DeclarativeBase):
-            return (TypeLoader(type_),)
+        try:
+            if issubclass(type_, DeclarativeBase):
+                return (TypeLoader(type_),)
+        except TypeError:
+            pass
         return ()
 
     def _get_loader(self, state: AnnotationState):
