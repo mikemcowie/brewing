@@ -55,15 +55,14 @@ class ViewSet(ExcludeCachedProperty):
         self._generic_class_params = tuple(
             p.__name__ for p in self.__class__.__type_params__
         )
-        if self._generic_class_params:
-            # TODO: WIP
-            raise Exception(
-                {
-                    k: v
-                    for k, v in self.__class__.__annotations__.items()
-                    if v in [f"type[{p}]" for p in self._generic_class_params]
-                }
-            )
+        self._generic_class_annotations = {
+            k: v
+            for k, v in self.__class__.__annotations__.items()
+            if v in [f"type[{p}]" for p in self._generic_class_params]
+        }
+        self._generic_overrides = {
+            k: getattr(self, k) for k in self._generic_class_annotations.keys()
+        }
         self._methods = [
             method
             for method in (
@@ -79,6 +78,15 @@ class ViewSet(ExcludeCachedProperty):
                     method.__annotations__.copy()
                 )
         for method in self._methods:
+            for (
+                cls_annotation_key,
+                cls_annotation_value,
+            ) in self._generic_class_annotations.items():
+                for annotation_name, annotation_value in method.__annotations__.items():
+                    if cls_annotation_value == f"type[{annotation_value}]":
+                        method.__annotations__[annotation_name] = (
+                            self._generic_overrides[cls_annotation_key]
+                        )
             self._rewrite_fastapi_style_depends(method)
         func: FunctionType
         calls: list[DeferredDecoratorCall]
@@ -88,6 +96,10 @@ class ViewSet(ExcludeCachedProperty):
             if getattr(m, DeferredHTTPPath.METADATA_KEY, None)
         ]:
             self._setup_classbased_endpoints(func, calls)
+
+    @cached_property
+    def _generic_overrides(self):
+        return {k: getattr(self, k) for k in self._generic_class_annotations.keys()}
 
     @cached_property
     def GET(self):
@@ -153,17 +165,19 @@ class ViewSet(ExcludeCachedProperty):
         except TypeError:
             # Just indicates its not an item we need to handle
             return
+
         for key, value in annotation_state.hints.items():
-            annotations_as_list = list(value.annotated)
-            for annotation in value.annotated:
-                if isinstance(annotation, Depends) and annotation.dependency in [
-                    getattr(f, "__func__", ...) for f in self._methods
-                ]:
-                    annotations_as_list.remove(annotation)
-                    annotations_as_list.append(
-                        Depends(getattr(self, annotation.dependency.__name__))  # type: ignore
-                    )
-            value = replace(value, annotated=tuple(annotations_as_list))  # noqa: PLW2901
+            if value.annotated:
+                annotations_as_list = list(value.annotated)
+                for annotation in value.annotated:
+                    if isinstance(annotation, Depends) and annotation.dependency in [
+                        getattr(f, "__func__", ...) for f in self._methods
+                    ]:
+                        annotations_as_list.remove(annotation)
+                        annotations_as_list.append(
+                            Depends(getattr(self, annotation.dependency.__name__))  # type: ignore
+                        )
+                value = replace(value, annotated=tuple(annotations_as_list))  # noqa: PLW2901
             annotation_state.hints[key] = value
         annotation_state.apply_pending()
 
