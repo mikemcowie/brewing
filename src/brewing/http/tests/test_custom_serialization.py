@@ -289,29 +289,26 @@ class TestFunctionLoaders:
         assert list(result.json().keys()) == ["f1", "f2"]
 
 
+class ViewsetWithGeneric[T: DeclarativeBase](ViewSet):
+    model: type[T]
+
+    def __init__(self, model: type[T]):
+        self.model = model
+        super().__init__()
+
+    test1 = root("test1")
+
+    @test1.POST()
+    def create(
+        self,
+        item: T,
+    ):  # -> CustomInitModel:
+        return item.__class__.__name__
+
+
 class TestTypeVarAnnoation:
-    @cached_property
-    def viewset(self):
-        class TestViewset[T: DeclarativeBase](ViewSet):
-            model: type[T]
-
-            def __init__(self, model: type[T]):
-                self.model = model
-                super().__init__()
-
-            test1 = root("test1")
-
-            @test1.POST()
-            def create(
-                self,
-                item: T,
-            ):  # -> CustomInitModel:
-                return item.__class__.__name__
-
-        return TestViewset
-
     def client(self, model: type[DeclarativeBase]):
-        return new_client(self.viewset(model=model))
+        return new_client(ViewsetWithGeneric(model=model))
 
     @pytest.mark.parametrize("model", [DataclassMappedModel, CustomInitModel])
     def test_generic_annotation_processed(self, model: type[DeclarativeBase]):

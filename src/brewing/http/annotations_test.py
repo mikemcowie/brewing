@@ -28,8 +28,8 @@ def some_func(self, foo: str, bar: Annotated[int, ob1]) -> Annotated[float, (ob1
 
 def test_capture_annotation():
     assert AnnotationState(some_func).hints == {
-        "self": Annotation(inspect.Parameter.empty, None),
-        "foo": Annotation(str, None),
+        "self": Annotation(inspect.Parameter.empty),
+        "foo": Annotation(str),
         "bar": Annotation(int, (ob1,)),
         "return": Annotation(float, ((ob1, ob2),)),
     }
@@ -49,8 +49,8 @@ def test_adaptor_pipeline():
 
     # Give a function with an unannotated paramter
     assert AnnotationState(adaptee).hints == {
-        "foo": Annotation(inspect.Parameter.empty, None),
-        "return": Annotation(str, None),
+        "foo": Annotation(inspect.Parameter.empty),
+        "return": Annotation(str),
     }
     # If we call adapt with a pipeline containing a function that adapts it to
     # add the Any annotation
@@ -60,8 +60,8 @@ def test_adaptor_pipeline():
     assert result is adaptee
     # But the annotation should have changed.
     assert AnnotationState(adaptee).hints == {
-        "foo": Annotation(Any, None),
-        "return": Annotation(str, None),
+        "foo": Annotation(Any),
+        "return": Annotation(str),
     }
 
 

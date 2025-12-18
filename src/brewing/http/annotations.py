@@ -6,7 +6,7 @@ import contextlib
 import inspect
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import wraps
 from typing import TYPE_CHECKING, Annotated, Any, Protocol, cast, get_type_hints
 
@@ -51,7 +51,7 @@ class Annotation:
     """Struct representing a single annotation."""
 
     type_: Any
-    annotated: tuple[Any, ...] | None
+    annotated: tuple[Any, ...] = field(default_factory=tuple)
 
     def raw(self) -> Any:
         """Return the annotation in the form used in __annotations__."""
@@ -76,13 +76,13 @@ class AnnotationState:
             if metadata := getattr(hint, "__metadata__", None):
                 self.hints[name] = Annotation(hint.__origin__, metadata)
             else:
-                self.hints[name] = Annotation(hint, None)
+                self.hints[name] = Annotation(hint)
         # get_type_hints doesn't tell us about any unannotated parameters,
         # so we use inspect.signature to find those
         inspect_params = inspect.signature(func).parameters
         for name in inspect_params:
             if name not in self.hints:
-                self.hints[name] = Annotation(inspect.Parameter.empty, None)
+                self.hints[name] = Annotation(inspect.Parameter.empty)
         self.hint_annotations = {
             key: annotation.annotated or () for key, annotation in self.hints.items()
         }
@@ -246,5 +246,5 @@ class WrapCustomSerializers(AnnotatedFunctionAdaptor):
             return parent_func(*args, **kwargs)
 
         state.func = wrapper
-        state.hints[loader_key] = Annotation(type_=loader[0].model, annotated=None)
+        state.hints[loader_key] = Annotation(type_=loader[0].model, annotated=())
         return state

@@ -52,6 +52,18 @@ class ViewSet(ExcludeCachedProperty):
     _original_annotations: ClassVar[dict[Callable[..., Any], dict[str, Any]]] = {}
 
     def __post_init__(self):
+        self._generic_class_params = tuple(
+            p.__name__ for p in self.__class__.__type_params__
+        )
+        if self._generic_class_params:
+            # TODO: WIP
+            raise Exception(
+                {
+                    k: v
+                    for k, v in self.__class__.__annotations__.items()
+                    if v in [f"type[{p}]" for p in self._generic_class_params]
+                }
+            )
         self._methods = [
             method
             for method in (
@@ -63,7 +75,9 @@ class ViewSet(ExcludeCachedProperty):
         ]
         if not self._original_annotations:
             for method in self._methods:
-                self._original_annotations[method] = method.__annotations__.copy()
+                self._original_annotations[method.__func__] = (
+                    method.__annotations__.copy()
+                )
         for method in self._methods:
             self._rewrite_fastapi_style_depends(method)
         func: FunctionType
@@ -140,17 +154,16 @@ class ViewSet(ExcludeCachedProperty):
             # Just indicates its not an item we need to handle
             return
         for key, value in annotation_state.hints.items():
-            if value.annotated:
-                annotations_as_list = list(value.annotated)
-                for annotation in value.annotated:
-                    if isinstance(annotation, Depends) and annotation.dependency in [
-                        getattr(f, "__func__", ...) for f in self._methods
-                    ]:
-                        annotations_as_list.remove(annotation)
-                        annotations_as_list.append(
-                            Depends(getattr(self, annotation.dependency.__name__))  # type: ignore
-                        )
-                value = replace(value, annotated=tuple(annotations_as_list))  # noqa: PLW2901
+            annotations_as_list = list(value.annotated)
+            for annotation in value.annotated:
+                if isinstance(annotation, Depends) and annotation.dependency in [
+                    getattr(f, "__func__", ...) for f in self._methods
+                ]:
+                    annotations_as_list.remove(annotation)
+                    annotations_as_list.append(
+                        Depends(getattr(self, annotation.dependency.__name__))  # type: ignore
+                    )
+            value = replace(value, annotated=tuple(annotations_as_list))  # noqa: PLW2901
             annotation_state.hints[key] = value
         annotation_state.apply_pending()
 
@@ -167,6 +180,12 @@ class ViewSet(ExcludeCachedProperty):
             if wrapped := getattr(func, "__wrapped__", None):
                 wrapped.__annotations__ = func.__annotations__
             decorator(func)  # type: ignore
+        self._restore_original_annotations()
+
+    @classmethod
+    def _restore_original_annotations(cls):
+        for func, value in cls._original_annotations.items():
+            func.__annotations__ = value
 
     def __call__(
         self, path: str, trailing_slash: bool | EllipsisType = ...
