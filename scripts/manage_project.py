@@ -1,6 +1,6 @@
 """Manages certain fields in every pyproject.toml file in the repo"""
 
-# pyright: reportIndexIssue=false
+# ty: ignore
 from __future__ import annotations
 
 import shutil
@@ -81,17 +81,17 @@ class ProjectManager(CLI[CLIOptions]):
 
     def _set_project_table(self, data: Container, version: semver.Version):
         if data["project"].get("dynamic"):  # type: ignore
-            del data["project"]["dynamic"]
-        data["project"]["version"] = str(version)
+            del data["project"]["dynamic"]  # type: ignore
+        data["project"]["version"] = str(version)  # type: ignore
         urls = data["project"].get("urls")  # type: ignore
         if not urls:
-            data["project"]["urls"] = tomlkit.table()
+            data["project"]["urls"] = tomlkit.table()  # type: ignore
             urls = data["project"]["urls"]  # type: ignore
-        urls["Homepage"] = "https://mikemcowie.github.io/brewing/"
-        urls["Documentation"] = "https://mikemcowie.github.io/brewing/"
-        urls["Repository"] = "https://github.com/mikemcowie/brewing"
-        urls["Issues"] = "https://github.com/mikemcowie/brewing"
-        urls["Releases"] = "https://github.com/mikemcowie/brewing/releases"
+        urls["Homepage"] = "https://mikemcowie.github.io/brewing/"  # type: ignore
+        urls["Documentation"] = "https://mikemcowie.github.io/brewing/"  # type: ignore
+        urls["Repository"] = "https://github.com/mikemcowie/brewing"  # type: ignore
+        urls["Issues"] = "https://github.com/mikemcowie/brewing"  # type: ignore
+        urls["Releases"] = "https://github.com/mikemcowie/brewing/releases"  # type: ignore
 
     def _read_version(self) -> semver.Version:
         project_file = self._repo_path / "pyproject.toml"

@@ -41,11 +41,11 @@ class MaterializationError(RuntimeError):
 def materialize_directory(directory: ManagedDirectory) -> None:
     """Ensure that the directory matches the configuration."""
     for name_generator, file_generator in list(directory.files.items()):
-        filename = (
+        filename: str = (
             name_generator(directory.config)
             if callable(name_generator)
             else name_generator
-        )
+        )  # ty:ignore[invalid-assignment]
         file = (
             file_generator(directory.config)
             if callable(file_generator)

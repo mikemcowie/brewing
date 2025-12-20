@@ -111,7 +111,7 @@ def test_project_init(tmp_path: Path, db_type: DatabaseType):
         [
             uv.find_uv_bin(),
             "add",
-            f"{Path(brewing.__file__).parents[2].relative_to(project_dir, walk_up=True)!s}[{db_type.value}]",
+            f"{Path(str(brewing.__file__)).parents[2].relative_to(project_dir, walk_up=True)!s}[{db_type.value}]",
         ],
         check=True,
         cwd=project_dir,

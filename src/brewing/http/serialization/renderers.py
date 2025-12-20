@@ -115,7 +115,7 @@ class SQLAlchemyORMRenderer[InternalT: DeclarativeBase](
             "dict[str, Any]",
             {
                 name: self._load_attribute(cast("str", name))
-                for name in ChainMap(*(t.__dict__ for t in self.internal_t.__mro__))  # pyright: ignore[reportArgumentType, reportUnknownVariableType]
+                for name in ChainMap(*(t.__dict__ for t in self.internal_t.__mro__))  # ty:ignore[invalid-argument-type]
             },
         )
         for k, v in list(self.attributes.items()):
@@ -183,4 +183,4 @@ class SQLAlchemyORMRenderer[InternalT: DeclarativeBase](
         return create_model(
             self.schema_name,
             **{f: self.attributes[f] for f in self.attributes if f in self.fields},
-        )
+        )  # ty:ignore[no-matching-overload]
