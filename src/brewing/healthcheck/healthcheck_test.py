@@ -58,7 +58,7 @@ def test_readyz_fail_when_database_down(
     def fail(*_, **__):
         raise RuntimeError("The database failed somehow.")
 
-    database.is_alive = fail
+    database.is_alive = fail  # ty:ignore[invalid-assignment]
     result = client.get("/readyz")
     assert result.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
     out, err = capsys.readouterr()
