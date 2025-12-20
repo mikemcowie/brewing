@@ -1,7 +1,7 @@
 [project]
 name = "example"
 readme = "README.md"
-version = "0.0.12-rc.4"
+version = "0.0.12-rc.5"
 dependencies = ["brewing[postgresql]"]
 requires-python = ">=3.14"
 
