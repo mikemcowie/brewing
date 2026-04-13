@@ -12,7 +12,7 @@ dependencies = [
     "brewing[all]",
     "coverage>=7.9.1",
     "hatch>=1.14.1",
-    "hatchling>=1.27.0",
+    "hatchling>=1.29.0",
     "ipython>=9.3.0",
     "polyfactory>=2.21.0",
     "pygit2>=1.18.2",
