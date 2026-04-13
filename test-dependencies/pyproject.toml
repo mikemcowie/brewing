@@ -41,7 +41,7 @@ Issues = "https://github.com/mikemcowie/brewing"
 Releases = "https://github.com/mikemcowie/brewing/releases"
 [dependency-groups]
 dev = [
-    "tomlkit>=0.13.3",
+    "tomlkit>=0.14.0",
 ]
 
 [tool.uv.sources]
